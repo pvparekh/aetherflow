@@ -8,7 +8,7 @@ export default function Navbar() {
         <Link href="/" className="hover:text-blue-400 hover:scale-110 transition transform duration-200 inline-block">
           Home
         </Link>
-        <Link href="/create" className="hover:text-blue-400 hover:scale-110 transition transform duration-200 inline-block">
+        <Link href="/analyze" className="hover:text-blue-400 hover:scale-110 transition transform duration-200 inline-block">
           Create
         </Link>
         <Link href="/dashboard" className="hover:text-blue-400 hover:scale-110 transition transform duration-200 inline-block">

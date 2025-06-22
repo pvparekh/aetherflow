@@ -28,9 +28,10 @@ export default function Home() {
           }}
         >
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: "easeOut" }}
+            initial={{ rotateX: -90, opacity: 0 }}
+            animate={{ rotateX: 0, opacity: 1 }}
+            transition={{ duration: 0.85, ease: "easeOut" }}
+            style={{ transformStyle: "preserve-3d" }}
             className="text-4xl font-bold mb-4"
           >
             Welcome to{" "}
@@ -46,13 +47,13 @@ export default function Home() {
           <div className="flex space-x-4">
             <button
               onClick={() => router.push("/login")}
-              className="px-6 py-3 rounded-lg bg-blue-600 text-white font-medium hover:scale-108 hover:bg-black transition"
+              className="px-6 py-3 rounded-lg bg-blue-600 text-white font-medium hover:scale-108 cursor-pointer hover:bg-black transition"
             >
               Login
             </button>
             <button
               onClick={() => router.push("/signup")}
-              className="px-6 py-3 rounded-lg bg-gray-500 text-white font-medium hover:scale-108 hover:bg-black transition"
+              className="px-6 py-3 rounded-lg bg-gray-500 text-white font-medium hover:scale-108 cursor-pointer hover:bg-black transition"
             >
               Signup
             </button>
@@ -64,12 +65,12 @@ export default function Home() {
           <h2 className="text-3xl font-semibold text-center mb-8">Key Features</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
             {[
-              { title: "Smart Document Upload", desc: "Drag and drop PDFs or spreadsheets — AetherFlow handles parsing and analysis instantly." },
-              { title: "Anomaly Detection", desc: "Flag overspending, inefficiencies, and budget risks before they escalate." },
-              { title: "Approval Threshold Logic", desc: "Auto-approve or route based on rules. Managers only see what matters." },
-              { title: "AI-Scored Reports", desc: "Every report gets an AI scorecard: compliance, value, risk." },
-              { title: "Audit Trail Logging", desc: "Full tracking of report activity, edits, and approvals for accountability." },
-              { title: "Role-Based Access", desc: "Separate workflows for finance, operations, and executives." },
+              { title: "Smart Document Upload", desc: "Upload structured .txt or .csv files, AetherFlow instantly parses and processes your data." },
+              { title: "Anomaly Detection", desc: "Flag overspending, inefficiencies, and irregularities with smart pattern recognition." },
+              { title: "AI-Scored Reports", desc: "Receive actionable insights, performance summaries, and basic risk indicators tailored to your input." },
+              { title: "Saved Analysis History", desc: "Sign up to save your analysis results and revisit past reports anytime from your dashboard." },
+              { title: "Limited Guest Usage", desc: "Try AetherFlow with up to 3 free analyses. Sign up to unlock full functionality and history tracking." },
+              { title: "Role-Based Access (Coming Soon)", desc: "Future roles like Finance Analyst or Ops Reviewer will allow tailored dashboards and permissions." },
             ].map((feature, index) => (
               <div key={index} className="border rounded-xl p-6 shadow hover:shadow-md transition">
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">{feature.title}</h3>
@@ -96,7 +97,7 @@ export default function Home() {
           <h2 className="text-2xl font-bold text-black mb-4">Ready to streamline your workflows?</h2>
           <button
             onClick={() => router.push("/signup")}
-            className="px-8 py-4 bg-blue-600 text-white rounded-lg text-lg font-medium hover:scale-110 hover:bg-blue-800 transition"
+            className="px-8 py-4 bg-blue-600 text-white rounded-lg text-lg font-medium cursor-pointer hover:scale-110 hover:bg-blue-800 transition"
           >
             Get Started Now
           </button>
