@@ -3,6 +3,9 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Layout from "@/components/Layout";
+import LoginLogoutButton from "@/components/LoginLogoutButton"
+import GreetUser from "@/components/GreetUser";
+
 
 export default function Home() {
   const router = useRouter();
@@ -40,17 +43,13 @@ export default function Home() {
             </span>
           </motion.h1>
 
+          <GreetUser />
           <p className="text-lg max-w-xl mx-auto mb-6">
             Your AI-powered intelligent workflow manager—analyzing, scoring, and flagging inefficiencies in business reports to help companies optimize.
           </p>
 
           <div className="flex space-x-4">
-            <button
-              onClick={() => router.push("/login")}
-              className="px-6 py-3 rounded-lg bg-blue-600 text-white font-medium hover:scale-108 cursor-pointer hover:bg-black transition"
-            >
-              Login
-            </button>
+            <LoginLogoutButton />
             <button
               onClick={() => router.push("/signup")}
               className="px-6 py-3 rounded-lg bg-gray-500 text-white font-medium hover:scale-108 cursor-pointer hover:bg-black transition"
@@ -85,10 +84,9 @@ export default function Home() {
           <div className="relative border-l-4 border-blue-600 bg-white p-8 rounded-xl shadow">
             <div className="absolute top-0 left-0 text-blue-600 text-6xl -mt-6 -ml-4 select-none">“</div>
             <p className="text-lg italic text-gray-800">
-              AetherFlow gave us clarity on where our operations were bleeding money—this tool doesn’t just organize, it thinks for us.
+              AetherFlow gave us clarity on where our operations were bleeding money. This tool doesn’t just organize, it thinks for us.
             </p>
             <div className="absolute bottom-0 right-0 text-blue-600 text-6xl -mb-6 -mr-4 select-none">”</div>
-            <p className="mt-6 text-sm font-medium text-gray-600">— Raj Patel, Startup Operations Lead</p>
           </div>
         </section>
 
