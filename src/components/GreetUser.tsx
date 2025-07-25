@@ -1,26 +1,63 @@
-"use client";
-import { createClient } from "../../utils/supabase/client";
-import React, { useEffect, useState } from "react";
+'use client'
 
-const GreetUser = () => {
-  const [user, setUser] = useState<any>(null);
-  const supabase = createClient();
+import { useEffect, useState } from 'react'
+import { createClient } from '../../utils/supabase/client'
+import { motion, AnimatePresence } from 'framer-motion'
 
+export default function GreetUser() {
+  const [greeting, setGreeting] = useState<string | null>(null)
+  const [isGuest, setIsGuest] = useState<boolean>(false)
   useEffect(() => {
-    const fetchUser = async () => {
+    async function fetchGreeting() {
+      const supabase = createClient()
+
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    fetchUser();
-  }, []);
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
+      if (sessionError || !session?.user) {
+        setGreeting('Hey Guest! sign in to unlock full access and save your workflows.')
+        setIsGuest(true)
+        return
+      }
+
+      const userId = session.user.id
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', userId)
+        .single()
+
+      if (profileError || !profile?.full_name) {
+        setGreeting('Hey Guest! sign in to unlock full access and save your workflows.')
+        setIsGuest(true)
+        return
+      }
+
+      const firstName = profile.full_name.split(' ')[0] ?? 'Guest'
+      setGreeting(`Welcome Back, ${firstName}👋`)
+      setIsGuest(false)
+    }
+
+    fetchGreeting()
+  }, [])
 
   return (
-    <p className="text-lg font-medium text-white mb-4">
-      Hello, <span className="font-semibold text-blue-200">{user?.full_name ?? "Guest"}</span> 👋
-    </p>
-  );
-};
-
-export default GreetUser;
+    <AnimatePresence>
+      {greeting && (
+        <motion.h2
+          key="greeting"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className={"font-semibold text-white mb-4 text-center text-xl" + (isGuest ? "text-gray-400" : "text-blue-200") }
+        >
+          {greeting}
+        </motion.h2>
+      )}
+    </AnimatePresence>
+  )
+}
