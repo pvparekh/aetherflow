@@ -93,7 +93,7 @@ export default function Home() {
               },
               {
                 title: "Limited Guest Usage",
-                desc: "Try AetherFlow with up to 3 free analyses. Sign up to unlock full functionality and history tracking.",
+                desc: "Try AetherFlow with 1 free analysis. Sign up to unlock full functionality and history tracking.",
               },
               {
                 title: "Role-Based Access (Coming Soon)",
@@ -143,3 +143,5 @@ export default function Home() {
     </Layout>
   );
 }
+
+

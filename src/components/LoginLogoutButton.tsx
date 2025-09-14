@@ -3,9 +3,10 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "../../utils/supabase/client";
 import { signout } from "@/lib/auth-actions";
+import type { User } from "@supabase/supabase-js";
 
 const LoginLogoutButton = () => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -17,7 +18,7 @@ const LoginLogoutButton = () => {
       setUser(user);
     };
     fetchUser();
-  }, []);
+  }, [supabase]);
 
   if (user) {
     return (
