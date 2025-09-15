@@ -3,11 +3,22 @@
 
 AI-powered workflow manager for business reports. Analyze, score, and flag inefficiencies to help companies optimize operations.
 
-![AetherFlow Screenshot](public/images/pf-ss.jpg.png)
+
+## Screenshots
+
+### Main Page
+![Main Page](public/main.png)
+
+### Analysis Page
+![Analysis Page](public/Analysispage.png)
+
+### Sign Up Page
+![Sign Up Page](public/signUP.png)
+
 
 ## Live Demo
 
-[View the live app](https://your-deployment-url.com) <!-- Replace with your actual URL -->
+[View the live app](https://aetherflow-three.vercel.app/)
 
 ## Features
 
