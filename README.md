@@ -7,13 +7,13 @@ AI-powered workflow manager for business reports. Analyze, score, and flag ineff
 ## Screenshots
 
 ### Main Page
-![Main Page](public/main.png)
+![Main Page](/aetherflow/public/main.png)
 
 ### Analysis Page
-![Analysis Page](public/Analysispage.png)
+![Analysis Page](/public/Analysispage.png)
 
 ### Sign Up Page
-![Sign Up Page](public/signUP.png)
+![Sign Up Page](/public/signUP.png)
 
 
 ## Live Demo
