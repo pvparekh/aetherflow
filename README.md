@@ -26,7 +26,7 @@ AI-powered workflow manager for business reports. Analyze, score, and flag ineff
 - AI-powered anomaly detection
 - Actionable, scored reports
 - Saved analysis history (for signed-in users)
-- Limited guest usage (3 free analyses)
+- Limited guest usage (1 free analysis)
 - Role-based access (coming soon)
 
 ## Tech Stack
