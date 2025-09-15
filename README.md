@@ -1,4 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+# AetherFlow
+
+AI-powered workflow manager for business reports. Analyze, score, and flag inefficiencies to help companies optimize operations.
+
+![AetherFlow Screenshot](public/images/pf-ss.jpg.png)
+
+## Live Demo
+
+[View the live app](https://your-deployment-url.com) <!-- Replace with your actual URL -->
+
+## Features
+
+- Smart document upload (.txt, .csv)
+- AI-powered anomaly detection
+- Actionable, scored reports
+- Saved analysis history (for signed-in users)
+- Limited guest usage (3 free analyses)
+- Role-based access (coming soon)
+
+## Tech Stack
+
+- Next.js 14 (App Router)
+- React
+- Tailwind CSS
+- Supabase (auth & database)
+- OpenAI API
+- Framer Motion (animations)
+
+---
+
 
 ## Getting Started
 
@@ -19,6 +49,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
 
 ## Learn More
 
