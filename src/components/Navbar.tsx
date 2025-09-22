@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import LoginLogoutButton2 from './Navbarloginlogout';
 
 export default function Navbar() {
   return (
@@ -17,9 +18,7 @@ export default function Navbar() {
         <Link href="/account" className="hover:text-blue-400 hover:scale-110 transition transform duration-200 inline-block">
           Account
         </Link>
-        <Link href="/logout" className="hover:text-blue-400 hover:scale-110 transition transform duration-200 inline-block">
-          Logout
-        </Link>
+        <LoginLogoutButton2 />
       </div>
     </nav>
   );
