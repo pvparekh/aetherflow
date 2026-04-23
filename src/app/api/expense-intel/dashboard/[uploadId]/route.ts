@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '../../../../../../utils/supabase/server';
 import { createServiceClient } from '../../../../../../utils/supabase/service';
-import type { Flag, Pass2Result } from '@/lib/expense-intel/types';
+import type { Flag, FlagType, Pass2Result } from '@/lib/expense-intel/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +32,13 @@ export async function GET(
     return NextResponse.json({ error: 'Upload not found' }, { status: 404 });
   }
 
-  const [{ data: lineItems }, { data: catStats }, { data: vendors }] = await Promise.all([
+  const [
+    { data: lineItems },
+    { data: catStats },
+    { data: vendors },
+    { data: latestUploadMeta },
+    { data: allUserUploads },
+  ] = await Promise.all([
     supabase
       .from('line_items')
       .select('*')
@@ -40,9 +46,57 @@ export async function GET(
       .order('amount', { ascending: false }),
     supabase.from('category_stats').select('*').eq('upload_id', uploadId),
     supabase.from('vendors').select('*').eq('user_id', user.id),
+    supabase
+      .from('uploads')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('pass1_status', 'complete')
+      .order('uploaded_at', { ascending: false })
+      .limit(1)
+      .single(),
+    supabase
+      .from('uploads')
+      .select('id, uploaded_at')
+      .eq('user_id', user.id)
+      .eq('pass1_status', 'complete'),
   ]);
 
-  // Historical totals for trend chart (last 5 prior uploads)
+  // Merge latest rolling averages when viewing an older upload
+  let mergedCatStats = catStats ?? [];
+  if (latestUploadMeta && latestUploadMeta.id !== uploadId) {
+    const { data: latestStats } = await supabase
+      .from('category_stats')
+      .select('category, rolling_avg_5, rolling_avg_alltime, std_dev, trend_direction, total_spend_alltime')
+      .eq('upload_id', latestUploadMeta.id);
+
+    if (latestStats && latestStats.length > 0) {
+      const latestMap = new Map(latestStats.map((s) => [s.category as string, s]));
+      mergedCatStats = mergedCatStats.map((s) => {
+        const latest = latestMap.get(s.category as string);
+        if (!latest) return s;
+        return {
+          ...s,
+          rolling_avg_5: latest.rolling_avg_5,
+          std_dev: latest.std_dev,
+          trend_direction: latest.trend_direction,
+          rolling_avg_alltime: latest.rolling_avg_alltime,
+          total_spend_alltime: latest.total_spend_alltime,
+        };
+      });
+    }
+  }
+
+  // Resolve vendor dates from upload date map
+  const uploadDateMap = new Map(
+    (allUserUploads ?? []).map((u) => [u.id as string, u.uploaded_at as string])
+  );
+  const vendorsWithDates = (vendors ?? []).map((v) => ({
+    ...v,
+    last_seen_at: uploadDateMap.get(v.last_seen_upload_id as string) ?? null,
+    first_seen_at: uploadDateMap.get(v.first_seen_upload_id as string) ?? null,
+  }));
+
+  // Historical category totals for rolling avg chart (last 5 prior uploads)
   const { data: prevUploads } = await supabase
     .from('uploads')
     .select('id, uploaded_at')
@@ -63,13 +117,13 @@ export async function GET(
 
     if (histStats) {
       const categories = new Set((catStats ?? []).map((s) => s.category as string));
-      const uploadDateMap = new Map(prevUploads.map((u) => [u.id as string, u.uploaded_at as string]));
+      const prevUploadDateMap = new Map(prevUploads.map((u) => [u.id as string, u.uploaded_at as string]));
 
       for (const cat of categories) {
         const points = histStats
           .filter((s) => s.category === cat)
           .map((s) => ({
-            uploaded_at: uploadDateMap.get(s.upload_id as string) ?? '',
+            uploaded_at: prevUploadDateMap.get(s.upload_id as string) ?? '',
             total: Number(s.total_spend_period),
           }))
           .sort((a, b) => new Date(a.uploaded_at).getTime() - new Date(b.uploaded_at).getTime());
@@ -81,7 +135,7 @@ export async function GET(
     }
   }
 
-  // Compute flags from line_items boolean flags + anomaly_severity
+  // Build flags from line items
   const flags: Flag[] = [];
   for (const item of lineItems ?? []) {
     const vendor = String(item.vendor ?? 'Unknown');
@@ -92,63 +146,75 @@ export async function GET(
     if (item.is_possible_duplicate) {
       flags.push({
         severity: 'critical',
-        title: 'Possible Duplicate',
-        description: `${vendor} charged $${amount.toFixed(2)} appears to be a duplicate transaction.`,
+        flag_type: 'duplicate' as FlagType,
+        title: 'Possible Duplicate Charge',
+        description: `${vendor} charged $${amount.toFixed(2)} — appears to be a duplicate transaction within a 7-day window.`,
         metric: `$${amount.toFixed(2)}`,
+        vendor,
+        amount,
+        z_score: item.z_score != null ? Number(item.z_score) : null,
         category,
         related_line_item_ids: [item.id as string],
       });
+      continue;
     }
 
-    if (item.is_round_number) {
-      if (item.anomaly_severity === 'high') {
-        flags.push({
-          severity: 'critical',
-          title: 'Round Number Anomaly',
-          description: `${vendor} charged a round $${amount.toFixed(2)} — significantly above the category average (z=${z.toFixed(1)}).`,
-          metric: `$${amount.toFixed(2)} (z=${z.toFixed(1)})`,
-          category,
-          related_line_item_ids: [item.id as string],
-        });
-      } else if (item.anomaly_severity === 'medium') {
-        flags.push({
-          severity: 'warning',
-          title: 'Round Number Anomaly',
-          description: `${vendor} charged a suspiciously round $${amount.toFixed(2)}, above the category average.`,
-          metric: `$${amount.toFixed(2)}`,
-          category,
-          related_line_item_ids: [item.id as string],
-        });
-      }
+    if (item.is_round_number && (item.anomaly_severity === 'high' || item.anomaly_severity === 'medium')) {
+      flags.push({
+        severity: item.anomaly_severity === 'high' ? 'critical' : 'warning',
+        flag_type: 'round_number' as FlagType,
+        title: 'Round Number Anomaly',
+        description: `${vendor} charged a round $${amount.toFixed(2)} — ${z > 0 ? `${z.toFixed(1)}σ above` : `${Math.abs(z).toFixed(1)}σ below`} the ${category} baseline.`,
+        metric: `$${amount.toFixed(2)} (z=${z.toFixed(1)})`,
+        vendor,
+        amount,
+        z_score: z,
+        category,
+        related_line_item_ids: [item.id as string],
+      });
+      continue;
     }
 
     if (item.is_first_time_vendor && (item.anomaly_severity === 'high' || item.anomaly_severity === 'medium')) {
       flags.push({
         severity: 'warning',
-        title: 'New High-Spend Vendor',
-        description: `First time seeing ${vendor}. Amount of $${amount.toFixed(2)} is unusual for this category.`,
-        metric: `$${amount.toFixed(2)} (first-time)`,
+        flag_type: 'first_time' as FlagType,
+        title: 'First-Time Vendor: Unusual Amount',
+        description: `First time seeing ${vendor}. Amount of $${amount.toFixed(2)} is ${z.toFixed(1)}σ above the ${category} baseline.`,
+        metric: `$${amount.toFixed(2)} (z=${z.toFixed(1)}, first-time)`,
+        vendor,
+        amount,
+        z_score: z,
         category,
         related_line_item_ids: [item.id as string],
       });
+      continue;
     }
 
     if (!item.is_possible_duplicate && !item.is_round_number && !item.is_first_time_vendor) {
       if (item.anomaly_severity === 'high') {
         flags.push({
           severity: 'critical',
+          flag_type: 'statistical' as FlagType,
           title: 'Statistical Anomaly',
-          description: `${vendor} at $${amount.toFixed(2)} is far above the category average (z=${z.toFixed(1)}).`,
+          description: `${vendor} at $${amount.toFixed(2)} is far above the ${category} baseline (z=${z.toFixed(1)}).`,
           metric: `$${amount.toFixed(2)} (z=${z.toFixed(1)})`,
+          vendor,
+          amount,
+          z_score: z,
           category,
           related_line_item_ids: [item.id as string],
         });
       } else if (item.anomaly_severity === 'medium') {
         flags.push({
           severity: 'warning',
+          flag_type: 'statistical' as FlagType,
           title: 'Statistical Anomaly',
-          description: `${vendor} at $${amount.toFixed(2)} is above the category mean (z=${z.toFixed(1)}).`,
+          description: `${vendor} at $${amount.toFixed(2)} is above the ${category} mean (z=${z.toFixed(1)}).`,
           metric: `$${amount.toFixed(2)} (z=${z.toFixed(1)})`,
+          vendor,
+          amount,
+          z_score: z,
           category,
           related_line_item_ids: [item.id as string],
         });
@@ -167,9 +233,9 @@ export async function GET(
   return NextResponse.json({
     upload,
     line_items: lineItems ?? [],
-    category_stats: catStats ?? [],
+    category_stats: mergedCatStats,
     category_history: categoryHistory,
-    vendors: vendors ?? [],
+    vendors: vendorsWithDates,
     flags,
     pass2,
   });

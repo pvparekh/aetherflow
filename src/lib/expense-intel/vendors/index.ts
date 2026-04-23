@@ -53,7 +53,6 @@ function daysApart(a: string, b: string): number {
   return Math.abs((new Date(a).getTime() - new Date(b).getTime()) / 86_400_000);
 }
 
-// Derive effective z-score: MAD-adjusted for skewed categories, standard otherwise
 function effectiveZ(
   item: VendorLineItem,
   skewedCategories: string[],
@@ -76,7 +75,6 @@ export async function runVendorIntelligence(
 ): Promise<VendorResult> {
   const { skewedCategories, categoryDrift } = statsResult;
 
-  // 1. Fetch current upload's line items (z_scores set by Phase 2)
   const { data: rawItems, error: itemsError } = await supabase
     .from('line_items')
     .select('id, vendor, amount, transaction_date, category, subcategory, z_score')
@@ -94,19 +92,14 @@ export async function runVendorIntelligence(
     z_score: r.z_score != null ? Number(r.z_score) : null,
   }));
 
-  // 2. Pre-compute MAD for skewed categories (for reliable outlier scoring)
   const madByCategory = new Map<string, { med: number; mad: number }>();
   for (const cat of skewedCategories) {
     const amounts = items.filter((i) => i.category === cat).map((i) => i.amount);
     if (amounts.length > 0) {
-      madByCategory.set(cat, {
-        med: median(amounts),
-        mad: medianAbsoluteDeviation(amounts),
-      });
+      madByCategory.set(cat, { med: median(amounts), mad: medianAbsoluteDeviation(amounts) });
     }
   }
 
-  // 3. Look up existing vendors for this user (single query)
   const vendorNames = [...new Set(items.map((i) => i.vendor).filter(Boolean))];
   const { data: existingVendors } = await supabase
     .from('vendors')
@@ -119,10 +112,8 @@ export async function runVendorIntelligence(
   );
   const newVendorNames = new Set(vendorNames.filter((n) => !existingMap.has(n)));
 
-  // 4. Round number flags (pure computation)
   const roundNumberIds = new Set(items.filter((i) => isRoundNumber(i.amount)).map((i) => i.id));
 
-  // 5. Duplicate detection — within this upload
   const duplicateIds = new Set<string>();
   const duplicateGroups: VendorResult['possibleDuplicates'] = [];
 
@@ -131,12 +122,10 @@ export async function runVendorIntelligence(
       const a = items[i];
       const b = items[j];
       if (a.vendor !== b.vendor || a.amount !== b.amount) continue;
-
       const isDupe =
         a.transaction_date && b.transaction_date
           ? daysApart(a.transaction_date, b.transaction_date) <= 7
-          : true; // same upload, same vendor+amount, no dates → flag it
-
+          : true;
       if (isDupe) {
         duplicateIds.add(a.id);
         duplicateIds.add(b.id);
@@ -151,7 +140,6 @@ export async function runVendorIntelligence(
     }
   }
 
-  // 6. Duplicate detection — across previous uploads for this user
   const { data: prevUploads } = await supabase
     .from('uploads')
     .select('id')
@@ -196,7 +184,6 @@ export async function runVendorIntelligence(
     }
   }
 
-  // 7. Batch update line_items vendor flags
   await Promise.all(
     items.map((item) =>
       supabase
@@ -210,7 +197,6 @@ export async function runVendorIntelligence(
     )
   );
 
-  // 8. Upsert vendors table — update cumulative stats
   const vendorGroups = new Map<
     string,
     { items: VendorLineItem[]; totalSpend: number; count: number }
@@ -235,7 +221,6 @@ export async function runVendorIntelligence(
     const newAvg = newTotalSpend / newOccurrences;
     const newTier = getRecurrenceTier(newOccurrences);
 
-    // Vendor tier upgrade with price increase → warning flag
     if (existing) {
       const oldTier = existing.recurrence_tier as RecurrenceTier;
       const oldAvg = Number(existing.avg_amount ?? 0);
@@ -243,16 +228,19 @@ export async function runVendorIntelligence(
         const pctIncrease = (((newAvg - oldAvg) / oldAvg) * 100).toFixed(1);
         tierUpgradeFlags.push({
           severity: 'warning',
+          flag_type: 'statistical',
           title: 'Recurring Vendor: Price Increase',
           description: `${vendorName} upgraded to "${newTier}" tier. Average spend rose from $${oldAvg.toFixed(2)} to $${newAvg.toFixed(2)} (+${pctIncrease}%) — review for contract renegotiation.`,
           metric: `avg +${pctIncrease}%, ${oldTier} → ${newTier}`,
+          vendor: vendorName,
+          amount: newAvg,
+          z_score: null,
           category: group.items[0].category,
           related_line_item_ids: group.items.map((i) => i.id),
         });
       }
     }
 
-    // Determine primary category by spend
     const catSpend = new Map<string, number>();
     for (const item of group.items) {
       catSpend.set(item.category, (catSpend.get(item.category) ?? 0) + item.amount);
@@ -279,7 +267,6 @@ export async function runVendorIntelligence(
     if (upsertError) throw new Error(`Failed to upsert vendors: ${upsertError.message}`);
   }
 
-  // 9. Pareto analysis per category (vendors driving 80% of spend)
   const paretoByCategory: Record<string, ParetoEntry[]> = {};
   const byCat = new Map<string, VendorLineItem[]>();
   for (const item of items) {
@@ -297,17 +284,12 @@ export async function runVendorIntelligence(
     const pareto: ParetoEntry[] = [];
     for (const [vendor, amount] of sorted) {
       cumulative += amount;
-      pareto.push({
-        vendor,
-        amount: Math.round(amount * 100) / 100,
-        cumulativePct: Math.round((cumulative / total) * 10000) / 100,
-      });
+      pareto.push({ vendor, amount: Math.round(amount * 100) / 100, cumulativePct: Math.round((cumulative / total) * 10000) / 100 });
       if (cumulative / total >= 0.8) break;
     }
     paretoByCategory[cat] = pareto;
   }
 
-  // 10. Consolidation opportunities (3+ vendors in same subcategory)
   const subcatMap = new Map<string, { vendors: Set<string>; spend: number; category: string }>();
   for (const item of items) {
     if (!item.subcategory) continue;
@@ -321,111 +303,126 @@ export async function runVendorIntelligence(
   for (const [key, e] of subcatMap) {
     if (e.vendors.size >= 3) {
       const [, subcategory] = key.split('::');
-      consolidationOpportunities.push({
-        category: e.category,
-        subcategory,
-        vendors: [...e.vendors],
-        totalSpend: Math.round(e.spend * 100) / 100,
-      });
+      consolidationOpportunities.push({ category: e.category, subcategory, vendors: [...e.vendors], totalSpend: Math.round(e.spend * 100) / 100 });
     }
   }
 
-  // 11. Generate flags
   const flags: Flag[] = [];
 
   for (const item of items) {
     const ez = effectiveZ(item, skewedCategories, madByCategory);
     const absEZ = Math.abs(ez);
     const isSKewed = skewedCategories.includes(item.category);
-    const madNote = isSKewed ? ' (MAD-adjusted — category distribution is skewed)' : '';
+    const madNote = isSKewed ? ' (MAD-adjusted)' : '';
 
-    // Possible duplicate — always critical, regardless of z
     if (duplicateIds.has(item.id)) {
       flags.push({
         severity: 'critical',
+        flag_type: 'duplicate',
         title: 'Possible Duplicate Charge',
-        description: `${item.vendor}: $${item.amount.toFixed(2)} appears more than once within a 7-day window — verify it was not charged twice.`,
+        description: `${item.vendor}: $${item.amount.toFixed(2)} appears more than once within a 7-day window.`,
         metric: `$${item.amount.toFixed(2)}`,
+        vendor: item.vendor,
+        amount: item.amount,
+        z_score: item.z_score,
         category: item.category,
         related_line_item_ids: [item.id],
       });
-      continue; // duplicate is the dominant signal, skip further checks for this item
+      continue;
     }
 
-    // Round number ≥ $500 + z > 1 — critical combined signal
     if (roundNumberIds.has(item.id) && item.amount >= 500 && absEZ > 1) {
       flags.push({
         severity: 'critical',
+        flag_type: 'round_number',
         title: 'Round Number Outlier',
-        description: `${item.vendor}: $${item.amount.toFixed(2)} is an exact round number ≥$500 and ${absEZ.toFixed(1)}σ above the ${item.category} baseline — possible manual or estimated expense.`,
+        description: `${item.vendor}: $${item.amount.toFixed(2)} is a round number ≥$500 and ${absEZ.toFixed(1)}σ above the ${item.category} baseline.`,
         metric: `z=${ez.toFixed(2)}, $${item.amount.toFixed(2)}${madNote}`,
+        vendor: item.vendor,
+        amount: item.amount,
+        z_score: ez,
         category: item.category,
         related_line_item_ids: [item.id],
       });
       continue;
     }
 
-    // First-time vendor + z > 1.5 — warning combined signal
     if (newVendorNames.has(item.vendor) && absEZ > 1.5) {
       flags.push({
         severity: 'warning',
+        flag_type: 'first_time',
         title: 'Unknown Vendor: Unusual Amount',
         description: `${item.vendor}: $${item.amount.toFixed(2)} is a first-time vendor and ${absEZ.toFixed(1)}σ above the ${item.category} baseline.`,
         metric: `z=${ez.toFixed(2)}, first-time vendor${madNote}`,
+        vendor: item.vendor,
+        amount: item.amount,
+        z_score: ez,
         category: item.category,
         related_line_item_ids: [item.id],
       });
       continue;
     }
 
-    // Statistical outlier z > 2 (severity determined by threshold)
     if (absEZ > 2) {
       flags.push({
         severity: absEZ >= 2.5 ? 'critical' : 'warning',
+        flag_type: 'statistical',
         title: 'Statistical Outlier',
         description: `${item.vendor}: $${item.amount.toFixed(2)} is ${absEZ.toFixed(1)}σ ${ez > 0 ? 'above' : 'below'} the ${item.category} mean${madNote}.`,
         metric: `z=${ez.toFixed(2)}`,
+        vendor: item.vendor,
+        amount: item.amount,
+        z_score: ez,
         category: item.category,
         related_line_item_ids: [item.id],
       });
       continue;
     }
 
-    // First-time vendor at normal amount — info
     if (newVendorNames.has(item.vendor)) {
       flags.push({
         severity: 'info',
+        flag_type: 'first_time',
         title: 'First-Time Vendor',
-        description: `${item.vendor}: $${item.amount.toFixed(2)} in ${item.category} — first time this vendor appears in your records.`,
+        description: `${item.vendor}: $${item.amount.toFixed(2)} in ${item.category} — first appearance in your records.`,
         metric: `$${item.amount.toFixed(2)}, first-time`,
+        vendor: item.vendor,
+        amount: item.amount,
+        z_score: item.z_score,
         category: item.category,
         related_line_item_ids: [item.id],
       });
     }
   }
 
-  // Category drift flags (from Phase 2 result)
   for (const drift of categoryDrift) {
     const direction = drift.deltaPct > 0 ? 'above' : 'below';
     flags.push({
       severity: Math.abs(drift.deltaPct) > 25 ? 'critical' : 'warning',
+      flag_type: 'statistical',
       title: `Category Spend Drift: ${drift.category}`,
-      description: `${drift.category}: ${Math.abs(drift.deltaPct).toFixed(1)} percentage points ${direction} its historical average share of total spend (${drift.currentPct.toFixed(1)}% this upload vs ${drift.historicalAvgPct.toFixed(1)}% avg).`,
+      description: `${drift.category}: ${Math.abs(drift.deltaPct).toFixed(1)}pp ${direction} its historical avg share (${drift.currentPct.toFixed(1)}% this upload vs ${drift.historicalAvgPct.toFixed(1)}% avg).`,
       metric: `${drift.deltaPct > 0 ? '+' : ''}${drift.deltaPct.toFixed(1)}pp vs rolling avg`,
+      vendor: drift.category,
+      amount: 0,
+      z_score: null,
       category: drift.category,
       related_line_item_ids: items.filter((i) => i.category === drift.category).map((i) => i.id),
     });
   }
 
-  // Consolidation opportunity flags
   for (const opp of consolidationOpportunities) {
     const top3 = opp.vendors.slice(0, 3).join(', ');
     const more = opp.vendors.length > 3 ? ` +${opp.vendors.length - 3} more` : '';
     flags.push({
       severity: 'info',
+      flag_type: 'statistical',
       title: 'Vendor Consolidation Opportunity',
-      description: `${opp.category} / ${opp.subcategory}: ${opp.vendors.length} vendors (${top3}${more}) share $${opp.totalSpend.toFixed(2)} — consolidating could simplify billing and unlock volume pricing.`,
+      description: `${opp.category} / ${opp.subcategory}: ${opp.vendors.length} vendors (${top3}${more}) share $${opp.totalSpend.toFixed(2)}.`,
       metric: `${opp.vendors.length} vendors, $${opp.totalSpend.toFixed(2)}`,
+      vendor: opp.category,
+      amount: opp.totalSpend,
+      z_score: null,
       category: opp.category,
       related_line_item_ids: items
         .filter((i) => i.category === opp.category && i.subcategory === opp.subcategory)
@@ -433,7 +430,6 @@ export async function runVendorIntelligence(
     });
   }
 
-  // Tier upgrade flags accumulated during vendor upsert
   flags.push(...tierUpgradeFlags);
 
   console.log(
@@ -441,11 +437,5 @@ export async function runVendorIntelligence(
       `roundNums=${roundNumberIds.size} consolidation=${consolidationOpportunities.length} flags=${flags.length}`
   );
 
-  return {
-    firstTimeVendors: [...newVendorNames],
-    possibleDuplicates: duplicateGroups,
-    consolidationOpportunities,
-    paretoByCategory,
-    flags,
-  };
+  return { firstTimeVendors: [...newVendorNames], possibleDuplicates: duplicateGroups, consolidationOpportunities, paretoByCategory, flags };
 }

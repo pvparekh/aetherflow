@@ -1,11 +1,16 @@
 export type UploadStatus = 'pending' | 'processing' | 'complete' | 'error';
 export type FlagSeverity = 'success' | 'info' | 'warning' | 'critical';
+export type FlagType = 'duplicate' | 'first_time' | 'round_number' | 'statistical';
 
 export interface Flag {
   severity: FlagSeverity;
+  flag_type: FlagType;
   title: string;
   description: string;
   metric: string;
+  vendor: string;
+  amount: number;
+  z_score: number | null;
   category: string;
   related_line_item_ids: string[];
 }
@@ -122,6 +127,9 @@ export interface Vendor {
   avg_amount: number | null;
   recurrence_tier: RecurrenceTier;
   primary_category: string | null;
+  // Resolved from upload dates in API responses
+  last_seen_at?: string | null;
+  first_seen_at?: string | null;
 }
 
 export interface Budget {
@@ -138,24 +146,30 @@ export interface InsightCard {
   title: string;
   description: string;
   severity: FlagSeverity;
-  category: string;
+  category: string | null;
   metric: string;
-  action: string;
 }
 
 export interface SavingsOpportunity {
   title: string;
   description: string;
-  estimated_savings: string;
-  category: string;
+  estimated_impact: string;
+}
+
+export interface AnomalyExplanation {
+  vendor: string;
+  amount: number;
+  reason: string;
+  severity: 'warning' | 'critical';
 }
 
 export interface Pass2Result {
-  health_score: number;
+  health_score: number;          // 1–10
   health_justification: string;
   narrative_summary: string;
   insights: InsightCard[];
   savings_opportunities: SavingsOpportunity[];
+  anomaly_explanations: AnomalyExplanation[];
 }
 
 // --- API response ---
