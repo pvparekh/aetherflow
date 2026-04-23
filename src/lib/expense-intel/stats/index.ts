@@ -17,6 +17,7 @@ export interface StatsResult {
 
 export async function computeAndWriteStats(
   uploadId: string,
+  userId: string,
   supabase: SupabaseClient
 ): Promise<StatsResult> {
   // 1. Fetch all line items for this upload
@@ -29,19 +30,32 @@ export async function computeAndWriteStats(
     throw new Error(`Failed to fetch line items: ${itemsError?.message}`);
   }
 
-  // 2. Fetch ALL historical category_stats in one round trip, newest first
-  const { data: allHistory, error: historyError } = await supabase
-    .from('category_stats')
-    .select('category, total_spend_period, pct_of_total_spend')
-    .order('computed_at', { ascending: false });
+  // 2. Fetch this user's previous upload IDs (exclude current — it has no stats yet)
+  const { data: prevUploads, error: prevError } = await supabase
+    .from('uploads')
+    .select('id')
+    .eq('user_id', userId)
+    .neq('id', uploadId);
 
-  if (historyError) {
-    throw new Error(`Failed to fetch category history: ${historyError.message}`);
+  if (prevError) throw new Error(`Failed to fetch previous uploads: ${prevError.message}`);
+
+  const prevUploadIds = (prevUploads ?? []).map((u) => u.id as string);
+
+  // 3. Fetch historical category_stats scoped to this user, newest first
+  let rawHistory: { category: string; total_spend_period: number; pct_of_total_spend: number }[] = [];
+  if (prevUploadIds.length > 0) {
+    const { data, error: historyError } = await supabase
+      .from('category_stats')
+      .select('category, total_spend_period, pct_of_total_spend')
+      .in('upload_id', prevUploadIds)
+      .order('computed_at', { ascending: false });
+    if (historyError) throw new Error(`Failed to fetch category history: ${historyError.message}`);
+    rawHistory = data ?? [];
   }
 
   // Group history by category for O(1) lookups
   const historyByCategory = new Map<string, { total: number; pct: number }[]>();
-  for (const row of allHistory ?? []) {
+  for (const row of rawHistory) {
     const cat = row.category as string;
     if (!historyByCategory.has(cat)) historyByCategory.set(cat, []);
     historyByCategory.get(cat)!.push({

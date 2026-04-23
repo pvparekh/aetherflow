@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mean, median, populationStdDev, computeCategoryAggregates } from '../aggregates';
+import { mean, median, populationStdDev, computeCategoryAggregates, medianAbsoluteDeviation, madZScore } from '../aggregates';
 
 describe('mean', () => {
   it('computes the arithmetic mean', () => {
@@ -70,5 +70,39 @@ describe('computeCategoryAggregates', () => {
     expect(result.mean).toBe(500);
     expect(result.median).toBe(500);
     expect(result.stdDev).toBe(0);
+  });
+});
+
+describe('medianAbsoluteDeviation', () => {
+  // Values: [1, 2, 3, 4, 5] → median=3, deviations=[2,1,0,1,2] → MAD=1
+  it('computes MAD for symmetric data', () => {
+    expect(medianAbsoluteDeviation([1, 2, 3, 4, 5])).toBe(1);
+  });
+  // Values: [1, 1, 2, 2, 4, 6, 9] → median=2, deviations=[1,1,0,0,2,4,7] → MAD=1
+  it('handles skewed data correctly', () => {
+    expect(medianAbsoluteDeviation([1, 1, 2, 2, 4, 6, 9])).toBe(1);
+  });
+  it('returns 0 for empty array', () => {
+    expect(medianAbsoluteDeviation([])).toBe(0);
+  });
+  it('returns 0 when all values identical', () => {
+    expect(medianAbsoluteDeviation([5, 5, 5, 5])).toBe(0);
+  });
+});
+
+describe('madZScore', () => {
+  // z = 0.6745 * (value - median) / MAD
+  it('computes correct MAD z-score', () => {
+    // value=5, median=3, MAD=1 → z = 0.6745 * (5-3) / 1 = 1.349
+    expect(madZScore(5, 3, 1)).toBeCloseTo(1.349, 2);
+  });
+  it('returns 0 when MAD is 0', () => {
+    expect(madZScore(100, 50, 0)).toBe(0);
+  });
+  it('returns 0 when value equals median', () => {
+    expect(madZScore(3, 3, 1)).toBe(0);
+  });
+  it('returns negative z for value below median', () => {
+    expect(madZScore(1, 3, 1)).toBeCloseTo(-1.349, 2);
   });
 });

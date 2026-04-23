@@ -1,4 +1,14 @@
 export type UploadStatus = 'pending' | 'processing' | 'complete' | 'error';
+export type FlagSeverity = 'success' | 'info' | 'warning' | 'critical';
+
+export interface Flag {
+  severity: FlagSeverity;
+  title: string;
+  description: string;
+  metric: string;
+  category: string;
+  related_line_item_ids: string[];
+}
 export type AnomalySeverity = 'none' | 'low' | 'medium' | 'high';
 export type RecurrenceTier = 'one_time' | 'occasional' | 'regular' | 'core';
 export type TrendDirection = 'up' | 'down' | 'stable';
@@ -55,6 +65,7 @@ export interface Pass1Item {
 
 export interface Upload {
   id: string;
+  user_id: string;
   filename: string;
   uploaded_at: string;
   total_amount: number | null;
@@ -102,6 +113,7 @@ export interface CategoryStats {
 
 export interface Vendor {
   id: string;
+  user_id: string;
   vendor_name: string;
   first_seen_upload_id: string | null;
   last_seen_upload_id: string | null;
@@ -114,6 +126,7 @@ export interface Vendor {
 
 export interface Budget {
   id: string;
+  user_id: string;
   category: string;
   monthly_target: number | null;
   active: boolean;

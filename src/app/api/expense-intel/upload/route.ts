@@ -1,13 +1,24 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '../../../../../utils/supabase/server';
 import { createServiceClient } from '../../../../../utils/supabase/service';
 import { parseExpenseFile } from '@/lib/expense-intel/parser';
 import { runPass1 } from '@/lib/expense-intel/pass1/categorizer';
 import { computeAndWriteStats } from '@/lib/expense-intel/stats';
+import { runVendorIntelligence } from '@/lib/expense-intel/vendors';
 import type { UploadResponse } from '@/lib/expense-intel/types';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
+  // Auth check — no guest access for Expense Intelligence
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  }
+  const userId = user.id;
+
+  // Service client bypasses RLS for all DB writes
   const supabase = createServiceClient();
 
   let formData: FormData;
@@ -31,7 +42,7 @@ export async function POST(req: Request) {
   const content = await file.text();
 
   const { rows, errors: parseErrors, format } = parseExpenseFile(content, filename);
-  console.log(`[upload] Parsed "${filename}" as format="${format}": ${rows.length} rows, ${parseErrors.length} errors`);
+  console.log(`[upload] user=${userId} file="${filename}" format="${format}" rows=${rows.length} parseErrors=${parseErrors.length}`);
 
   if (rows.length === 0) {
     return NextResponse.json(
@@ -40,10 +51,11 @@ export async function POST(req: Request) {
     );
   }
 
-  // Create the upload record (pass1 begins)
+  // Create the upload record
   const { data: uploadRow, error: insertError } = await supabase
     .from('uploads')
     .insert({
+      user_id: userId,
       filename,
       line_item_count: rows.length,
       pass1_status: 'processing',
@@ -62,7 +74,7 @@ export async function POST(req: Request) {
   const uploadId: string = uploadRow.id;
   console.log(`[upload] Created upload ${uploadId}`);
 
-  // Run Pass 1 — batched categorization
+  // Pass 1 — batched GPT-4o-mini categorization
   let batchesProcessed = 0;
   try {
     const result = await runPass1(uploadId, rows, supabase);
@@ -76,7 +88,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // Finalize upload record
   const totalAmount = rows.reduce((sum, r) => sum + r.amount, 0);
   const roundedTotal = Math.round(totalAmount * 100) / 100;
 
@@ -85,15 +96,26 @@ export async function POST(req: Request) {
     .update({ pass1_status: 'complete', total_amount: roundedTotal })
     .eq('id', uploadId);
 
-  // Run statistical layer — compute aggregates, z-scores, rolling avgs, trends
+  // Phase 2 — statistical layer: z-scores, rolling averages, trends
+  let statsResult;
   try {
-    await computeAndWriteStats(uploadId, supabase);
+    statsResult = await computeAndWriteStats(uploadId, userId, supabase);
   } catch (err) {
-    // Stats failure is non-fatal: upload + line items are already written
-    console.error(`[upload] Stats computation failed for ${uploadId}:`, err);
+    console.error(`[upload] Stats failed for ${uploadId}:`, err);
   }
 
-  console.log(`[upload] Complete — upload_id=${uploadId}, rows=${rows.length}, batches=${batchesProcessed}, total=$${roundedTotal}`);
+  // Phase 3 — vendor intelligence: first-time, duplicates, round numbers, flags
+  try {
+    await runVendorIntelligence(uploadId, userId, supabase, statsResult ?? {
+      categoriesProcessed: [],
+      skewedCategories: [],
+      categoryDrift: [],
+    });
+  } catch (err) {
+    console.error(`[upload] Vendor intelligence failed for ${uploadId}:`, err);
+  }
+
+  console.log(`[upload] Complete — upload_id=${uploadId} rows=${rows.length} batches=${batchesProcessed} total=$${roundedTotal}`);
 
   const body: UploadResponse = {
     upload_id: uploadId,

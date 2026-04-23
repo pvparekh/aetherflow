@@ -28,6 +28,21 @@ export interface CategoryAggregates {
   stdDev: number;
 }
 
+// Median Absolute Deviation — robust spread estimate, not skewed by extreme outliers
+export function medianAbsoluteDeviation(values: number[]): number {
+  if (values.length === 0) return 0;
+  const med = median(values);
+  return median(values.map((v) => Math.abs(v - med)));
+}
+
+// Modified z-score using MAD. Factor 0.6745 ≈ Φ⁻¹(0.75) — makes it comparable to
+// standard z-scores for normal distributions. Use this when the category is skewed
+// (|mean - median| / median > 0.25) so the mean-based z is unreliable.
+export function madZScore(value: number, med: number, mad: number): number {
+  if (mad === 0) return 0;
+  return (0.6745 * (value - med)) / mad;
+}
+
 export function computeCategoryAggregates(amounts: number[]): CategoryAggregates {
   return {
     total: amounts.reduce((s, v) => s + v, 0),
