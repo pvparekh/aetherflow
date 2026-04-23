@@ -1,5 +1,5 @@
 import openai from '@/lib/openai';
-import { createClient } from '../../../../utils/supabase/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { CATEGORIES, type Category, type ParsedRow, type Pass1Item } from '../types';
 
 const BATCH_SIZE = 25;
@@ -95,9 +95,9 @@ async function categorizeBatch(batch: ParsedRow[], attempt = 1): Promise<Pass1It
 
 export async function runPass1(
   uploadId: string,
-  rows: ParsedRow[]
+  rows: ParsedRow[],
+  supabase: SupabaseClient
 ): Promise<{ batchesProcessed: number; itemsWritten: number }> {
-  const supabase = await createClient();
 
   const batches: ParsedRow[][] = [];
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {

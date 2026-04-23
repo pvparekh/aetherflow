@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '../../../../../utils/supabase/server';
+import { createServiceClient } from '../../../../../utils/supabase/service';
 import { parseExpenseFile } from '@/lib/expense-intel/parser';
 import { runPass1 } from '@/lib/expense-intel/pass1/categorizer';
 import type { UploadResponse } from '@/lib/expense-intel/types';
@@ -7,7 +7,7 @@ import type { UploadResponse } from '@/lib/expense-intel/types';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   let formData: FormData;
   try {
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
   // Run Pass 1 — batched categorization
   let batchesProcessed = 0;
   try {
-    const result = await runPass1(uploadId, rows);
+    const result = await runPass1(uploadId, rows, supabase);
     batchesProcessed = result.batchesProcessed;
   } catch (err) {
     console.error(`[upload] Pass 1 failed for ${uploadId}:`, err);
