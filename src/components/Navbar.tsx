@@ -15,6 +15,9 @@ export default function Navbar() {
         <Link href="/dashboard" className="hover:text-blue-400 hover:scale-110 transition transform duration-200 inline-block">
           Dashboard
         </Link>
+        <Link href="/expense-intel" className="hover:text-blue-400 hover:scale-110 transition transform duration-200 inline-block">
+          Expense Intel
+        </Link>
         <Link href="/account" className="hover:text-blue-400 hover:scale-110 transition transform duration-200 inline-block">
           Account
         </Link>

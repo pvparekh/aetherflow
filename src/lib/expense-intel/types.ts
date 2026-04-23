@@ -132,6 +132,32 @@ export interface Budget {
   active: boolean;
 }
 
+// --- Pass 2 AI ---
+
+export interface InsightCard {
+  title: string;
+  description: string;
+  severity: FlagSeverity;
+  category: string;
+  metric: string;
+  action: string;
+}
+
+export interface SavingsOpportunity {
+  title: string;
+  description: string;
+  estimated_savings: string;
+  category: string;
+}
+
+export interface Pass2Result {
+  health_score: number;
+  health_justification: string;
+  narrative_summary: string;
+  insights: InsightCard[];
+  savings_opportunities: SavingsOpportunity[];
+}
+
 // --- API response ---
 
 export interface UploadResponse {

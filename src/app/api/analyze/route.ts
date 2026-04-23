@@ -1,32 +1,51 @@
-import { NextResponse } from "next/server";
-import openai from "@/lib/openai";
+import { NextResponse } from 'next/server';
+import openai from '@/lib/openai';
 
-const agentInstructions = ` 
-You are Aetherflow, an intelligent workflow analyst. Main purpose is for employers and or regular people to analyze things like expense reports(or other reports) and find red flags quickly. Analyze the user's input for inefficiencies or red flags, then give helpful feedback and improvement suggestions. Try to give actionable results section if possible. Respond in plain text.
-`; //instructions for how the AI should behave
+const SYSTEM_PROMPT = `You are AetherFlow, an intelligent workflow and expense analyst.
+Analyze the user's input (expense report, financial document, or business report) for red flags, inefficiencies, and actionable insights.
 
-// function below handles POST requests to /api/analyze
+Respond with ONLY a valid JSON object — no markdown, no code fences:
+{
+  "sections": [
+    {
+      "type": "success|info|warning|critical",
+      "title": "<short descriptive title>",
+      "content": "<2-4 sentence analysis or finding>",
+      "action": "<specific actionable recommendation>"
+    }
+  ]
+}
+
+Type guidelines:
+- critical: immediate red flags requiring urgent attention
+- warning: concerning patterns worth reviewing
+- info: neutral observations and context
+- success: positive findings or areas performing well
+
+Generate 4-7 sections covering the most important findings. Be specific and actionable.`;
+
 export async function POST(req: Request) {
-  const { prompt } = await req.json(); //Extract prompt text sent by the frontend (analyze page)
+  const { prompt } = await req.json();
 
   try {
-    const input = `System:\n${agentInstructions}\n\nUser:\n${prompt}`;
-    //combine agent instructions with user input
-    const response = await openai.responses.create({ //billing happens here
-      model: "gpt-4o",
-      input,  //send combined input to OpenAI
+    const input = `System:\n${SYSTEM_PROMPT}\n\nUser:\n${prompt}`;
+    const response = await openai.responses.create({
+      model: 'gpt-4o',
+      input,
+      text: { format: { type: 'json_object' } },
     });
 
-    console.log("Raw output from GPT:", response.output_text); //log raw output for debugging
+    let sections: { type: string; title: string; content: string; action?: string }[] = [];
+    try {
+      const parsed = JSON.parse(response.output_text);
+      sections = Array.isArray(parsed.sections) ? parsed.sections : [];
+    } catch {
+      sections = [{ type: 'info', title: 'Analysis', content: response.output_text }];
+    }
 
-    return NextResponse.json({
-      text: response.output_text, //return as plain string
-    });
-  } catch (err) { //error handling
-    console.error("OpenAI Error:", err);
-    return NextResponse.json(
-      { error: "AI agent failed to analyze." },
-      { status: 500 }
-    );
+    return NextResponse.json({ sections });
+  } catch (err) {
+    console.error('OpenAI Error:', err);
+    return NextResponse.json({ error: 'AI agent failed to analyze.' }, { status: 500 });
   }
 }

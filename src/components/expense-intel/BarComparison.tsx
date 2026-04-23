@@ -1,0 +1,88 @@
+'use client';
+
+import { useMemo } from 'react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
+import { getCategoryColor, formatCurrency } from '@/lib/expense-intel/ui-helpers';
+import type { CategoryStats } from '@/lib/expense-intel/types';
+
+interface Props {
+  categoryStats: CategoryStats[];
+  selectedCategory: string | null;
+}
+
+export default function BarComparison({ categoryStats, selectedCategory }: Props) {
+  const data = useMemo(() => {
+    const filtered = selectedCategory
+      ? categoryStats.filter((s) => s.category === selectedCategory)
+      : categoryStats;
+
+    return filtered
+      .filter((s) => Number(s.total_spend_period ?? 0) > 0)
+      .map((s) => ({
+        category: s.category,
+        'This Period': Number(s.total_spend_period ?? 0),
+        'Rolling Avg (5)': Number(s.rolling_avg_5 ?? 0),
+        isAnomalous:
+          s.trend_direction === 'up' &&
+          Number(s.total_spend_period) > Number(s.rolling_avg_5 ?? 0) * 1.25,
+      }))
+      .sort((a, b) => b['This Period'] - a['This Period']);
+  }, [categoryStats, selectedCategory]);
+
+  if (data.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-gray-800">
+          Current vs Rolling Average{selectedCategory ? `: ${selectedCategory}` : ''}
+        </h3>
+        <span className="text-xs text-gray-400">Red bars = 25%+ above rolling avg with upward trend</span>
+      </div>
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart data={data} barGap={4} barCategoryGap="30%">
+          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          <XAxis
+            dataKey="category"
+            tick={{ fontSize: 11 }}
+            interval={0}
+            angle={-15}
+            textAnchor="end"
+            height={50}
+          />
+          <YAxis
+            tickFormatter={(v) => `$${v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}`}
+            tick={{ fontSize: 11 }}
+          />
+          <Tooltip
+            formatter={(v, name) => [formatCurrency(Number(v ?? 0)), String(name)]}
+            contentStyle={{ fontSize: 12, borderRadius: 8 }}
+          />
+          <Legend iconType="square" iconSize={10} formatter={(v) => <span className="text-xs text-gray-600">{v}</span>} />
+
+          <Bar dataKey="This Period" radius={[4, 4, 0, 0]}>
+            {data.map((entry) => (
+              <Cell
+                key={entry.category}
+                fill={entry.isAnomalous ? '#ef4444' : getCategoryColor(entry.category)}
+              />
+            ))}
+          </Bar>
+          <Bar dataKey="Rolling Avg (5)" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}

@@ -5,12 +5,21 @@ import { useRouter } from 'next/navigation';
 import { UploadCloud } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
-import { createClient } from '../../../utils/supabase/client'; // Your supabase client
+import { SEVERITY_STYLES } from '@/lib/expense-intel/ui-helpers';
+import { createClient } from '../../../utils/supabase/client';
+
 const supabase = createClient();
+
+interface AnalysisSection {
+  type: 'success' | 'info' | 'warning' | 'critical';
+  title: string;
+  content: string;
+  action?: string;
+}
 
 export default function AnalyzePage() {
   const [input, setInput] = useState('');
-  const [response, setResponse] = useState('');
+  const [sections, setSections] = useState<AnalysisSection[]>([]);
   const [loading, setLoading] = useState(false);
   const [fileName, setFileName] = useState('');
   const [ready, setReady] = useState(true);
@@ -32,15 +41,12 @@ export default function AnalyzePage() {
       }
 
       if (!guestUsed) {
-        // Guest has not used yet, allow entry and set 'accessed'
         localStorage.setItem('guestUsedAnalyze', 'accessed');
         setAllowed(true);
       } else {
-        // Guest already submitted before, redirect immediately
         if (guestUsed === 'submitted') {
           router.push('/signup');
         } else {
-          // guestUsed === 'accessed'
           setAllowed(true);
         }
       }
@@ -54,7 +60,7 @@ export default function AnalyzePage() {
     if (!file) return;
 
     setFileName(file.name);
-    setResponse('');
+    setSections([]);
     setReady(false);
 
     const reader = new FileReader();
@@ -63,7 +69,6 @@ export default function AnalyzePage() {
       setReady(true);
     };
     reader.readAsText(file);
-
     e.target.value = '';
   };
 
@@ -74,40 +79,43 @@ export default function AnalyzePage() {
     const isLoggedIn = !!session?.user;
     const guestStatus = localStorage.getItem('guestUsedAnalyze');
 
-    // Block second submission attempt for guests
     if (!isLoggedIn && guestStatus === 'submitted') {
       router.push('/signup');
       return;
     }
 
-    setLoading(true); //Shows a spinner/loading UI while the request is processing
+    setLoading(true);
     try {
-      const res = await fetch('/api/analyze', {  // Send a POST request to my own serverside endpoint (/api/analyze)
-  // This does NOT talk to OpenAI directly, just to your backend route
+      const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: input }), //Send input text as JSON
+        body: JSON.stringify({ prompt: input }),
       });
 
-      const data = await res.json();   //Wait for server to respond with AI result
-      setResponse(data.text || 'No response'); //if valid result, show to user, otherwise show "no response"
+      const data = await res.json();
 
-      // After first successful submit, set to 'submitted'
+      if (data.sections && Array.isArray(data.sections)) {
+        setSections(data.sections);
+      } else if (data.error) {
+        setSections([{ type: 'critical', title: 'Error', content: data.error }]);
+      } else {
+        setSections([{ type: 'info', title: 'Response', content: 'No analysis returned.' }]);
+      }
+
       if (!isLoggedIn) {
         localStorage.setItem('guestUsedAnalyze', 'submitted');
       }
 
-      // Clear the input, keep response
       setInput('');
       setFileName('');
-    } catch {      
-      setResponse('Something went wrong.'); // Handle any errors that occur during the fetch, tell user
+    } catch {
+      setSections([{ type: 'critical', title: 'Error', content: 'Something went wrong. Please try again.' }]);
     } finally {
-      setLoading(false); // Hide the spinner/loading UI, whether success or failure 
+      setLoading(false);
     }
   };
 
-  if (!allowed) return null; // or show a spinner
+  if (!allowed) return null;
 
   return (
     <Layout>
@@ -124,21 +132,28 @@ export default function AnalyzePage() {
             </h1>
           </motion.header>
           <p className="text-md text-gray-700 max-w-2xl mx-auto">
-            Upload your reports, and AetherFlow’s AI will provide detailed analysis to help optimize efficiency and deliver actionable results!
+            Upload your reports, and AetherFlow&apos;s AI will provide detailed analysis to help optimize
+            efficiency and deliver actionable results!
           </p>
 
           <section className="space-y-4">
-            <label className="block text-lg font-semibold text-gray-800">Upload a .txt or .csv File</label>
+            <label className="block text-lg font-semibold text-gray-800">
+              Upload a .txt or .csv File
+            </label>
             <div className="text-sm text-gray-700 mb-2">
-              Don’t have a report ready?{' '}
-              <a href="/sample/Q2_Expense_Report.csv" download className="ml-1 text-blue-600 underline hover:text-blue-800">
+              Don&apos;t have a report ready?{' '}
+              <a
+                href="/sample/Q2_Expense_Report.csv"
+                download
+                className="ml-1 text-blue-600 underline hover:text-blue-800"
+              >
                 Download a sample report
               </a>{' '}
               to test the analyzer.
             </div>
             <label
               htmlFor="file-upload"
-              className="cursor-pointer border-2 border-dashed border-blue-500 bg-blue-50 rounded-xl p-6 flex items-center justify-center hover:scale-103 hover:shadow-lg hover:bg-blue-100 text-blue-700 font-medium space-x-3 transition-all"
+              className="cursor-pointer border-2 border-dashed border-blue-500 bg-blue-50 rounded-xl p-6 flex items-center justify-center hover:shadow-lg hover:bg-blue-100 text-blue-700 font-medium space-x-3 transition-all"
             >
               <UploadCloud className="w-6 h-6" />
               <span>{fileName || 'Click to upload a file'}</span>
@@ -150,11 +165,15 @@ export default function AnalyzePage() {
                 className="hidden"
               />
             </label>
-            {!ready && <p className="text-sm text-gray-500 italic">Parsing file… Please wait.</p>}
+            {!ready && (
+              <p className="text-sm text-gray-500 italic">Parsing file… Please wait.</p>
+            )}
           </section>
 
           <section>
-            <label className="block text-lg font-semibold text-gray-800 mb-2">Or Paste Report Text:</label>
+            <label className="block text-lg font-semibold text-gray-800 mb-2">
+              Or Paste Report Text:
+            </label>
             <textarea
               className="w-full h-48 border border-gray-300 rounded-xl p-4 text-black bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
               placeholder="Paste or upload your report here..."
@@ -175,19 +194,52 @@ export default function AnalyzePage() {
             </button>
           </div>
 
-          {response && (
+          {sections.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              className="bg-gray-100 p-6 rounded-xl border border-gray-300 shadow-inner"
+              className="space-y-4"
             >
-              <h2 className="text-xl font-semibold text-gray-800 mb-3">AI Feedback</h2>
-              <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">{response}</p>
+              <h2 className="text-xl font-semibold text-gray-800">AI Feedback</h2>
+              {sections.map((section, i) => {
+                const sev = (
+                  ['success', 'info', 'warning', 'critical'].includes(section.type)
+                    ? section.type
+                    : 'info'
+                ) as keyof typeof SEVERITY_STYLES;
+                const styles = SEVERITY_STYLES[sev];
+                return (
+                  <div
+                    key={i}
+                    className={`${styles.bg} ${styles.border} border rounded-xl p-5`}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <span
+                        className={`w-5 h-5 rounded-full ${styles.dot} flex items-center justify-center text-white text-xs font-bold`}
+                      >
+                        {styles.icon}
+                      </span>
+                      <span className={`font-semibold text-sm ${styles.text}`}>
+                        {section.title}
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles.badge}`}
+                      >
+                        {sev}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700 leading-relaxed">{section.content}</p>
+                    {section.action && (
+                      <p className="text-xs text-gray-500 mt-2 italic">→ {section.action}</p>
+                    )}
+                  </div>
+                );
+              })}
             </motion.div>
           )}
         </div>
       </main>
     </Layout>
   );
-  }
+}
