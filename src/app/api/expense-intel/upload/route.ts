@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServiceClient } from '../../../../../utils/supabase/service';
 import { parseExpenseFile } from '@/lib/expense-intel/parser';
 import { runPass1 } from '@/lib/expense-intel/pass1/categorizer';
+import { computeAndWriteStats } from '@/lib/expense-intel/stats';
 import type { UploadResponse } from '@/lib/expense-intel/types';
 
 export const dynamic = 'force-dynamic';
@@ -83,6 +84,14 @@ export async function POST(req: Request) {
     .from('uploads')
     .update({ pass1_status: 'complete', total_amount: roundedTotal })
     .eq('id', uploadId);
+
+  // Run statistical layer — compute aggregates, z-scores, rolling avgs, trends
+  try {
+    await computeAndWriteStats(uploadId, supabase);
+  } catch (err) {
+    // Stats failure is non-fatal: upload + line items are already written
+    console.error(`[upload] Stats computation failed for ${uploadId}:`, err);
+  }
 
   console.log(`[upload] Complete — upload_id=${uploadId}, rows=${rows.length}, batches=${batchesProcessed}, total=$${roundedTotal}`);
 
