@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p C:/Dev/aetherflow/src/lib/expense-intel/ai)",
+      "Bash(mkdir -p C:/Dev/aetherflow/src/app/api/expense-intel/pass2)",
+      "Bash(mkdir -p \"C:/Dev/aetherflow/src/app/api/expense-intel/uploads\")",
+      "Bash(mkdir -p \"C:/Dev/aetherflow/src/app/api/expense-intel/dashboard/[uploadId]\")",
+      "Bash(mkdir -p C:/Dev/aetherflow/src/app/api/expense-intel/resolve)"
+    ]
+  }
+}

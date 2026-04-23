@@ -38,9 +38,9 @@ export default function UploadHistory({ uploads, activeUploadId, onSelect }: Pro
           const scoreColor =
             upload.health_score == null
               ? 'text-gray-400'
-              : upload.health_score >= 80
+              : upload.health_score >= 8
                 ? 'text-green-600'
-                : upload.health_score >= 60
+                : upload.health_score >= 5
                   ? 'text-yellow-600'
                   : 'text-red-600';
 
@@ -66,7 +66,7 @@ export default function UploadHistory({ uploads, activeUploadId, onSelect }: Pro
                     </p>
                   )}
                   {upload.health_score != null && (
-                    <p className={`text-xs font-medium ${scoreColor}`}>{upload.health_score}/100</p>
+                    <p className={`text-xs font-medium ${scoreColor}`}>{upload.health_score}/10</p>
                   )}
                 </div>
               </div>

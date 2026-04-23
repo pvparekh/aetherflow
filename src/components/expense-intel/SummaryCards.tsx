@@ -6,23 +6,27 @@ import type { Upload, CategoryStats } from '@/lib/expense-intel/types';
 interface Props {
   upload: Upload;
   categoryStats: CategoryStats[];
-  criticalFlags: number;
+  anomalyCount: number;
 }
 
-export default function SummaryCards({ upload, categoryStats, criticalFlags }: Props) {
-  const sorted = [...categoryStats].sort(
-    (a, b) => Number(b.total_spend_period ?? 0) - Number(a.total_spend_period ?? 0)
-  );
-  const topCat = sorted[0];
+export default function SummaryCards({ upload, categoryStats, anomalyCount }: Props) {
+  void categoryStats; // available for future expansion
 
   const scoreColor =
     upload.health_score == null
       ? 'from-gray-400 to-gray-500'
-      : upload.health_score >= 80
+      : upload.health_score >= 8
         ? 'from-green-500 to-green-600'
-        : upload.health_score >= 60
+        : upload.health_score >= 5
           ? 'from-yellow-500 to-yellow-600'
           : 'from-red-500 to-red-600';
+
+  const anomalyGradient =
+    anomalyCount === 0
+      ? 'from-green-500 to-green-600'
+      : anomalyCount <= 3
+        ? 'from-yellow-500 to-yellow-600'
+        : 'from-red-500 to-red-600';
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -37,16 +41,24 @@ export default function SummaryCards({ upload, categoryStats, criticalFlags }: P
         gradient="from-indigo-500 to-indigo-600"
       />
       <Card
-        label="Top Category"
-        value={topCat?.category ?? '—'}
-        sub={topCat ? formatCurrency(Number(topCat.total_spend_period)) : undefined}
-        gradient="from-purple-500 to-purple-600"
+        label="Health Score"
+        value={upload.health_score != null ? `${upload.health_score}/10` : 'Pending'}
+        sub={
+          upload.health_score == null
+            ? 'Click Generate AI Insights'
+            : upload.health_score >= 8
+              ? 'Excellent spend discipline'
+              : upload.health_score >= 5
+                ? 'Needs attention'
+                : 'Critical issues detected'
+        }
+        gradient={scoreColor}
       />
       <Card
-        label="Health Score"
-        value={upload.health_score != null ? `${upload.health_score}/100` : 'Pending'}
-        sub={criticalFlags > 0 ? `${criticalFlags} critical flag${criticalFlags !== 1 ? 's' : ''}` : undefined}
-        gradient={scoreColor}
+        label="Anomalies Flagged"
+        value={String(anomalyCount)}
+        sub={anomalyCount === 0 ? 'Clean report' : anomalyCount === 1 ? '1 item to review' : `${anomalyCount} items to review`}
+        gradient={anomalyGradient}
       />
     </div>
   );
@@ -67,7 +79,7 @@ function Card({
     <div className={`bg-gradient-to-br ${gradient} text-white rounded-xl p-5 shadow`}>
       <p className="text-xs font-medium uppercase tracking-wide opacity-80">{label}</p>
       <p className="text-2xl font-bold mt-1 truncate">{value}</p>
-      {sub && <p className="text-sm opacity-80 mt-0.5 truncate">{sub}</p>}
+      {sub && <p className="text-xs opacity-80 mt-0.5 truncate">{sub}</p>}
     </div>
   );
 }
