@@ -122,10 +122,20 @@ export default function RollingAvgChart({ categoryStats, categoryHistory }: Prop
 
       <ResponsiveContainer width="100%" height={280}>
         <ComposedChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-          <XAxis dataKey="period" tick={{ fontSize: 11 }} />
-          <YAxis tickFormatter={(v) => `$${v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}`} tick={{ fontSize: 11 }} />
-          <Tooltip formatter={(v) => formatCurrency(Number(v ?? 0))} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+          <XAxis dataKey="period" tick={{ fontSize: 11, fontFamily: 'var(--font-geist-mono), monospace', fill: '#9CA3AF' }} />
+          <YAxis tickFormatter={(v) => `$${v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}`} tick={{ fontSize: 11, fontFamily: 'var(--font-geist-mono), monospace', fill: '#9CA3AF' }} />
+          <Tooltip
+            formatter={(v) => formatCurrency(Number(v ?? 0))}
+            contentStyle={{
+              fontSize: 12,
+              borderRadius: 8,
+              backgroundColor: '#fff',
+              border: '1px solid #E5E7EB',
+              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.08)',
+              fontFamily: 'var(--font-geist-mono), monospace',
+            }}
+          />
           <Legend iconType="circle" iconSize={8} formatter={(v) => <span className="text-xs text-gray-600">{v}</span>} />
 
           {/* ±1σ reference bands */}
@@ -162,5 +172,5 @@ export default function RollingAvgChart({ categoryStats, categoryHistory }: Prop
 function formatPeriod(dateStr: string): string {
   if (dateStr === 'Current') return 'Current';
   const d = new Date(dateStr);
-  return d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }

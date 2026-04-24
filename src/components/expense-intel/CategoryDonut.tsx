@@ -57,7 +57,14 @@ export default function CategoryDonut({ stats, selectedCategory, onSelectCategor
               </Pie>
               <Tooltip
                 formatter={(value) => [formatCurrency(Number(value ?? 0)), 'Spend']}
-                contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                contentStyle={{
+                  fontSize: 12,
+                  borderRadius: 8,
+                  backgroundColor: '#fff',
+                  border: '1px solid #E5E7EB',
+                  boxShadow: '0 4px 6px -1px rgba(0,0,0,0.08)',
+                  fontFamily: 'var(--font-geist-mono), monospace',
+                }}
               />
               <Legend
                 iconType="circle"

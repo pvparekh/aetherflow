@@ -53,10 +53,10 @@ export default function BarComparison({ categoryStats, selectedCategory }: Props
       </div>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data} barGap={4} barCategoryGap="30%">
-          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
           <XAxis
             dataKey="category"
-            tick={{ fontSize: 11 }}
+            tick={{ fontSize: 11, fontFamily: 'var(--font-geist-mono), monospace', fill: '#9CA3AF' }}
             interval={0}
             angle={-15}
             textAnchor="end"
@@ -64,11 +64,18 @@ export default function BarComparison({ categoryStats, selectedCategory }: Props
           />
           <YAxis
             tickFormatter={(v) => `$${v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}`}
-            tick={{ fontSize: 11 }}
+            tick={{ fontSize: 11, fontFamily: 'var(--font-geist-mono), monospace', fill: '#9CA3AF' }}
           />
           <Tooltip
             formatter={(v, name) => [formatCurrency(Number(v ?? 0)), String(name)]}
-            contentStyle={{ fontSize: 12, borderRadius: 8 }}
+            contentStyle={{
+              fontSize: 12,
+              borderRadius: 8,
+              backgroundColor: '#fff',
+              border: '1px solid #E5E7EB',
+              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.08)',
+              fontFamily: 'var(--font-geist-mono), monospace',
+            }}
           />
           <Legend iconType="square" iconSize={10} formatter={(v) => <span className="text-xs text-gray-600">{v}</span>} />
 

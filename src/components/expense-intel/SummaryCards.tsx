@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/expense-intel/ui-helpers';
 import type { Upload, CategoryStats } from '@/lib/expense-intel/types';
 
@@ -9,58 +10,94 @@ interface Props {
   anomalyCount: number;
 }
 
+const item = {
+  hidden: { opacity: 0, y: 16 },
+  show:   { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' as const } },
+};
+
 export default function SummaryCards({ upload, categoryStats, anomalyCount }: Props) {
-  void categoryStats; // available for future expansion
+  void categoryStats;
 
-  const scoreColor =
+  const scoreBorderClass =
     upload.health_score == null
-      ? 'from-gray-400 to-gray-500'
+      ? 'border-l-gray-300'
       : upload.health_score >= 8
-        ? 'from-green-500 to-green-600'
+        ? 'border-l-emerald-500'
         : upload.health_score >= 5
-          ? 'from-yellow-500 to-yellow-600'
-          : 'from-red-500 to-red-600';
+          ? 'border-l-amber-500'
+          : 'border-l-red-500';
 
-  const anomalyGradient =
+  const scoreValueClass =
+    upload.health_score == null
+      ? 'text-gray-400'
+      : upload.health_score >= 8
+        ? 'text-emerald-600'
+        : upload.health_score >= 5
+          ? 'text-amber-600'
+          : 'text-red-600';
+
+  const anomalyBorderClass = anomalyCount === 0 ? 'border-l-emerald-500' : 'border-l-red-500';
+  const anomalyValueClass =
     anomalyCount === 0
-      ? 'from-green-500 to-green-600'
+      ? 'text-emerald-600'
       : anomalyCount <= 3
-        ? 'from-yellow-500 to-yellow-600'
-        : 'from-red-500 to-red-600';
+        ? 'text-amber-600'
+        : 'text-red-600';
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <Card
-        label="Total Spend"
-        value={formatCurrency(Number(upload.total_amount ?? 0))}
-        gradient="from-blue-500 to-blue-600"
-      />
-      <Card
-        label="Line Items"
-        value={String(upload.line_item_count ?? 0)}
-        gradient="from-indigo-500 to-indigo-600"
-      />
-      <Card
-        label="Health Score"
-        value={upload.health_score != null ? `${upload.health_score}/10` : 'Pending'}
-        sub={
-          upload.health_score == null
-            ? 'Click Generate AI Insights'
-            : upload.health_score >= 8
-              ? 'Excellent spend discipline'
-              : upload.health_score >= 5
-                ? 'Needs attention'
-                : 'Critical issues detected'
-        }
-        gradient={scoreColor}
-      />
-      <Card
-        label="Anomalies Flagged"
-        value={String(anomalyCount)}
-        sub={anomalyCount === 0 ? 'Clean report' : anomalyCount === 1 ? '1 item to review' : `${anomalyCount} items to review`}
-        gradient={anomalyGradient}
-      />
-    </div>
+    <motion.div
+      className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+      variants={{ show: { transition: { staggerChildren: 0.08 } } }}
+      initial="hidden"
+      animate="show"
+    >
+      <motion.div variants={item}>
+        <Card
+          label="Total Spend"
+          value={formatCurrency(Number(upload.total_amount ?? 0))}
+          leftBorderClass="border-l-blue-500"
+        />
+      </motion.div>
+      <motion.div variants={item}>
+        <Card
+          label="Line Items"
+          value={String(upload.line_item_count ?? 0)}
+          leftBorderClass="border-l-purple-500"
+        />
+      </motion.div>
+      <motion.div variants={item}>
+        <Card
+          label="Health Score"
+          value={upload.health_score != null ? `${upload.health_score}/10` : '—'}
+          sub={
+            upload.health_score == null
+              ? 'Generate AI Insights'
+              : upload.health_score >= 8
+                ? 'Excellent spend discipline'
+                : upload.health_score >= 5
+                  ? 'Needs attention'
+                  : 'Critical issues detected'
+          }
+          leftBorderClass={scoreBorderClass}
+          valueClass={scoreValueClass}
+        />
+      </motion.div>
+      <motion.div variants={item}>
+        <Card
+          label="Anomalies Flagged"
+          value={String(anomalyCount)}
+          sub={
+            anomalyCount === 0
+              ? 'Clean report'
+              : anomalyCount === 1
+                ? '1 item to review'
+                : `${anomalyCount} items to review`
+          }
+          leftBorderClass={anomalyBorderClass}
+          valueClass={anomalyValueClass}
+        />
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -68,18 +105,27 @@ function Card({
   label,
   value,
   sub,
-  gradient,
+  leftBorderClass,
+  valueClass = 'text-gray-900',
 }: {
   label: string;
   value: string;
   sub?: string;
-  gradient: string;
+  leftBorderClass: string;
+  valueClass?: string;
 }) {
   return (
-    <div className={`bg-gradient-to-br ${gradient} text-white rounded-xl p-5 shadow`}>
-      <p className="text-xs font-medium uppercase tracking-wide opacity-80">{label}</p>
-      <p className="text-2xl font-bold mt-1 truncate">{value}</p>
-      {sub && <p className="text-xs opacity-80 mt-0.5 truncate">{sub}</p>}
+    <div
+      className={`bg-white rounded-xl p-5 border border-gray-200 border-l-4 ${leftBorderClass} shadow-sm hover:shadow-md transition-shadow`}
+    >
+      <p className="text-xs font-medium uppercase tracking-widest text-gray-400">{label}</p>
+      <p
+        className={`text-3xl font-bold mt-2 truncate ${valueClass}`}
+        style={{ fontFamily: 'var(--font-geist-mono), monospace' }}
+      >
+        {value}
+      </p>
+      {sub && <p className="text-xs mt-1 truncate text-gray-500">{sub}</p>}
     </div>
   );
 }

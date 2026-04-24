@@ -39,9 +39,9 @@ export default function UploadHistory({ uploads, activeUploadId, onSelect }: Pro
             upload.health_score == null
               ? 'text-gray-400'
               : upload.health_score >= 8
-                ? 'text-green-600'
+                ? 'text-emerald-600'
                 : upload.health_score >= 5
-                  ? 'text-yellow-600'
+                  ? 'text-amber-600'
                   : 'text-red-600';
 
           return (
@@ -61,12 +61,12 @@ export default function UploadHistory({ uploads, activeUploadId, onSelect }: Pro
                 </div>
                 <div className="text-right flex-shrink-0">
                   {upload.total_amount != null && (
-                    <p className="text-sm font-semibold text-gray-700">
+                    <p className="text-sm font-semibold text-gray-700" style={{ fontFamily: 'var(--font-geist-mono), monospace' }}>
                       {formatCurrency(Number(upload.total_amount))}
                     </p>
                   )}
                   {upload.health_score != null && (
-                    <p className={`text-xs font-medium ${scoreColor}`}>{upload.health_score}/10</p>
+                    <p className={`text-xs font-medium ${scoreColor}`} style={{ fontFamily: 'var(--font-geist-mono), monospace' }}>{upload.health_score}/10</p>
                   )}
                 </div>
               </div>

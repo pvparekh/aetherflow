@@ -70,20 +70,23 @@ export default function VendorsTable({ vendors, selectedCategory }: Props) {
 
       {/* Category tabs */}
       {categories.length > 2 && (
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat === 'All' ? null : cat)}
-              className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
-                (cat === 'All' ? activeCategory == null : activeCategory === cat)
-                  ? 'bg-gray-800 text-white border-gray-800'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-0 mb-4 border-b border-gray-200">
+          {categories.map((cat) => {
+            const isActive = cat === 'All' ? activeCategory == null : activeCategory === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat === 'All' ? null : cat)}
+                className={`px-4 py-2 text-xs font-medium transition-all border-b-2 -mb-px ${
+                  isActive
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {cat}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -118,11 +121,11 @@ export default function VendorsTable({ vendors, selectedCategory }: Props) {
                 <tr key={vendor.id} className="hover:bg-gray-50 transition-colors">
                   <td className="py-3 font-medium text-gray-800">{vendor.vendor_name}</td>
                   <td className="py-3 text-gray-500">{vendor.primary_category ?? '—'}</td>
-                  <td className="py-3 text-gray-700 font-medium">
+                  <td className="py-3 text-gray-700 font-medium" style={{ fontFamily: 'var(--font-geist-mono), monospace' }}>
                     {formatCurrency(Number(vendor.total_spend ?? 0))}
                   </td>
                   <td className="py-3 text-gray-600">{vendor.total_occurrences ?? 0}</td>
-                  <td className="py-3 text-gray-600">
+                  <td className="py-3 text-gray-600" style={{ fontFamily: 'var(--font-geist-mono), monospace' }}>
                     {vendor.avg_amount ? formatCurrency(Number(vendor.avg_amount)) : '—'}
                   </td>
                   <td className="py-3 text-gray-500 text-xs">

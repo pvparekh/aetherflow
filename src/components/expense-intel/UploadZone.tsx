@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { UploadCloud, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface Props {
@@ -46,8 +47,6 @@ export default function UploadZone({ onUploadComplete }: Props) {
         return;
       }
 
-      // Phase 2: run AI analysis and await the result so the dashboard
-      // loads with insights already populated on first view.
       setPhase('analyzing');
       try {
         await fetch('/api/expense-intel/pass2', {
@@ -56,7 +55,7 @@ export default function UploadZone({ onUploadComplete }: Props) {
           body: JSON.stringify({ upload_id: uploadId }),
         });
       } catch {
-        // Pass 2 failure is non-fatal — dashboard still shows pass1 data
+        // Pass 2 failure is non-fatal
       }
 
       setPhase('done');
@@ -84,10 +83,21 @@ export default function UploadZone({ onUploadComplete }: Props) {
   const canUpload = phase === 'idle' || phase === 'done' || phase === 'error';
 
   return (
-    <div
-      className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all select-none
-        ${canUpload ? 'cursor-pointer' : 'cursor-default pointer-events-none opacity-80'}
-        ${dragging ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'}`}
+    <motion.div
+      animate={{
+        borderColor: dragging
+          ? '#3B82F6'
+          : phase === 'error'
+            ? '#EF4444'
+            : '#D1D5DB',
+        backgroundColor: dragging ? '#EFF6FF' : '#F9FAFB',
+        boxShadow: dragging
+          ? '0 0 0 3px rgba(59, 130, 246, 0.15)'
+          : '0 0 0 0px rgba(59, 130, 246, 0)',
+      }}
+      transition={{ duration: 0.15 }}
+      className="relative border-2 border-dashed rounded-2xl p-8 text-center select-none min-h-[160px] flex flex-col items-center justify-center"
+      style={{ cursor: canUpload ? 'pointer' : 'default' }}
       onClick={() => canUpload && inputRef.current?.click()}
       onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
       onDragLeave={() => setDragging(false)}
@@ -95,49 +105,68 @@ export default function UploadZone({ onUploadComplete }: Props) {
     >
       <input ref={inputRef} type="file" accept=".csv,.txt" className="hidden" onChange={handleChange} />
 
-      {phase === 'uploading' && (
-        <>
-          <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="font-semibold text-gray-700">Pass 1: Categorizing expenses…</p>
-          <p className="text-sm text-gray-500 mt-1">
-            GPT-4o-mini batch categorization + statistical analysis
-          </p>
-        </>
-      )}
+      <AnimatePresence mode="wait">
+        {phase === 'uploading' && (
+          <motion.div
+            key="uploading"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="flex flex-col items-center"
+          >
+            <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="font-semibold text-gray-900">Pass 1: Categorizing expenses…</p>
+            <p className="text-sm mt-1 text-gray-500">GPT-4o-mini batch categorization + statistical analysis</p>
+          </motion.div>
+        )}
 
-      {phase === 'analyzing' && (
-        <>
-          <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="font-semibold text-gray-700">Pass 2: Running AI analysis…</p>
-          <p className="text-sm text-gray-500 mt-1">
-            GPT-4o generating insights, health score, and anomaly explanations
-          </p>
-        </>
-      )}
+        {phase === 'analyzing' && (
+          <motion.div
+            key="analyzing"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="flex flex-col items-center"
+          >
+            <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="font-semibold text-gray-900">Pass 2: Running AI analysis…</p>
+            <p className="text-sm mt-1 text-gray-500">GPT-4o generating insights, health score, and anomaly explanations</p>
+          </motion.div>
+        )}
 
-      {(phase === 'idle' || phase === 'done' || phase === 'error') && (
-        <>
-          {phase === 'done' ? (
-            <CheckCircle className="w-10 h-10 mx-auto mb-3 text-green-500" />
-          ) : (
-            <UploadCloud className="w-10 h-10 mx-auto mb-3 text-blue-500" />
-          )}
-          <p className="font-semibold text-gray-700">
-            {phase === 'done'
-              ? 'Analysis complete — drop another to analyze again'
-              : 'Drop a .csv or .txt expense file here'}
-          </p>
-          <p className="text-sm text-gray-500 mt-1">
-            {phase === 'done' ? 'Dashboard updated with latest insights' : 'or click to browse'}
-          </p>
-          {error && (
-            <div className="mt-3 flex items-center gap-2 justify-center text-red-600 text-sm">
-              <AlertCircle className="w-4 h-4" />
-              {error}
-            </div>
-          )}
-        </>
-      )}
-    </div>
+        {(phase === 'idle' || phase === 'done' || phase === 'error') && (
+          <motion.div
+            key="idle"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="flex flex-col items-center"
+          >
+            {phase === 'done' ? (
+              <CheckCircle className="w-10 h-10 mx-auto mb-3 text-emerald-600" />
+            ) : (
+              <UploadCloud className="w-10 h-10 mx-auto mb-3 text-blue-600" />
+            )}
+            <p className="font-semibold text-gray-800">
+              {phase === 'done'
+                ? 'Analysis complete — drop another to analyze again'
+                : 'Drop a .csv or .txt expense file here'}
+            </p>
+            <p className="text-sm mt-1 text-gray-500">
+              {phase === 'done' ? 'Dashboard updated with latest insights' : 'or click to browse'}
+            </p>
+            {error && (
+              <div className="mt-3 flex items-center gap-2 justify-center text-sm text-red-600">
+                <AlertCircle className="w-4 h-4" />
+                {error}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }

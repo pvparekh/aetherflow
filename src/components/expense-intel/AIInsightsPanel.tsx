@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Sparkles } from 'lucide-react';
 import { SEVERITY_STYLES } from '@/lib/expense-intel/ui-helpers';
 import type { Pass2Result, UploadStatus } from '@/lib/expense-intel/types';
 
@@ -40,7 +41,10 @@ export default function AIInsightsPanel({ pass2, pass2Status, uploadId, onPass2C
   if (!pass2) {
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h3 className="font-semibold text-gray-800 mb-3">AI Insights</h3>
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="w-4 h-4 text-blue-600" />
+          <h3 className="font-semibold text-gray-800">AI Analysis</h3>
+        </div>
         {loading ? (
           <div className="flex items-center gap-3 text-gray-500">
             <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
@@ -72,23 +76,26 @@ export default function AIInsightsPanel({ pass2, pass2Status, uploadId, onPass2C
 
   const scoreColor =
     pass2.health_score >= 8
-      ? 'text-green-600'
+      ? 'text-emerald-600'
       : pass2.health_score >= 5
-        ? 'text-yellow-600'
+        ? 'text-amber-600'
         : 'text-red-600';
 
   const scoreBg =
     pass2.health_score >= 8
-      ? 'bg-green-50 border-green-200'
+      ? 'bg-emerald-50 border-emerald-200'
       : pass2.health_score >= 5
-        ? 'bg-yellow-50 border-yellow-200'
+        ? 'bg-amber-50 border-amber-200'
         : 'bg-red-50 border-red-200';
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-6">
       {/* Header row: title + health score */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <h3 className="font-semibold text-gray-800 text-lg">AI Insights</h3>
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-blue-600" />
+          <h3 className="font-semibold text-gray-800 text-lg">AI Analysis</h3>
+        </div>
         <div className={`${scoreBg} border rounded-xl px-4 py-3 text-right`}>
           <div className="flex items-baseline gap-1 justify-end">
             <span className={`text-3xl font-bold ${scoreColor}`}>{pass2.health_score}</span>

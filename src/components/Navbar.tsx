@@ -1,24 +1,30 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import LoginLogoutButton2 from './Navbarloginlogout';
 
 export default function Navbar() {
+  const pathname = usePathname();
+
+  const linkClass = (href: string) =>
+    `hover:scale-110 transition transform duration-200 inline-block ${
+      pathname === href
+        ? 'text-blue-600 font-medium'
+        : 'text-gray-600 hover:text-gray-900'
+    }`;
+
   return (
-    <nav className="bg-blue-800 text-white p-6 flex justify-between items-center">
-      <h1 className="text-2xl font-bold text-white">AetherFlow</h1>
+    <nav className="bg-white border-b border-gray-200 shadow-sm px-6 py-4 flex justify-between items-center">
+      <h1 className="text-xl font-bold text-gray-900">AetherFlow</h1>
       <div className="space-x-6 text-sm">
-        <Link href="/" className="hover:text-blue-400 hover:scale-110 transition transform duration-200 inline-block">
+        <Link href="/" className={linkClass('/')}>
           Home
         </Link>
-        <Link href="/analyze" className="hover:text-blue-400 hover:scale-110 transition transform duration-200 inline-block">
-          Create
+        <Link href="/expense-intel" className={linkClass('/expense-intel')}>
+          Expense Intelligence
         </Link>
-        <Link href="/dashboard" className="hover:text-blue-400 hover:scale-110 transition transform duration-200 inline-block">
-          Dashboard
-        </Link>
-        <Link href="/expense-intel" className="hover:text-blue-400 hover:scale-110 transition transform duration-200 inline-block">
-          Expense Intel
-        </Link>
-        <Link href="/account" className="hover:text-blue-400 hover:scale-110 transition transform duration-200 inline-block">
+        <Link href="/account" className={linkClass('/account')}>
           Account
         </Link>
         <LoginLogoutButton2 />
@@ -26,4 +32,3 @@ export default function Navbar() {
     </nav>
   );
 }
-

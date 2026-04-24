@@ -73,13 +73,13 @@ export default function AnomalyFeed({ flags, selectedCategory, resolvedItems, on
               onClick={() => setFeedFilter(f)}
               className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
                 feedFilter === f
-                  ? 'bg-gray-800 text-white border-gray-800'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-gray-100 text-gray-600 border-gray-100 hover:border-gray-300'
               }`}
             >
               {FILTER_LABELS[f]}
               {count > 0 && (
-                <span className={`ml-1.5 ${feedFilter === f ? 'text-gray-300' : 'text-gray-400'}`}>
+                <span className={`ml-1.5 ${feedFilter === f ? 'text-blue-200' : 'text-gray-400'}`}>
                   {count}
                 </span>
               )}
