@@ -2,47 +2,138 @@ import openai from '@/lib/openai';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Pass2Result } from '../types';
 
-const SYSTEM_PROMPT = `You are a professional expense analyst. You receive structured expense data and return ONLY a JSON object — no markdown, no asterisks, no preamble. Be specific with numbers. Every insight must reference actual dollar amounts, percentages, or z-scores from the data provided.
+// ─── System prompts ────────────────────────────────────────────────────────
 
-Return this exact JSON structure:
+const SYSTEM_PROMPT_EXPENSE_REPORT = `You are a sharp, direct expense analyst reviewing a business expense report. You have the data — now give a real take. Be specific with numbers and vendor names. Sound like a trusted advisor, not a software report. Never use statistical jargon. Lead every insight with why it matters, not what the number is. If something looks fine, say so directly. If something looks off, say exactly why in plain english. Be concise — busy people are reading this.
+
+Return ONLY valid JSON. No markdown, no asterisks, no preamble:
 {
+  "tone_context": "expense_report",
   "health_score": <integer 1-10>,
-  "health_justification": "<one sentence explaining the score>",
-  "narrative_summary": "<2-3 sentences, specific numbers, professional tone>",
+  "health_justification": "<one plain-english sentence — what's the main takeaway on this report's health>",
+  "narrative_summary": "<2-3 conversational sentences — what happened this period, what stands out, what to check>",
   "insights": [
     {
-      "title": "<short scannable title>",
-      "description": "<one sentence with specific numbers>",
+      "title": "<short, direct title — no jargon>",
+      "description": "<1-2 sentences with specific vendor names and dollar amounts — plain english>",
       "severity": "<success|info|warning|critical>",
-      "category": "<category name or null>",
-      "metric": "<e.g. 42% above rolling avg or z=2.8>"
+      "category": "<category name, or null>",
+      "metric": "<plain comparison like '$459 vs $280 avg' or '3 new vendors this month' — no z-scores or formulas>"
     }
   ],
   "savings_opportunities": [
     {
-      "title": "<short title>",
-      "description": "<specific actionable recommendation>",
-      "estimated_impact": "<dollar amount or percentage if calculable>"
+      "title": "<short actionable title>",
+      "description": "<specific recommendation with vendor names where possible>",
+      "estimated_impact": "<dollar amount or plain description>"
+    }
+  ],
+  "anomaly_explanations": [
+    {
+      "vendor": "<vendor name>",
+      "amount": <number — raw value, not formatted>,
+      "reason": "<one sentence, plain english, why this is worth a second look>",
+      "severity": "<warning|critical>"
+    }
+  ]
+}
+
+Scoring guide (1-10):
+9-10 = spending looks controlled and consistent across the board
+7-8 = mostly fine — one or two things worth a look, nothing serious
+5-6 = a few things need attention, some categories running higher than normal
+3-4 = concerning patterns, multiple categories off, something should change
+1-2 = serious issues that need immediate attention
+
+Rules:
+- Generate 3-6 insights. Quality over quantity.
+- Only generate a savings opportunity if there's a real, specific one — don't invent vague advice.
+- Include one anomaly explanation per flagged transaction, up to 5 max.
+- If everything looks normal, say so — do not manufacture concern to seem thorough.
+- Never say "z-score", "rolling average", "std dev", "anomaly severity", "statistical", "baseline", or any technical metric term.
+- Always reference actual vendor names and dollar amounts.
+- Short sentences. No corporate filler like "It is worth noting that..."`;
+
+const SYSTEM_PROMPT_BANK_STATEMENT = `You are a sharp, direct personal finance advisor reviewing someone's bank statement. You can see what came in and what went out. Give a real, honest take on their month. Be warm but direct. Specific vendor names and dollar amounts make insights useful — use them. Never use financial jargon or statistical terms. Lead with cash flow first (did they come out ahead?), then spending patterns, then anything that looks off. If their finances look healthy, say so clearly. Don't manufacture concern.
+
+Return ONLY valid JSON. No markdown, no asterisks, no preamble:
+{
+  "tone_context": "bank_statement",
+  "health_score": <integer 1-10>,
+  "health_justification": "<one plain-english sentence about their financial health this period>",
+  "narrative_summary": "<2-3 conversational sentences — cash flow first, then what stands out, then anything to check>",
+  "insights": [
+    {
+      "title": "<short, direct title>",
+      "description": "<1-2 sentences with specific vendor names and dollar amounts>",
+      "severity": "<success|info|warning|critical>",
+      "category": "<category name, or null>",
+      "metric": "<plain comparison — no jargon>"
+    }
+  ],
+  "savings_opportunities": [
+    {
+      "title": "<short actionable title>",
+      "description": "<specific recommendation with vendor names where possible>",
+      "estimated_impact": "<dollar amount or plain description>"
     }
   ],
   "anomaly_explanations": [
     {
       "vendor": "<vendor name>",
       "amount": <number>,
-      "reason": "<specific explanation with numbers>",
+      "reason": "<one sentence, plain english>",
       "severity": "<warning|critical>"
     }
   ]
 }
 
-Scoring guide (1-10): 9-10=excellent spend discipline, 7-8=good with minor concerns, 5-6=needs attention, 3-4=concerning patterns, 1-2=critical issues requiring immediate action.
-Severity: success=positive/under-budget, info=neutral observation, warning=z 1.5-2.5 or mild drift, critical=z>2.5 or duplicate or >50% over avg.
-Generate 4-7 insights, 2-4 savings_opportunities, and one anomaly_explanation per top anomalous transaction (max 5).`;
+Scoring guide (1-10):
+9-10 = healthy cash flow, spending well within income, consistent habits
+7-8 = came out ahead but a few things worth watching
+5-6 = broke even or slight overspend, nothing catastrophic
+3-4 = spending materially more than coming in, patterns to address
+1-2 = significant cash flow problem this period
+
+Rules:
+- Lead with whether they came out ahead financially.
+- If they did well, say so warmly and directly — don't bury the good news.
+- Only flag things that genuinely deserve attention.
+- Specific vendor names and amounts, always.
+- Max 5 anomaly explanations.
+- No jargon. No filler. Short sentences.`;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────
+
+function fmt(n: number): string {
+  return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function vsRecent(period: number, rolling: number): string {
+  if (rolling <= 0) return 'no history to compare against yet';
+  const diff = period - rolling;
+  const pct = Math.round(Math.abs((diff / rolling) * 100));
+  if (pct < 10) return `about normal (recent avg ${fmt(rolling)})`;
+  if (diff > 0) return `${pct}% more than recent average of ${fmt(rolling)}`;
+  return `${pct}% less than recent average of ${fmt(rolling)}`;
+}
+
+function vsPrev(period: number, prevTotal: number | null): string {
+  if (!prevTotal || prevTotal <= 0) return 'first report on record';
+  const diff = period - prevTotal;
+  const pct = Math.round(Math.abs((diff / prevTotal) * 100));
+  if (pct < 5) return 'about the same as last period';
+  if (diff > 0) return `up ${pct}% from last period (was ${fmt(prevTotal)})`;
+  return `down ${pct}% from last period (was ${fmt(prevTotal)})`;
+}
+
+// ─── Main function ────────────────────────────────────────────────────────
 
 export async function runPass2(
   uploadId: string,
   userId: string,
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  documentType: 'expense_report' | 'bank_statement' = 'expense_report'
 ): Promise<Pass2Result> {
   const { data: upload, error: uploadError } = await supabase
     .from('uploads')
@@ -50,21 +141,26 @@ export async function runPass2(
     .eq('id', uploadId)
     .eq('user_id', userId)
     .single();
-  if (uploadError || !upload) throw new Error(`Upload not found: ${uploadError?.message}`);
+  if (uploadError || !upload) {
+    console.error('[pass2] Upload fetch failed:', uploadError?.message);
+    throw new Error(`Upload not found: ${uploadError?.message}`);
+  }
+
+  console.log('[pass2] Starting analysis for upload:', upload.filename);
 
   const [
-    { data: allItems },
-    { data: catStats },
+    { data: allItems, error: itemsErr },
+    { data: catStats, error: statsErr },
     { data: allVendors },
   ] = await Promise.all([
     supabase
       .from('line_items')
       .select('vendor, amount, category, subcategory, z_score, anomaly_severity, is_possible_duplicate, is_round_number, is_first_time_vendor')
       .eq('upload_id', uploadId)
-      .order('z_score', { ascending: false }),
+      .order('amount', { ascending: false }),
     supabase
       .from('category_stats')
-      .select('category, total_spend_period, total_spend_alltime, pct_of_total_spend, mean_amount, std_dev, rolling_avg_5, rolling_avg_alltime, trend_direction')
+      .select('category, total_spend_period, pct_of_total_spend, mean_amount, rolling_avg_5, rolling_avg_alltime, trend_direction')
       .eq('upload_id', uploadId),
     supabase
       .from('vendors')
@@ -73,6 +169,11 @@ export async function runPass2(
       .order('total_spend', { ascending: false })
       .limit(20),
   ]);
+
+  if (itemsErr) console.error('[pass2] line_items fetch error:', itemsErr.message);
+  if (statsErr) console.error('[pass2] category_stats fetch error:', statsErr.message);
+
+  console.log('[pass2] Data fetched — items:', allItems?.length, 'categories:', catStats?.length, 'vendors:', allVendors?.length);
 
   const { data: prevUpload } = await supabase
     .from('uploads')
@@ -105,124 +206,128 @@ export async function runPass2(
     (i) => i.is_round_number && i.anomaly_severity !== 'none'
   );
 
-  // Category breakdown — pre-aggregated, never raw rows
-  const category_breakdown = stats.map((s) => {
-    const period = Number(s.total_spend_period ?? 0);
-    const rolling = Number(s.rolling_avg_5 ?? 0);
-    const prev = prevCatStats.find((p) => p.category === s.category);
-    const prevTotal = prev ? Number(prev.total_spend_period) : null;
-    const catAnomalies = items.filter(
-      (i) => i.category === s.category && i.anomaly_severity !== 'none'
-    ).length;
+  // ── Build plain-english context — no jargon keys ─────────────────────
 
+  const spending_by_category = [...stats]
+    .sort((a, b) => Number(b.total_spend_period ?? 0) - Number(a.total_spend_period ?? 0))
+    .map((s) => {
+      const period = Number(s.total_spend_period ?? 0);
+      const rolling = Number(s.rolling_avg_5 ?? 0);
+      const prev = prevCatStats.find((p) => p.category === s.category);
+      const catAnomalies = items.filter(
+        (i) => i.category === s.category && i.anomaly_severity !== 'none'
+      ).length;
+
+      return {
+        category: s.category,
+        spent_this_period: fmt(period),
+        share_of_total: `${Number(s.pct_of_total_spend ?? 0).toFixed(1)}%`,
+        vs_recent: vsRecent(period, rolling),
+        vs_last_period: vsPrev(period, prev ? Number(prev.total_spend_period) : null),
+        trend: s.trend_direction,
+        notable_charges: catAnomalies > 0 ? `${catAnomalies} charge(s) worth reviewing` : 'nothing unusual',
+      };
+    });
+
+  const flagged_transactions = anomalies.slice(0, 10).map((i) => {
+    const reasons: string[] = [];
+    if (i.is_possible_duplicate) reasons.push('same vendor and amount seen in another report recently — possible duplicate');
+    if (i.is_first_time_vendor) reasons.push("first time seeing this vendor");
+    if (i.is_round_number) reasons.push('exact round number — sometimes signals a manual entry or estimate');
+    if (reasons.length === 0) {
+      const z = Number(i.z_score ?? 0);
+      const rolling = stats.find((s) => s.category === i.category);
+      const avg = rolling ? fmt(Number(rolling.rolling_avg_5 ?? 0)) : null;
+      if (z > 0 && avg) reasons.push(`higher than typical for ${i.category} (category avg around ${avg})`);
+      else reasons.push(`unusual amount for ${i.category}`);
+    }
     return {
-      category: s.category,
-      total_spend_period: period,
-      rolling_avg_5: rolling,
-      rolling_avg_alltime: Number(s.rolling_avg_alltime ?? 0),
-      pct_of_total_spend: `${Number(s.pct_of_total_spend ?? 0).toFixed(1)}%`,
-      trend_direction: s.trend_direction,
-      mean_amount: Number(s.mean_amount ?? 0).toFixed(2),
-      std_dev: Number(s.std_dev ?? 0).toFixed(2),
-      anomalous_items_count: catAnomalies,
-      vs_rolling_avg:
-        rolling > 0
-          ? `${(((period - rolling) / rolling) * 100).toFixed(1)}% ${period > rolling ? 'above' : 'below'} rolling avg`
-          : 'no baseline yet',
-      vs_prev_period:
-        prevTotal && prevTotal > 0
-          ? `${(((period - prevTotal) / prevTotal) * 100).toFixed(1)}% vs prev period`
-          : 'first period on record',
+      vendor: i.vendor,
+      amount: fmt(Number(i.amount ?? 0)),
+      category: i.category,
+      why_flagged: reasons.join('; '),
     };
   });
 
-  // Top anomalies by z-score — only aggregated stats
-  const top_anomalies = anomalies.slice(0, 10).map((i) => ({
-    vendor: i.vendor,
-    amount: Number(i.amount ?? 0),
-    category: i.category,
-    anomaly_severity: i.anomaly_severity,
-    z_score: Number(i.z_score ?? 0).toFixed(2),
-    flags: [
-      i.is_first_time_vendor && 'first_time_vendor',
-      i.is_possible_duplicate && 'possible_duplicate',
-      i.is_round_number && 'round_number',
-    ].filter(Boolean),
+  const possible_duplicates = duplicates.slice(0, 5).map((d) => ({
+    vendor: d.vendor,
+    amount: fmt(Number(d.amount ?? 0)),
+    note: 'Same vendor and amount found in another upload within 7 days',
   }));
 
-  // Vendor flags
-  const vendor_flags = {
-    possible_duplicates: duplicates.slice(0, 5).map((d) => ({
-      vendor: d.vendor,
-      amount: Number(d.amount ?? 0),
-      category: d.category,
-    })),
-    first_time_high_spend: firstTimeHighSpend.slice(0, 5).map((v) => ({
-      vendor: v.vendor,
-      amount: Number(v.amount ?? 0),
-      category: v.category,
-      z_score: Number(v.z_score ?? 0).toFixed(2),
-    })),
-    round_number_flags: roundNumbers.slice(0, 3).map((r) => ({
-      vendor: r.vendor,
-      amount: Number(r.amount ?? 0),
-      category: r.category,
-    })),
-  };
+  const new_vendors_with_large_charges = firstTimeHighSpend.slice(0, 5).map((v) => ({
+    vendor: v.vendor,
+    amount: fmt(Number(v.amount ?? 0)),
+    category: v.category,
+    note: 'First time seeing this vendor — charge is higher than typical for this category',
+  }));
 
-  // Skewed categories (>25% above rolling avg)
-  const skewed_categories = stats
+  const round_number_charges = roundNumbers.slice(0, 3).map((r) => ({
+    vendor: r.vendor,
+    amount: fmt(Number(r.amount ?? 0)),
+    note: 'Exact round number — worth confirming it was a real receipt',
+  }));
+
+  const categories_running_high = stats
     .filter((s) => {
       const period = Number(s.total_spend_period ?? 0);
       const rolling = Number(s.rolling_avg_5 ?? 0);
       return rolling > 0 && period > rolling * 1.25;
     })
-    .map((s) => ({
-      category: s.category,
-      period_spend: Number(s.total_spend_period ?? 0),
-      rolling_avg: Number(s.rolling_avg_5 ?? 0),
-      deviation_pct: `${(((Number(s.total_spend_period ?? 0) - Number(s.rolling_avg_5 ?? 0)) / Number(s.rolling_avg_5 ?? 0)) * 100).toFixed(1)}%`,
-    }));
+    .map((s) => {
+      const period = Number(s.total_spend_period ?? 0);
+      const rolling = Number(s.rolling_avg_5 ?? 0);
+      const pct = Math.round(((period - rolling) / rolling) * 100);
+      return {
+        category: s.category,
+        spent: fmt(period),
+        recent_average: fmt(rolling),
+        how_much_higher: `${pct}% above recent average`,
+      };
+    });
 
-  // Consolidation opportunities: categories with ≥3 distinct vendors
   const vendorsByCategory: Record<string, string[]> = {};
   for (const v of vendors) {
     const cat = v.primary_category ?? 'Misc';
     if (!vendorsByCategory[cat]) vendorsByCategory[cat] = [];
     vendorsByCategory[cat].push(v.vendor_name);
   }
-  const consolidation_opportunities = Object.entries(vendorsByCategory)
+  const multiple_vendors_per_category = Object.entries(vendorsByCategory)
     .filter(([, vList]) => vList.length >= 3)
     .map(([category, vList]) => ({
       category,
-      vendor_count: vList.length,
-      top_vendors: vList.slice(0, 4),
+      vendors_used: vList.slice(0, 5),
+      note: `${vList.length} different vendors in this category`,
     }));
 
   const context = {
-    period_summary: {
+    report: {
       filename: upload.filename,
-      uploaded_at: upload.uploaded_at,
-      total_spend: Number(upload.total_amount ?? 0),
-      line_item_count: Number(upload.line_item_count ?? 0),
-      categories_active: stats.length,
+      total_spent: fmt(Number(upload.total_amount ?? 0)),
+      transaction_count: Number(upload.line_item_count ?? 0),
+      has_previous_history: prevCatStats.length > 0,
     },
-    category_breakdown,
-    top_anomalies,
-    vendor_flags,
-    skewed_categories,
-    consolidation_opportunities,
-    anomaly_counts: {
-      total: anomalies.length,
-      high: anomalies.filter((a) => a.anomaly_severity === 'high').length,
-      medium: anomalies.filter((a) => a.anomaly_severity === 'medium').length,
+    spending_by_category,
+    flagged_transactions,
+    possible_duplicates,
+    new_vendors_with_large_charges,
+    round_number_charges,
+    categories_running_high,
+    multiple_vendors_per_category,
+    flags_summary: {
+      total_flagged: anomalies.length,
       possible_duplicates: duplicates.length,
-      first_time_high_spend: firstTimeHighSpend.length,
-      round_number_flags: roundNumbers.length,
+      new_vendors_flagged: firstTimeHighSpend.length,
+      round_numbers: roundNumbers.length,
     },
   };
 
-  const input = `System:\n${SYSTEM_PROMPT}\n\nUser:\nAnalyze this expense period:\n\n${JSON.stringify(context, null, 2)}`;
+  const systemPrompt =
+    documentType === 'bank_statement' ? SYSTEM_PROMPT_BANK_STATEMENT : SYSTEM_PROMPT_EXPENSE_REPORT;
+
+  const input = `${systemPrompt}\n\nHere is the data:\n\n${JSON.stringify(context, null, 2)}`;
+
+  console.log('[pass2] Sending to OpenAI — context size:', input.length, 'chars, doc type:', documentType);
 
   let response;
   try {
@@ -252,7 +357,6 @@ export async function runPass2(
     throw new Error(`Pass 2 JSON parse failed: ${String(err)}`);
   }
 
-  // Clamp health_score to 1-10
   result.health_score = Math.max(1, Math.min(10, Math.round(result.health_score)));
 
   await supabase

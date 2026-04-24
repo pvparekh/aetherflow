@@ -5,6 +5,17 @@ import { runPass2 } from '@/lib/expense-intel/ai/pass2';
 
 export const dynamic = 'force-dynamic';
 
+const PASS2_TIMEOUT_MS = 30_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`pass2_timeout`)), ms)
+    ),
+  ]);
+}
+
 export async function POST(req: Request) {
   const authClient = await createClient();
   const {
@@ -39,14 +50,48 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Pass 1 must complete before Pass 2' }, { status: 409 });
   }
 
+  // Already complete — return cached result without re-running
+  if (upload.pass2_status === 'complete') {
+    const { data: done } = await supabase
+      .from('uploads')
+      .select('ai_analysis')
+      .eq('id', uploadId)
+      .single();
+    return NextResponse.json(done?.ai_analysis ?? {});
+  }
+
   await supabase.from('uploads').update({ pass2_status: 'processing' }).eq('id', uploadId);
+  console.log(`[pass2/route] Starting for upload ${uploadId}`);
 
   try {
-    const result = await runPass2(uploadId, user.id, supabase);
+    const result = await withTimeout(runPass2(uploadId, user.id, supabase), PASS2_TIMEOUT_MS);
+    console.log(`[pass2/route] Completed for upload ${uploadId}`);
     return NextResponse.json(result);
   } catch (err) {
-    console.error(`[pass2] Failed for ${uploadId}:`, err);
-    await supabase.from('uploads').update({ pass2_status: 'error' }).eq('id', uploadId);
-    return NextResponse.json({ error: `Pass 2 failed: ${String(err)}` }, { status: 500 });
+    const isTimeout = String(err).includes('pass2_timeout');
+    console.error(
+      `[pass2/route] ${isTimeout ? 'Timed out' : 'Failed'} for ${uploadId}:`,
+      err
+    );
+    await supabase
+      .from('uploads')
+      .update({
+        pass2_status: 'error',
+        ai_analysis: {
+          error: true,
+          narrative_summary: isTimeout
+            ? 'Analysis timed out. Hit retry to run it again.'
+            : 'Analysis failed. Hit retry to run it again.',
+          health_score: null,
+          insights: [],
+          savings_opportunities: [],
+          anomaly_explanations: [],
+        },
+      })
+      .eq('id', uploadId);
+    return NextResponse.json(
+      { error: isTimeout ? 'Analysis timed out — hit Retry to try again.' : `Pass 2 failed: ${String(err)}` },
+      { status: 500 }
+    );
   }
 }

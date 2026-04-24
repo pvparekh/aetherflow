@@ -6,11 +6,12 @@ import { UploadCloud, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface Props {
   onUploadComplete: (uploadId: string) => void;
+  label?: string;
 }
 
 type Phase = 'idle' | 'uploading' | 'analyzing' | 'done' | 'error';
 
-export default function UploadZone({ onUploadComplete }: Props) {
+export default function UploadZone({ onUploadComplete, label = 'Drop a .csv or .txt expense file here' }: Props) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -19,8 +20,8 @@ export default function UploadZone({ onUploadComplete }: Props) {
   const handleFile = useCallback(
     async (file: File) => {
       const ext = file.name.split('.').pop()?.toLowerCase();
-      if (!['csv', 'txt'].includes(ext ?? '')) {
-        setError('Only .csv and .txt files are supported');
+      if (!['csv', 'txt', 'pdf'].includes(ext ?? '')) {
+        setError('Only .csv, .txt, and .pdf files are supported');
         setPhase('error');
         return;
       }
@@ -103,7 +104,7 @@ export default function UploadZone({ onUploadComplete }: Props) {
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
     >
-      <input ref={inputRef} type="file" accept=".csv,.txt" className="hidden" onChange={handleChange} />
+      <input ref={inputRef} type="file" accept=".csv,.txt,.pdf" className="hidden" onChange={handleChange} />
 
       <AnimatePresence mode="wait">
         {phase === 'uploading' && (
@@ -153,7 +154,7 @@ export default function UploadZone({ onUploadComplete }: Props) {
             <p className="font-semibold text-gray-800">
               {phase === 'done'
                 ? 'Analysis complete — drop another to analyze again'
-                : 'Drop a .csv or .txt expense file here'}
+                : label}
             </p>
             <p className="text-sm mt-1 text-gray-500">
               {phase === 'done' ? 'Dashboard updated with latest insights' : 'or click to browse'}

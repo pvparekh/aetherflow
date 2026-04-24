@@ -188,21 +188,31 @@ export async function GET(
     }
   }
 
+  // Build a rolling-avg map so flag descriptions can say "usually around $X"
+  const catAvgMap = new Map<string, number>();
+  for (const s of mergedCatStats) {
+    const avg = Number(s.rolling_avg_5 ?? 0);
+    if (avg > 0) catAvgMap.set(s.category as string, avg);
+  }
+  const historyCount = prevUploads?.length ?? 0;
+
   // Build flags from line items
   const flags: Flag[] = [];
   for (const item of lineItems ?? []) {
     const vendor = String(item.vendor ?? 'Unknown');
     const amount = Number(item.amount ?? 0);
     const category = String(item.category ?? 'Misc');
-    const z = Number(item.z_score ?? 0);
+    const catAvg = catAvgMap.get(category);
+    const avgNote = catAvg ? ` (${category} usually runs around $${catAvg.toFixed(0)})` : '';
+    const historyNote = historyCount > 0 ? ` across your last ${historyCount} report${historyCount === 1 ? '' : 's'}` : '';
 
     if (item.is_possible_duplicate) {
       flags.push({
         severity: 'critical',
         flag_type: 'duplicate' as FlagType,
         title: 'Possible Duplicate Charge',
-        description: `${vendor} charged $${amount.toFixed(2)} — appears to be a duplicate transaction within a 7-day window.`,
-        metric: `$${amount.toFixed(2)}`,
+        description: `You have two identical $${amount.toFixed(2)} charges from ${vendor} within 7 days — could be a double charge worth checking.`,
+        metric: `$${amount.toFixed(2)} × 2`,
         vendor,
         amount,
         z_score: item.z_score != null ? Number(item.z_score) : null,
@@ -217,12 +227,12 @@ export async function GET(
       flags.push({
         severity: item.anomaly_severity === 'high' ? 'critical' : 'warning',
         flag_type: 'round_number' as FlagType,
-        title: 'Round Number Anomaly',
-        description: `${vendor} charged a round $${amount.toFixed(2)} — ${z > 0 ? `${z.toFixed(1)}σ above` : `${Math.abs(z).toFixed(1)}σ below`} the ${category} baseline.`,
-        metric: `$${amount.toFixed(2)} (z=${z.toFixed(1)})`,
+        title: 'Large Round Number',
+        description: `$${amount.toFixed(2)} from ${vendor} is an exact round number and higher than what you'd typically spend in ${category}. Worth confirming it came from a real receipt.`,
+        metric: `$${amount.toFixed(2)}, round number`,
         vendor,
         amount,
-        z_score: z,
+        z_score: item.z_score != null ? Number(item.z_score) : null,
         category,
         related_line_item_ids: [item.id as string],
       });
@@ -233,12 +243,12 @@ export async function GET(
       flags.push({
         severity: 'warning',
         flag_type: 'first_time' as FlagType,
-        title: 'First-Time Vendor: Unusual Amount',
-        description: `First time seeing ${vendor}. Amount of $${amount.toFixed(2)} is ${z.toFixed(1)}σ above the ${category} baseline.`,
-        metric: `$${amount.toFixed(2)} (z=${z.toFixed(1)}, first-time)`,
+        title: 'New Vendor, Large Charge',
+        description: `First time seeing a charge from ${vendor} and it's on the larger side at $${amount.toFixed(2)}${avgNote}. Flagging since it's new.`,
+        metric: `$${amount.toFixed(2)}, first-time vendor`,
         vendor,
         amount,
-        z_score: z,
+        z_score: item.z_score != null ? Number(item.z_score) : null,
         category,
         related_line_item_ids: [item.id as string],
       });
@@ -250,12 +260,12 @@ export async function GET(
         flags.push({
           severity: 'critical',
           flag_type: 'statistical' as FlagType,
-          title: 'Statistical Anomaly',
-          description: `${vendor} at $${amount.toFixed(2)} is far above the ${category} baseline (z=${z.toFixed(1)}).`,
-          metric: `$${amount.toFixed(2)} (z=${z.toFixed(1)})`,
+          title: 'Unusually High Charge',
+          description: `${vendor} at $${amount.toFixed(2)} is significantly higher than what you'd normally see in ${category}${historyNote}${avgNote}.`,
+          metric: catAvg ? `$${amount.toFixed(2)} vs $${catAvg.toFixed(0)} avg` : `$${amount.toFixed(2)}`,
           vendor,
           amount,
-          z_score: z,
+          z_score: item.z_score != null ? Number(item.z_score) : null,
           category,
           related_line_item_ids: [item.id as string],
         });
@@ -263,12 +273,12 @@ export async function GET(
         flags.push({
           severity: 'warning',
           flag_type: 'statistical' as FlagType,
-          title: 'Statistical Anomaly',
-          description: `${vendor} at $${amount.toFixed(2)} is above the ${category} mean (z=${z.toFixed(1)}).`,
-          metric: `$${amount.toFixed(2)} (z=${z.toFixed(1)})`,
+          title: 'Higher Than Usual',
+          description: `${vendor} at $${amount.toFixed(2)} is more than you'd typically spend in ${category}${avgNote}. Worth a look.`,
+          metric: catAvg ? `$${amount.toFixed(2)} vs $${catAvg.toFixed(0)} avg` : `$${amount.toFixed(2)}`,
           vendor,
           amount,
-          z_score: z,
+          z_score: item.z_score != null ? Number(item.z_score) : null,
           category,
           related_line_item_ids: [item.id as string],
         });

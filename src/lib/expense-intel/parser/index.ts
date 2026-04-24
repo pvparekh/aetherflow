@@ -1,4 +1,5 @@
 import Papa from 'papaparse';
+import openai from '@/lib/openai';
 import type { ParsedRow, ParseError, ParseResult, ParseFormat } from '../types';
 
 function detectFormat(headers: string[]): ParseFormat {
@@ -114,6 +115,74 @@ function parseTxt(content: string): ParseResult {
   });
 
   return { rows, errors, format: 'txt' };
+}
+
+interface RawTransaction {
+  description: string;
+  amount: number;
+  direction: 'debit' | 'credit';
+  date: string | null;
+}
+
+export async function parsePDF(buffer: Buffer): Promise<ParseResult> {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const pdfParse = require('pdf-parse/lib/pdf-parse') as (buf: Buffer) => Promise<{ text: string }>;
+  const { text } = await pdfParse(buffer);
+
+  if (!text?.trim()) {
+    return { rows: [], errors: [{ line: 0, raw: '', reason: 'PDF contained no extractable text' }], format: 'pdf' };
+  }
+
+  const truncated = text.slice(0, 12000);
+
+  const response = await openai.responses.create({
+    model: 'gpt-4o-mini',
+    instructions: `Extract every financial transaction from this document text. Return ONLY valid JSON — no markdown, no code fences:
+{
+  "transactions": [
+    { "description": "vendor or payee name", "amount": 0.00, "direction": "debit", "date": "YYYY-MM-DD or null" }
+  ]
+}
+Rules:
+- direction must be "debit" (money out) or "credit" (money in)
+- amount is always a positive number
+- description is the merchant/payee name, cleaned and normalized
+- Include every line item found; omit balance rows, headers, and totals
+- If unsure whether a row is a transaction, include it`,
+    input: truncated,
+  });
+
+  let transactions: RawTransaction[] = [];
+  try {
+    const raw = response.output_text ?? '';
+    const json = JSON.parse(raw.replace(/```json|```/g, '').trim()) as { transactions: RawTransaction[] };
+    transactions = json.transactions ?? [];
+  } catch {
+    return { rows: [], errors: [{ line: 0, raw: '', reason: 'AI could not parse transactions from PDF' }], format: 'pdf' };
+  }
+
+  const rows: ParsedRow[] = [];
+  const errors: ParseError[] = [];
+
+  transactions.forEach((t, i) => {
+    if (!t.description?.trim()) {
+      errors.push({ line: i + 1, raw: JSON.stringify(t), reason: 'Missing description' });
+      return;
+    }
+    if (typeof t.amount !== 'number' || isNaN(t.amount) || t.amount <= 0) {
+      errors.push({ line: i + 1, raw: JSON.stringify(t), reason: 'Invalid amount' });
+      return;
+    }
+    if (t.direction === 'credit') return; // skip credits — only track outflows
+    rows.push({
+      raw_text: `${t.description} | ${t.amount}${t.date ? ` | ${t.date}` : ''}`,
+      vendor: t.description.trim(),
+      amount: t.amount,
+      transaction_date: t.date ?? null,
+    });
+  });
+
+  return { rows, errors, format: 'pdf' };
 }
 
 export function parseExpenseFile(content: string, filename: string): ParseResult {

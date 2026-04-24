@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, RefreshCw } from 'lucide-react';
 import { SEVERITY_STYLES } from '@/lib/expense-intel/ui-helpers';
 import type { Pass2Result, UploadStatus } from '@/lib/expense-intel/types';
 
@@ -62,8 +62,15 @@ export default function AIInsightsPanel({ pass2, pass2Status, uploadId, onPass2C
             {error && <p className="text-sm text-red-600">{error}</p>}
             <button
               onClick={runPass2}
-              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                pass2Status === 'error'
+                  ? 'border border-blue-600 text-blue-600 hover:bg-blue-50'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
             >
+              {(pass2Status === 'processing' || pass2Status === 'error') && (
+                <RefreshCw className="w-3.5 h-3.5" />
+              )}
               {pass2Status === 'processing' || pass2Status === 'error'
                 ? 'Retry AI Analysis'
                 : 'Generate AI Insights'}

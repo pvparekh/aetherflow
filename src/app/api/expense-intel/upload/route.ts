@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '../../../../../utils/supabase/server';
 import { createServiceClient } from '../../../../../utils/supabase/service';
-import { parseExpenseFile } from '@/lib/expense-intel/parser';
+import { parseExpenseFile, parsePDF } from '@/lib/expense-intel/parser';
 import { runPass1 } from '@/lib/expense-intel/pass1/categorizer';
 import { computeAndWriteStats } from '@/lib/expense-intel/stats';
 import { runVendorIntelligence } from '@/lib/expense-intel/vendors';
+import { runPass2 } from '@/lib/expense-intel/ai/pass2';
 import type { UploadResponse } from '@/lib/expense-intel/types';
 
 export const dynamic = 'force-dynamic';
@@ -35,13 +36,25 @@ export async function POST(req: Request) {
 
   const filename = file.name;
   const ext = filename.split('.').pop()?.toLowerCase();
-  if (!['csv', 'txt'].includes(ext ?? '')) {
-    return NextResponse.json({ error: 'Only .csv and .txt files are supported' }, { status: 400 });
+  if (!['csv', 'txt', 'pdf'].includes(ext ?? '')) {
+    return NextResponse.json({ error: 'Only .csv, .txt, and .pdf files are supported' }, { status: 400 });
   }
 
-  const content = await file.text();
+  const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+  if (file.size > MAX_BYTES) {
+    return NextResponse.json({ error: 'File exceeds the 10 MB limit' }, { status: 413 });
+  }
 
-  const { rows, errors: parseErrors, format } = parseExpenseFile(content, filename);
+  let parseResult: Awaited<ReturnType<typeof parseExpenseFile>>;
+  if (ext === 'pdf') {
+    const arrayBuffer = await file.arrayBuffer();
+    parseResult = await parsePDF(Buffer.from(arrayBuffer));
+  } else {
+    const content = await file.text();
+    parseResult = parseExpenseFile(content, filename);
+  }
+
+  const { rows, errors: parseErrors, format } = parseResult;
   console.log(`[upload] user=${userId} file="${filename}" format="${format}" rows=${rows.length} parseErrors=${parseErrors.length}`);
 
   if (rows.length === 0) {
@@ -116,6 +129,18 @@ export async function POST(req: Request) {
   }
 
   console.log(`[upload] Complete — upload_id=${uploadId} rows=${rows.length} batches=${batchesProcessed} total=$${roundedTotal}`);
+
+  // Phase 4 — fire Pass 2 in background; doesn't block the HTTP response.
+  // runPass2 sets pass2_status='complete' on success or 'error' on failure.
+  // If the serverless instance terminates early, status stays 'pending' and
+  // the user can trigger manually via the "Generate AI Insights" button.
+  void runPass2(uploadId, userId, supabase).catch((err) => {
+    console.error(`[upload] Background Pass 2 failed for ${uploadId}:`, err);
+    void supabase
+      .from('uploads')
+      .update({ pass2_status: 'error' })
+      .eq('id', uploadId);
+  });
 
   const body: UploadResponse = {
     upload_id: uploadId,

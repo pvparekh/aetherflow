@@ -225,13 +225,12 @@ export async function runVendorIntelligence(
       const oldTier = existing.recurrence_tier as RecurrenceTier;
       const oldAvg = Number(existing.avg_amount ?? 0);
       if (tierRank(newTier) > tierRank(oldTier) && oldAvg > 0 && newAvg > oldAvg * 1.1) {
-        const pctIncrease = (((newAvg - oldAvg) / oldAvg) * 100).toFixed(1);
         tierUpgradeFlags.push({
           severity: 'warning',
           flag_type: 'statistical',
-          title: 'Recurring Vendor: Price Increase',
-          description: `${vendorName} upgraded to "${newTier}" tier. Average spend rose from $${oldAvg.toFixed(2)} to $${newAvg.toFixed(2)} (+${pctIncrease}%) — review for contract renegotiation.`,
-          metric: `avg +${pctIncrease}%, ${oldTier} → ${newTier}`,
+          title: 'Vendor Amount Creeping Up',
+          description: `You've been using ${vendorName} regularly and the amount has been creeping up — was $${oldAvg.toFixed(2)} when first logged, now averaging $${newAvg.toFixed(2)}.`,
+          metric: `was $${oldAvg.toFixed(2)}, now $${newAvg.toFixed(2)}`,
           vendor: vendorName,
           amount: newAvg,
           z_score: null,
@@ -320,8 +319,8 @@ export async function runVendorIntelligence(
         severity: 'critical',
         flag_type: 'duplicate',
         title: 'Possible Duplicate Charge',
-        description: `${item.vendor}: $${item.amount.toFixed(2)} appears more than once within a 7-day window.`,
-        metric: `$${item.amount.toFixed(2)}`,
+        description: `You have two identical $${item.amount.toFixed(2)} charges from ${item.vendor} within 7 days — could be a double charge worth checking.`,
+        metric: `$${item.amount.toFixed(2)} × 2`,
         vendor: item.vendor,
         amount: item.amount,
         z_score: item.z_score,
@@ -335,9 +334,9 @@ export async function runVendorIntelligence(
       flags.push({
         severity: 'critical',
         flag_type: 'round_number',
-        title: 'Round Number Outlier',
-        description: `${item.vendor}: $${item.amount.toFixed(2)} is a round number ≥$500 and ${absEZ.toFixed(1)}σ above the ${item.category} baseline.`,
-        metric: `z=${ez.toFixed(2)}, $${item.amount.toFixed(2)}${madNote}`,
+        title: 'Large Round Number',
+        description: `$${item.amount.toFixed(2)} from ${item.vendor} is an exact round number and higher than what you'd typically spend in ${item.category}. Worth confirming it came from a real receipt.`,
+        metric: `$${item.amount.toFixed(2)}, round number`,
         vendor: item.vendor,
         amount: item.amount,
         z_score: ez,
@@ -351,9 +350,9 @@ export async function runVendorIntelligence(
       flags.push({
         severity: 'warning',
         flag_type: 'first_time',
-        title: 'Unknown Vendor: Unusual Amount',
-        description: `${item.vendor}: $${item.amount.toFixed(2)} is a first-time vendor and ${absEZ.toFixed(1)}σ above the ${item.category} baseline.`,
-        metric: `z=${ez.toFixed(2)}, first-time vendor${madNote}`,
+        title: 'New Vendor, Large Charge',
+        description: `First time seeing a charge from ${item.vendor} and it's on the larger side at $${item.amount.toFixed(2)}. Flagging since it's new.`,
+        metric: `$${item.amount.toFixed(2)}, first-time vendor`,
         vendor: item.vendor,
         amount: item.amount,
         z_score: ez,
@@ -364,12 +363,13 @@ export async function runVendorIntelligence(
     }
 
     if (absEZ > 2) {
+      const direction = ez > 0 ? 'higher' : 'lower';
       flags.push({
         severity: absEZ >= 2.5 ? 'critical' : 'warning',
         flag_type: 'statistical',
-        title: 'Statistical Outlier',
-        description: `${item.vendor}: $${item.amount.toFixed(2)} is ${absEZ.toFixed(1)}σ ${ez > 0 ? 'above' : 'below'} the ${item.category} mean${madNote}.`,
-        metric: `z=${ez.toFixed(2)}`,
+        title: ez > 0 ? 'Unusually High Charge' : 'Unusually Low Charge',
+        description: `${item.vendor} at $${item.amount.toFixed(2)} is significantly ${direction} than what you'd normally see in ${item.category}.`,
+        metric: `$${item.amount.toFixed(2)}, well above typical`,
         vendor: item.vendor,
         amount: item.amount,
         z_score: ez,
@@ -384,7 +384,7 @@ export async function runVendorIntelligence(
         severity: 'info',
         flag_type: 'first_time',
         title: 'First-Time Vendor',
-        description: `${item.vendor}: $${item.amount.toFixed(2)} in ${item.category} — first appearance in your records.`,
+        description: `First time seeing ${item.vendor} ($${item.amount.toFixed(2)} in ${item.category}). Just flagging for awareness.`,
         metric: `$${item.amount.toFixed(2)}, first-time`,
         vendor: item.vendor,
         amount: item.amount,
@@ -396,13 +396,12 @@ export async function runVendorIntelligence(
   }
 
   for (const drift of categoryDrift) {
-    const direction = drift.deltaPct > 0 ? 'above' : 'below';
     flags.push({
       severity: Math.abs(drift.deltaPct) > 25 ? 'critical' : 'warning',
       flag_type: 'statistical',
-      title: `Category Spend Drift: ${drift.category}`,
-      description: `${drift.category}: ${Math.abs(drift.deltaPct).toFixed(1)}pp ${direction} its historical avg share (${drift.currentPct.toFixed(1)}% this upload vs ${drift.historicalAvgPct.toFixed(1)}% avg).`,
-      metric: `${drift.deltaPct > 0 ? '+' : ''}${drift.deltaPct.toFixed(1)}pp vs rolling avg`,
+      title: `${drift.category} Spend Shifted`,
+      description: `${drift.category} made up ${drift.currentPct.toFixed(1)}% of your spending this time vs your usual ${drift.historicalAvgPct.toFixed(1)}%. ${drift.deltaPct > 0 ? 'Bigger' : 'Smaller'} slice than normal.`,
+      metric: `${drift.currentPct.toFixed(1)}% vs usual ${drift.historicalAvgPct.toFixed(1)}%`,
       vendor: drift.category,
       amount: 0,
       z_score: null,
@@ -417,9 +416,9 @@ export async function runVendorIntelligence(
     flags.push({
       severity: 'info',
       flag_type: 'statistical',
-      title: 'Vendor Consolidation Opportunity',
-      description: `${opp.category} / ${opp.subcategory}: ${opp.vendors.length} vendors (${top3}${more}) share $${opp.totalSpend.toFixed(2)}.`,
-      metric: `${opp.vendors.length} vendors, $${opp.totalSpend.toFixed(2)}`,
+      title: 'Multiple Vendors, Same Purpose',
+      description: `You're using ${opp.vendors.length} different ${opp.subcategory} services in ${opp.category} — ${top3}${more}. Picking one or two could simplify things.`,
+      metric: `${opp.vendors.length} vendors, $${opp.totalSpend.toFixed(2)} combined`,
       vendor: opp.category,
       amount: opp.totalSpend,
       z_score: null,

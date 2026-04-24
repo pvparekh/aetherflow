@@ -24,7 +24,7 @@ export type AnomalySeverity = 'none' | 'low' | 'medium' | 'high';
 export type RecurrenceTier = 'one_time' | 'occasional' | 'regular' | 'core';
 export type TrendDirection = 'up' | 'down' | 'stable';
 export type UserResolution = 'expected' | 'investigate' | null;
-export type ParseFormat = 'standard' | 'bank' | 'simple' | 'txt';
+export type ParseFormat = 'standard' | 'bank' | 'simple' | 'txt' | 'pdf';
 
 export const CATEGORIES = [
   'Food/Dining',
@@ -47,6 +47,7 @@ export interface ParsedRow {
   vendor: string;
   amount: number;
   transaction_date: string | null;
+  direction?: 'debit' | 'credit';
 }
 
 export interface ParseError {
@@ -80,11 +81,13 @@ export interface Upload {
   filename: string;
   uploaded_at: string;
   total_amount: number | null;
+  income_total: number | null;
   line_item_count: number | null;
   pass1_status: UploadStatus;
   pass2_status: UploadStatus;
   health_score: number | null;
   ai_analysis: unknown | null;
+  document_type: 'expense_report' | 'bank_statement';
 }
 
 export interface LineItem {
@@ -170,6 +173,7 @@ export interface AnomalyExplanation {
 }
 
 export interface Pass2Result {
+  tone_context?: 'expense_report' | 'bank_statement';
   health_score: number;          // 1–10
   health_justification: string;
   narrative_summary: string;
