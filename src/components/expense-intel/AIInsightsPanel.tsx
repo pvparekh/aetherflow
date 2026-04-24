@@ -41,9 +41,9 @@ export default function AIInsightsPanel({ pass2, pass2Status, uploadId, onPass2C
   if (!pass2) {
     return (
       <div className="ei-card-section rounded-xl p-6">
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-4 h-4 text-blue-600" />
-          <h3 className="font-semibold text-gray-800">AI Analysis</h3>
+        <div className="flex items-center gap-3 mb-4">
+          <Sparkles className="w-6 h-6 text-blue-600" />
+          <h3 className="text-2xl font-bold text-gray-900">AI Analysis</h3>
         </div>
         {loading ? (
           <div className="flex items-center gap-3 text-gray-500">
@@ -92,18 +92,18 @@ export default function AIInsightsPanel({ pass2, pass2Status, uploadId, onPass2C
     <div className="ei-card-section rounded-xl p-6 space-y-6">
       {/* Header row: title + health score */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-blue-600" />
-          <h3 className="font-semibold text-gray-800 text-lg">AI Analysis</h3>
+        <div className="flex items-center gap-3">
+          <Sparkles className="w-6 h-6 text-blue-600" />
+          <h3 className="text-2xl font-bold text-gray-900">AI Analysis</h3>
         </div>
-        <div className={`${scoreBg} border rounded-xl px-4 py-3 text-right`}>
-          <div className="flex items-baseline gap-1 justify-end">
-            <span className={`text-3xl font-bold ${scoreColor}`}>{pass2.health_score}</span>
-            <span className="text-gray-400 text-lg">/10</span>
+        <div className={`${scoreBg} border rounded-2xl px-6 py-5 text-right min-w-[160px]`}>
+          <div className="flex items-center gap-0.5 justify-end">
+            <span className={`text-5xl font-bold ${scoreColor}`}>{pass2.health_score}</span>
+            <span className={`text-5xl font-bold ${scoreColor} opacity-40`}>/10</span>
           </div>
-          <p className="text-xs text-gray-500 mt-0.5">Spend Health Score</p>
+          <p className="text-sm text-gray-500 mt-1 font-medium">Spend Health Score</p>
           {pass2.health_justification && (
-            <p className={`text-xs mt-1 max-w-[220px] ${scoreColor} font-medium`}>
+            <p className={`text-xs mt-2 max-w-[260px] ${scoreColor} font-medium leading-relaxed`}>
               {pass2.health_justification}
             </p>
           )}

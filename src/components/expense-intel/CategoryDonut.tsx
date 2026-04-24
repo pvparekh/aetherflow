@@ -78,7 +78,10 @@ export default function CategoryDonut({ stats, selectedCategory, onSelectCategor
 
   return (
     <div className="ei-card-section rounded-xl p-6 h-full">
-      <h3 className="font-semibold text-gray-800 mb-4">Spend by Category</h3>
+      <div className="mb-4">
+        <h3 className="font-semibold text-gray-800">Spend by Category</h3>
+        <p className="text-xs text-gray-400 mt-0.5">Click a slice to filter the dashboard by category</p>
+      </div>
       {data.length === 0 ? (
         <p className="text-gray-400 text-sm text-center mt-10">No category data</p>
       ) : (

@@ -55,16 +55,21 @@ export default function ExpenseIntelPage() {
   const [activeUploadId, setActiveUploadId] = useState<string | null>(null);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loadingDashboard, setLoadingDashboard] = useState(false);
+  const [loadingInitial, setLoadingInitial] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [resolvedItems, setResolvedItems] = useState<Record<string, 'expected' | 'investigate'>>({});
   const [activeTab, setActiveTab] = useState<'upload' | 'alltime'>('upload');
 
   const fetchUploads = useCallback(async () => {
-    const res = await fetch('/api/expense-intel/uploads');
-    if (res.status === 401) { router.push('/login'); return; }
-    if (!res.ok) return;
-    const data = await res.json();
-    setUploads(data.uploads ?? []);
+    try {
+      const res = await fetch('/api/expense-intel/uploads');
+      if (res.status === 401) { router.push('/login'); return; }
+      if (!res.ok) return;
+      const data = await res.json();
+      setUploads(data.uploads ?? []);
+    } finally {
+      setLoadingInitial(false);
+    }
   }, [router]);
 
   const loadDashboard = useCallback(async (uploadId: string) => {
@@ -249,8 +254,20 @@ export default function ExpenseIntelPage() {
             )}
           </AnimatePresence>
 
+          {/* Initial fetch spinner — prevents empty-state flash on reload */}
+          {activeTab === 'upload' && loadingInitial && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex items-center justify-center py-20 text-gray-500"
+            >
+              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mr-3" />
+              Loading…
+            </motion.div>
+          )}
+
           {/* Latest Upload — loading */}
-          {activeTab === 'upload' && loadingDashboard && (
+          {activeTab === 'upload' && !loadingInitial && loadingDashboard && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -263,7 +280,7 @@ export default function ExpenseIntelPage() {
 
           {/* Latest Upload — data */}
           <AnimatePresence mode="wait">
-            {activeTab === 'upload' && dashboardData && !loadingDashboard && (
+            {activeTab === 'upload' && !loadingInitial && dashboardData && !loadingDashboard && (
               <motion.div
                 key="upload-data"
                 initial={{ opacity: 0 }}
@@ -340,8 +357,8 @@ export default function ExpenseIntelPage() {
             )}
           </AnimatePresence>
 
-          {/* Empty state */}
-          {activeTab === 'upload' && !dashboardData && !loadingDashboard && uploads.length === 0 && (
+          {/* Empty state — only shown once initial fetch completes and there are no uploads */}
+          {activeTab === 'upload' && !loadingInitial && !dashboardData && !loadingDashboard && uploads.length === 0 && (
             <motion.div
               {...stagger(3)}
               className="text-center py-20"

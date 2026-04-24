@@ -1,6 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/expense-intel/ui-helpers';
 import type { Vendor } from '@/lib/expense-intel/types';
 
@@ -18,10 +20,13 @@ const TIER_STYLES: Record<string, string> = {
   one_time: 'bg-orange-100 text-orange-700',
 };
 
+const INITIAL_COUNT = 12;
+
 export default function VendorsTable({ vendors, selectedCategory }: Props) {
   const [sortField, setSortField] = useState<SortField>('total_spend');
   const [sortAsc, setSortAsc] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(selectedCategory);
+  const [showAll, setShowAll] = useState(false);
 
   // Derive unique categories from vendor list
   const categories = useMemo(() => {
@@ -30,8 +35,9 @@ export default function VendorsTable({ vendors, selectedCategory }: Props) {
   }, [vendors]);
 
   // Sync with external selectedCategory changes
-  useMemo(() => {
+  useEffect(() => {
     setActiveCategory(selectedCategory);
+    setShowAll(false);
   }, [selectedCategory]);
 
   const filtered = useMemo(() => {
@@ -45,6 +51,9 @@ export default function VendorsTable({ vendors, selectedCategory }: Props) {
       return sortAsc ? va - vb : vb - va;
     });
   }, [vendors, activeCategory, sortField, sortAsc]);
+
+  const visibleVendors = showAll ? filtered : filtered.slice(0, INITIAL_COUNT);
+  const hiddenCount = Math.max(0, filtered.length - INITIAL_COUNT);
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -76,7 +85,10 @@ export default function VendorsTable({ vendors, selectedCategory }: Props) {
             return (
               <button
                 key={cat}
-                onClick={() => setActiveCategory(cat === 'All' ? null : cat)}
+                onClick={() => {
+                  setActiveCategory(cat === 'All' ? null : cat);
+                  setShowAll(false);
+                }}
                 className={`px-4 py-2 text-xs font-medium transition-all border-b-2 -mb-px ${
                   isActive
                     ? 'border-blue-600 text-blue-600'
@@ -117,15 +129,21 @@ export default function VendorsTable({ vendors, selectedCategory }: Props) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filtered.map((vendor) => (
+              {visibleVendors.map((vendor) => (
                 <tr key={vendor.id} className="hover:bg-gray-50 transition-colors">
                   <td className="py-3 font-medium text-gray-800">{vendor.vendor_name}</td>
                   <td className="py-3 text-gray-500">{vendor.primary_category ?? '—'}</td>
-                  <td className="py-3 text-gray-700 font-medium" style={{ fontFamily: 'var(--font-geist-mono), monospace' }}>
+                  <td
+                    className="py-3 text-gray-700 font-medium"
+                    style={{ fontFamily: 'var(--font-geist-mono), monospace' }}
+                  >
                     {formatCurrency(Number(vendor.total_spend ?? 0))}
                   </td>
                   <td className="py-3 text-gray-600">{vendor.total_occurrences ?? 0}</td>
-                  <td className="py-3 text-gray-600" style={{ fontFamily: 'var(--font-geist-mono), monospace' }}>
+                  <td
+                    className="py-3 text-gray-600"
+                    style={{ fontFamily: 'var(--font-geist-mono), monospace' }}
+                  >
                     {vendor.avg_amount ? formatCurrency(Number(vendor.avg_amount)) : '—'}
                   </td>
                   <td className="py-3 text-gray-500 text-xs">
@@ -144,6 +162,23 @@ export default function VendorsTable({ vendors, selectedCategory }: Props) {
               ))}
             </tbody>
           </table>
+
+          {/* Show more / less */}
+          {hiddenCount > 0 && (
+            <button
+              onClick={() => setShowAll((v) => !v)}
+              className="w-full flex items-center justify-center gap-1.5 py-3 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <span>
+                {showAll
+                  ? 'Show less'
+                  : `Show ${hiddenCount} more ${hiddenCount === 1 ? 'vendor' : 'vendors'}`}
+              </span>
+              <motion.div animate={{ rotate: showAll ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                <ChevronDown className="w-4 h-4" />
+              </motion.div>
+            </button>
+          )}
         </div>
       )}
     </div>

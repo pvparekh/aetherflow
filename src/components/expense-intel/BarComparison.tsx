@@ -49,7 +49,6 @@ export default function BarComparison({ categoryStats, selectedCategory }: Props
         <h3 className="font-semibold text-gray-800">
           Current vs Rolling Average{selectedCategory ? `: ${selectedCategory}` : ''}
         </h3>
-        <span className="text-xs text-gray-400">Red bars = 25%+ above rolling avg with upward trend</span>
       </div>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data} barGap={4} barCategoryGap="30%">

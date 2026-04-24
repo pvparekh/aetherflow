@@ -32,6 +32,8 @@ export default function AnomalyFeed({ flags, selectedCategory, resolvedItems, on
   const [expandedDuplicates, setExpandedDuplicates] = useState<Set<string>>(new Set());
   const [deletedItems, setDeletedItems] = useState<Set<string>>(new Set());
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
 
   const categoryFiltered = useMemo(() => {
     if (!selectedCategory) return flags;
@@ -58,6 +60,10 @@ export default function AnomalyFeed({ flags, selectedCategory, resolvedItems, on
   const visibleFlags = showAll ? filtered : filtered.slice(0, INITIAL_COUNT);
   const hiddenCount  = Math.max(0, filtered.length - INITIAL_COUNT);
 
+  const deletableCount = categoryFiltered.filter(
+    (f) => f.related_line_item_ids[0] && !deletedItems.has(f.related_line_item_ids[0])
+  ).length;
+
   const toggleExpand = (key: string) =>
     setExpanded((prev) => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
 
@@ -76,8 +82,96 @@ export default function AnomalyFeed({ flags, selectedCategory, resolvedItems, on
     }
   };
 
+  const handleDeleteAll = async () => {
+    setDeleteAllLoading(true);
+    const toDelete = categoryFiltered
+      .map((f) => f.related_line_item_ids[0])
+      .filter((id): id is string => !!id && !deletedItems.has(id));
+
+    setDeletedItems((prev) => {
+      const n = new Set(prev);
+      for (const id of toDelete) n.add(id);
+      return n;
+    });
+    setShowDeleteAllModal(false);
+
+    const results = await Promise.allSettled(
+      toDelete.map((id) => fetch(`/api/expense-intel/anomaly/${id}`, { method: 'DELETE' }))
+    );
+
+    const failed = toDelete.filter((_, i) =>
+      results[i].status === 'rejected' ||
+      (results[i].status === 'fulfilled' && !(results[i] as PromiseFulfilledResult<Response>).value.ok)
+    );
+    if (failed.length > 0) {
+      setDeletedItems((prev) => {
+        const n = new Set(prev);
+        for (const id of failed) n.delete(id);
+        return n;
+      });
+      setDeleteError(`Failed to delete ${failed.length} anomal${failed.length === 1 ? 'y' : 'ies'}. Please try again.`);
+      setTimeout(() => setDeleteError(null), 3000);
+    }
+    setDeleteAllLoading(false);
+  };
+
   return (
     <div className="ei-card-section rounded-xl p-6">
+      {/* Delete All confirmation modal */}
+      <AnimatePresence>
+        {showDeleteAllModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowDeleteAllModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <Trash2 className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Delete All Anomalies</h3>
+                  <p className="text-xs text-gray-500">This cannot be undone</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600 mb-5">
+                This will permanently remove{' '}
+                <span className="font-semibold text-gray-900">
+                  {deletableCount} anomal{deletableCount === 1 ? 'y' : 'ies'}
+                </span>
+                {selectedCategory ? ` in ${selectedCategory}` : ''} from your dashboard.
+                The underlying transactions will remain unchanged.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowDeleteAllModal(false)}
+                  className="flex-1 px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteAll}
+                  disabled={deleteAllLoading}
+                  className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                >
+                  {deleteAllLoading ? 'Deleting…' : 'Delete All'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {deleteError && (
           <motion.div
@@ -95,7 +189,18 @@ export default function AnomalyFeed({ flags, selectedCategory, resolvedItems, on
         <h3 className="font-semibold text-gray-800">
           Anomaly Feed{selectedCategory ? ` — ${selectedCategory}` : ''}
         </h3>
-        <span className="text-xs text-gray-400">{categoryFiltered.length} total flags</span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-400">{categoryFiltered.length} total flags</span>
+          {deletableCount > 0 && (
+            <button
+              onClick={() => setShowDeleteAllModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <Trash2 className="w-3 h-3" />
+              Delete All
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filter pills */}
@@ -156,13 +261,13 @@ export default function AnomalyFeed({ flags, selectedCategory, resolvedItems, on
                   <div
                     className={`border rounded-lg p-4 transition-all ${
                       isResolved
-                        ? 'border-gray-100 bg-gray-50 opacity-40'
+                        ? 'border-gray-100 bg-gray-50'
                         : `${styles.bg} ${styles.border}`
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      {/* Left: content */}
-                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                      {/* Left: content — dimmed when resolved */}
+                      <div className={`flex items-start gap-3 flex-1 min-w-0 transition-opacity ${isResolved ? 'opacity-40' : ''}`}>
                         <span className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${styles.dot}`} />
                         <div className="flex-1 min-w-0">
                           {/* Title row */}
@@ -259,7 +364,7 @@ export default function AnomalyFeed({ flags, selectedCategory, resolvedItems, on
                         </div>
                       </div>
 
-                      {/* Right: action buttons */}
+                      {/* Right: action buttons — always full opacity */}
                       {itemId && (
                         <div className="flex flex-col gap-1.5 flex-shrink-0">
                           {resolution === 'expected' ? (
