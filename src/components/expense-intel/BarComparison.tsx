@@ -44,7 +44,7 @@ export default function BarComparison({ categoryStats, selectedCategory }: Props
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6">
+    <div className="ei-card-section rounded-xl p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-gray-800">
           Current vs Rolling Average{selectedCategory ? `: ${selectedCategory}` : ''}
@@ -77,7 +77,15 @@ export default function BarComparison({ categoryStats, selectedCategory }: Props
               fontFamily: 'var(--font-geist-mono), monospace',
             }}
           />
-          <Legend iconType="square" iconSize={10} formatter={(v) => <span className="text-xs text-gray-600">{v}</span>} />
+          <Legend
+            iconType="square"
+            iconSize={10}
+            formatter={(v) => (
+              <span className={`text-xs ${v === 'Rolling Avg (5)' ? 'text-gray-700 font-medium' : 'text-gray-600'}`}>
+                {v}
+              </span>
+            )}
+          />
 
           <Bar dataKey="This Period" radius={[4, 4, 0, 0]}>
             {data.map((entry) => (
@@ -87,7 +95,7 @@ export default function BarComparison({ categoryStats, selectedCategory }: Props
               />
             ))}
           </Bar>
-          <Bar dataKey="Rolling Avg (5)" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="Rolling Avg (5)" fill="#94A3B8" radius={[4, 4, 0, 0]} stroke="#64748B" strokeWidth={1} />
         </BarChart>
       </ResponsiveContainer>
     </div>

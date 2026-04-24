@@ -162,18 +162,29 @@ export default function ExpenseIntelPage() {
           {/* Header */}
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <motion.h1
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease }}
-                className="text-3xl font-bold text-gray-900"
-              >
-                Expense Intelligence
-              </motion.h1>
+              <h1 className="text-3xl font-bold text-gray-900">
+                <motion.span
+                  initial={{ opacity: 0, y: -40, filter: 'blur(8px)' }}
+                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                  style={{ display: 'inline-block' }}
+                >
+                  Expense
+                </motion.span>
+                {' '}
+                <motion.span
+                  initial={{ opacity: 0, y: -40, filter: 'blur(8px)' }}
+                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  transition={{ duration: 0.7, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+                  style={{ display: 'inline-block' }}
+                >
+                  Intelligence
+                </motion.span>
+              </h1>
               <motion.p
-                initial={{ opacity: 0, y: -12 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.15, ease }}
+                transition={{ duration: 0.5, delay: 0.25 }}
                 className="text-sm mt-1 text-gray-500"
               >
                 AI-powered expense categorization, anomaly detection, and financial insights.

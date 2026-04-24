@@ -1,6 +1,7 @@
 'use client';
 
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useState } from 'react';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, Sector } from 'recharts';
 import { getCategoryColor, formatCurrency } from '@/lib/expense-intel/ui-helpers';
 import type { CategoryStats } from '@/lib/expense-intel/types';
 
@@ -10,8 +11,58 @@ interface Props {
   onSelectCategory: (cat: string | null) => void;
 }
 
+interface DataPoint {
+  name: string;
+  value: number;
+  pct: number;
+}
+
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{ payload: DataPoint }>;
+}
+
+function CustomTooltip({ active, payload }: TooltipProps) {
+  if (!active || !payload?.length) return null;
+  const { name, value, pct } = payload[0].payload;
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 shadow-md" style={{ padding: 12 }}>
+      <p className="font-medium text-gray-800 text-sm mb-1">{name}</p>
+      <p
+        className="text-gray-900 font-bold text-lg"
+        style={{ fontFamily: 'var(--font-geist-mono), monospace' }}
+      >
+        {formatCurrency(value)}
+      </p>
+      <p className="font-bold text-lg" style={{ color: getCategoryColor(name) }}>
+        {pct.toFixed(1)}%
+      </p>
+    </div>
+  );
+}
+
+function ActiveShape(props: {
+  cx: number; cy: number; innerRadius: number; outerRadius: number;
+  startAngle: number; endAngle: number; fill: string; opacity?: number;
+}) {
+  return (
+    <Sector
+      cx={props.cx}
+      cy={props.cy}
+      innerRadius={props.innerRadius}
+      outerRadius={props.outerRadius + 6}
+      startAngle={props.startAngle}
+      endAngle={props.endAngle}
+      fill={props.fill}
+      opacity={props.opacity}
+    />
+  );
+}
+
 export default function CategoryDonut({ stats, selectedCategory, onSelectCategory }: Props) {
-  const data = [...stats]
+  const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
+
+  const data: DataPoint[] = [...stats]
     .filter((s) => Number(s.total_spend_period ?? 0) > 0)
     .map((s) => ({
       name: s.category,
@@ -26,7 +77,7 @@ export default function CategoryDonut({ stats, selectedCategory, onSelectCategor
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 h-full">
+    <div className="ei-card-section rounded-xl p-6 h-full">
       <h3 className="font-semibold text-gray-800 mb-4">Spend by Category</h3>
       {data.length === 0 ? (
         <p className="text-gray-400 text-sm text-center mt-10">No category data</p>
@@ -42,6 +93,10 @@ export default function CategoryDonut({ stats, selectedCategory, onSelectCategor
                 outerRadius={95}
                 paddingAngle={2}
                 dataKey="value"
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                {...({ activeIndex, activeShape: (p: any) => <ActiveShape {...p} /> } as any)}
+                onMouseEnter={(_: unknown, index: number) => setActiveIndex(index)}
+                onMouseLeave={() => setActiveIndex(undefined)}
                 onClick={handleClick}
                 cursor="pointer"
               >
@@ -55,17 +110,10 @@ export default function CategoryDonut({ stats, selectedCategory, onSelectCategor
                   />
                 ))}
               </Pie>
-              <Tooltip
-                formatter={(value) => [formatCurrency(Number(value ?? 0)), 'Spend']}
-                contentStyle={{
-                  fontSize: 12,
-                  borderRadius: 8,
-                  backgroundColor: '#fff',
-                  border: '1px solid #E5E7EB',
-                  boxShadow: '0 4px 6px -1px rgba(0,0,0,0.08)',
-                  fontFamily: 'var(--font-geist-mono), monospace',
-                }}
-              />
+              <Tooltip content={(props: unknown) => {
+                const p = props as TooltipProps;
+                return <CustomTooltip active={p.active} payload={p.payload} />;
+              }} />
               <Legend
                 iconType="circle"
                 iconSize={8}

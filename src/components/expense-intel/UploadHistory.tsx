@@ -22,7 +22,7 @@ interface Props {
 export default function UploadHistory({ uploads, activeUploadId, onSelect }: Props) {
   if (uploads.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
+      <div className="ei-card-section rounded-xl p-6">
         <h3 className="font-semibold text-gray-800 mb-3">Upload History</h3>
         <p className="text-sm text-gray-400">No uploads yet — drop a file to get started.</p>
       </div>
@@ -30,7 +30,7 @@ export default function UploadHistory({ uploads, activeUploadId, onSelect }: Pro
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6">
+    <div className="ei-card-section rounded-xl p-6">
       <h3 className="font-semibold text-gray-800 mb-3">Upload History</h3>
       <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
         {uploads.map((upload) => {

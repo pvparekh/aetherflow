@@ -107,7 +107,7 @@ export default function AllTimeView() {
 
       {/* Section 2: Category totals */}
       {data.category_totals.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="ei-card-section rounded-xl p-6">
           <h3 className="font-semibold text-gray-800 mb-5">All-Time Spend by Category</h3>
           <div className="space-y-4">
             {data.category_totals.map((cat) => {
@@ -162,7 +162,7 @@ export default function AllTimeView() {
       />
 
       {/* Section 4: All-time top vendors table */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
+      <div className="ei-card-section rounded-xl p-6">
         <h3 className="font-semibold text-gray-800 mb-4">
           All-Time Top Vendors
           <span className="text-xs font-normal text-gray-400 ml-2">by total spend</span>
@@ -234,9 +234,14 @@ function SummaryCard({
   valueClass?: string;
 }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5">
+    <div className="ei-card rounded-xl p-5">
       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
-      <p className={`text-2xl font-bold mt-1 ${valueClass}`}>{value}</p>
+      <p
+        className={`text-2xl font-bold mt-1 ${valueClass}`}
+        style={{ fontFamily: 'var(--font-geist-mono), monospace' }}
+      >
+        {value}
+      </p>
     </div>
   );
 }

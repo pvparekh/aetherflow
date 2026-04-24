@@ -2,6 +2,11 @@ export type UploadStatus = 'pending' | 'processing' | 'complete' | 'error';
 export type FlagSeverity = 'success' | 'info' | 'warning' | 'critical';
 export type FlagType = 'duplicate' | 'first_time' | 'round_number' | 'statistical';
 
+export interface DuplicateContext {
+  this_entry: { filename: string; transaction_date: string | null; amount: number };
+  match:      { filename: string; transaction_date: string | null; amount: number };
+}
+
 export interface Flag {
   severity: FlagSeverity;
   flag_type: FlagType;
@@ -13,6 +18,7 @@ export interface Flag {
   z_score: number | null;
   category: string;
   related_line_item_ids: string[];
+  duplicate_context?: DuplicateContext;
 }
 export type AnomalySeverity = 'none' | 'low' | 'medium' | 'high';
 export type RecurrenceTier = 'one_time' | 'occasional' | 'regular' | 'core';

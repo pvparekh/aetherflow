@@ -18,14 +18,14 @@ const item = {
 export default function SummaryCards({ upload, categoryStats, anomalyCount }: Props) {
   void categoryStats;
 
-  const scoreBorderClass =
+  const scoreBorderColor =
     upload.health_score == null
-      ? 'border-l-gray-300'
+      ? '#D1D5DB'
       : upload.health_score >= 8
-        ? 'border-l-emerald-500'
+        ? '#10B981'
         : upload.health_score >= 5
-          ? 'border-l-amber-500'
-          : 'border-l-red-500';
+          ? '#F59E0B'
+          : '#EF4444';
 
   const scoreValueClass =
     upload.health_score == null
@@ -36,7 +36,7 @@ export default function SummaryCards({ upload, categoryStats, anomalyCount }: Pr
           ? 'text-amber-600'
           : 'text-red-600';
 
-  const anomalyBorderClass = anomalyCount === 0 ? 'border-l-emerald-500' : 'border-l-red-500';
+  const anomalyBorderColor = anomalyCount === 0 ? '#10B981' : '#EF4444';
   const anomalyValueClass =
     anomalyCount === 0
       ? 'text-emerald-600'
@@ -52,18 +52,10 @@ export default function SummaryCards({ upload, categoryStats, anomalyCount }: Pr
       animate="show"
     >
       <motion.div variants={item}>
-        <Card
-          label="Total Spend"
-          value={formatCurrency(Number(upload.total_amount ?? 0))}
-          leftBorderClass="border-l-blue-500"
-        />
+        <Card label="Total Spend" value={formatCurrency(Number(upload.total_amount ?? 0))} leftBorderColor="#3B82F6" />
       </motion.div>
       <motion.div variants={item}>
-        <Card
-          label="Line Items"
-          value={String(upload.line_item_count ?? 0)}
-          leftBorderClass="border-l-purple-500"
-        />
+        <Card label="Line Items" value={String(upload.line_item_count ?? 0)} leftBorderColor="#A855F7" />
       </motion.div>
       <motion.div variants={item}>
         <Card
@@ -78,7 +70,7 @@ export default function SummaryCards({ upload, categoryStats, anomalyCount }: Pr
                   ? 'Needs attention'
                   : 'Critical issues detected'
           }
-          leftBorderClass={scoreBorderClass}
+          leftBorderColor={scoreBorderColor}
           valueClass={scoreValueClass}
         />
       </motion.div>
@@ -93,7 +85,7 @@ export default function SummaryCards({ upload, categoryStats, anomalyCount }: Pr
                 ? '1 item to review'
                 : `${anomalyCount} items to review`
           }
-          leftBorderClass={anomalyBorderClass}
+          leftBorderColor={anomalyBorderColor}
           valueClass={anomalyValueClass}
         />
       </motion.div>
@@ -105,18 +97,19 @@ function Card({
   label,
   value,
   sub,
-  leftBorderClass,
+  leftBorderColor,
   valueClass = 'text-gray-900',
 }: {
   label: string;
   value: string;
   sub?: string;
-  leftBorderClass: string;
+  leftBorderColor: string;
   valueClass?: string;
 }) {
   return (
     <div
-      className={`bg-white rounded-xl p-5 border border-gray-200 border-l-4 ${leftBorderClass} shadow-sm hover:shadow-md transition-shadow`}
+      className="ei-card-warm rounded-xl p-5"
+      style={{ borderLeftColor: leftBorderColor }}
     >
       <p className="text-xs font-medium uppercase tracking-widest text-gray-400">{label}</p>
       <p

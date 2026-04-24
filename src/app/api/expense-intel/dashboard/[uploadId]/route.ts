@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '../../../../../../utils/supabase/server';
 import { createServiceClient } from '../../../../../../utils/supabase/service';
-import type { Flag, FlagType, Pass2Result } from '@/lib/expense-intel/types';
+import type { Flag, FlagType, Pass2Result, DuplicateContext } from '@/lib/expense-intel/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -135,6 +135,59 @@ export async function GET(
     }
   }
 
+  // Find duplicate-match context for each possibly-duplicated line item
+  const duplicateItems = (lineItems ?? []).filter((i) => i.is_possible_duplicate);
+  const duplicateContextMap = new Map<string, DuplicateContext>();
+
+  if (duplicateItems.length > 0) {
+    const otherUploadIds = (allUserUploads ?? [])
+      .map((u) => u.id as string)
+      .filter((id) => id !== uploadId);
+
+    if (otherUploadIds.length > 0) {
+      const vendorNames = [
+        ...new Set(duplicateItems.map((i) => i.vendor as string).filter(Boolean)),
+      ];
+
+      const [{ data: otherUploads }, { data: matchingItems }] = await Promise.all([
+        supabase.from('uploads').select('id, filename').in('id', otherUploadIds),
+        vendorNames.length > 0
+          ? supabase
+              .from('line_items')
+              .select('id, vendor, amount, transaction_date, upload_id')
+              .in('upload_id', otherUploadIds)
+              .in('vendor', vendorNames)
+          : Promise.resolve({ data: [] }),
+      ]);
+
+      const otherFilenameMap = new Map(
+        (otherUploads ?? []).map((u) => [u.id as string, u.filename as string])
+      );
+
+      for (const dupItem of duplicateItems) {
+        const match = (matchingItems ?? []).find(
+          (m) =>
+            m.vendor === dupItem.vendor &&
+            Math.abs(Number(m.amount) - Number(dupItem.amount)) < 0.01
+        );
+        if (match) {
+          duplicateContextMap.set(dupItem.id as string, {
+            this_entry: {
+              filename: upload.filename as string,
+              transaction_date: dupItem.transaction_date as string | null,
+              amount: Number(dupItem.amount),
+            },
+            match: {
+              filename: otherFilenameMap.get(match.upload_id as string) ?? 'Unknown file',
+              transaction_date: match.transaction_date as string | null,
+              amount: Number(match.amount),
+            },
+          });
+        }
+      }
+    }
+  }
+
   // Build flags from line items
   const flags: Flag[] = [];
   for (const item of lineItems ?? []) {
@@ -155,6 +208,7 @@ export async function GET(
         z_score: item.z_score != null ? Number(item.z_score) : null,
         category,
         related_line_item_ids: [item.id as string],
+        duplicate_context: duplicateContextMap.get(item.id as string),
       });
       continue;
     }

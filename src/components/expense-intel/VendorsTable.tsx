@@ -65,7 +65,7 @@ export default function VendorsTable({ vendors, selectedCategory }: Props) {
   );
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6">
+    <div className="ei-card-section rounded-xl p-6">
       <h3 className="font-semibold text-gray-800 mb-4">Vendor Intelligence</h3>
 
       {/* Category tabs */}

@@ -40,7 +40,7 @@ export default function AIInsightsPanel({ pass2, pass2Status, uploadId, onPass2C
 
   if (!pass2) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
+      <div className="ei-card-section rounded-xl p-6">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="w-4 h-4 text-blue-600" />
           <h3 className="font-semibold text-gray-800">AI Analysis</h3>
@@ -89,7 +89,7 @@ export default function AIInsightsPanel({ pass2, pass2Status, uploadId, onPass2C
         : 'bg-red-50 border-red-200';
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-6">
+    <div className="ei-card-section rounded-xl p-6 space-y-6">
       {/* Header row: title + health score */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-2">

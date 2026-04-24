@@ -87,7 +87,7 @@ export default function RollingAvgChart({ categoryStats, categoryHistory }: Prop
 
   if (chartData.length < 2) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-6 h-full flex flex-col">
+      <div className="ei-card-section rounded-xl p-6 h-full flex flex-col">
         <h3 className="font-semibold text-gray-800 mb-2">Rolling Average Trend</h3>
         <p className="text-sm text-gray-400 mt-auto mb-auto text-center">
           Upload more reports to see trends over time.
@@ -97,7 +97,7 @@ export default function RollingAvgChart({ categoryStats, categoryHistory }: Prop
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6">
+    <div className="ei-card-section rounded-xl p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-gray-800">Rolling Average Trend</h3>
         <span className="text-xs text-gray-400">Shaded band = rolling avg ±1σ</span>

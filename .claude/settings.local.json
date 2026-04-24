@@ -5,7 +5,8 @@
       "Bash(mkdir -p C:/Dev/aetherflow/src/app/api/expense-intel/pass2)",
       "Bash(mkdir -p \"C:/Dev/aetherflow/src/app/api/expense-intel/uploads\")",
       "Bash(mkdir -p \"C:/Dev/aetherflow/src/app/api/expense-intel/dashboard/[uploadId]\")",
-      "Bash(mkdir -p C:/Dev/aetherflow/src/app/api/expense-intel/resolve)"
+      "Bash(mkdir -p C:/Dev/aetherflow/src/app/api/expense-intel/resolve)",
+      "Bash(npx tsc *)"
     ]
   }
 }
