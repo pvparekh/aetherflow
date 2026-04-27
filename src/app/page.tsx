@@ -10,15 +10,15 @@ import { createClient } from "../../utils/supabase/client";
 export default function Home() {
   const [isAuth, setIsAuth] = useState<boolean | null>(null);
   const router = useRouter();
-  const supabase = createClient();
 
   useEffect(() => {
+    const supabase = createClient();
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuth(!!session?.user);
     };
     checkSession();
-  }, [supabase]);
+  }, []);
 
   if (isAuth === null) return null;
 

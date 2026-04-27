@@ -8,9 +8,9 @@ import type { User } from "@supabase/supabase-js";
 const LoginLogoutButton2 = () => {
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
-  const supabase = createClient();
 
   useEffect(() => {
+    const supabase = createClient();
     const fetchUser = async () => {
       const {
         data: { user },
@@ -18,7 +18,7 @@ const LoginLogoutButton2 = () => {
       setUser(user);
     };
     fetchUser();
-  }, [supabase]);
+  }, []);
 
   if (user) {
     return (
