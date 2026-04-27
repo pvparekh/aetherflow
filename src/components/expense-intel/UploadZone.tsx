@@ -166,7 +166,7 @@ export default function UploadZone({ onUploadComplete, label = 'Drop your expens
               {phase === 'done' ? 'Dashboard updated with latest insights' : 'or click to browse'}
             </p>
             {phase !== 'done' && (
-              <p className="text-xs mt-2 text-gray-400">PDF files may take up to 2 minutes</p>
+              <p className="text-xs mt-2 text-gray-400">Analysis may take up to 2 minutes or more, especially PDFs</p>
             )}
             {error && (
               <div className="mt-3 flex items-center gap-2 justify-center text-sm text-red-600">

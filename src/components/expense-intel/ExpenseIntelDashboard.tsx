@@ -241,7 +241,7 @@ export default function ExpenseIntelDashboard() {
           <motion.div {...stagger(1)}>
             <UploadZone onUploadComplete={handleUploadComplete} />
             <p className="text-xs text-gray-400 text-center mt-3">
-              Analysis may take up to 2 minutes. Don&apos;t have an expense file ready? Try these:{' '}
+              Don&apos;t have an expense file ready? Try these:{' '}
               <a
                 href="/sample/Q2_Expense_Report.csv"
                 download
