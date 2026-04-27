@@ -121,6 +121,10 @@
   }
 }
 
+button, a, [role="button"], [role="tab"], select, label[for] {
+  cursor: pointer;
+}
+
 /* ── Card depth design system ──────────────────────────────────────── */
 .ei-card {
   background: #FEFEFE;
