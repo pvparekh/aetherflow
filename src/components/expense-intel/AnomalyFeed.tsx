@@ -65,10 +65,10 @@ export default function AnomalyFeed({ flags, selectedCategory, resolvedItems, on
   ).length;
 
   const toggleExpand = (key: string) =>
-    setExpanded((prev) => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
+    setExpanded((prev) => { const n = new Set(prev); if (n.has(key)) { n.delete(key); } else { n.add(key); } return n; });
 
   const toggleDuplicate = (key: string) =>
-    setExpandedDuplicates((prev) => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
+    setExpandedDuplicates((prev) => { const n = new Set(prev); if (n.has(key)) { n.delete(key); } else { n.add(key); } return n; });
 
   const handleDelete = async (lineItemId: string) => {
     setDeletedItems((prev) => new Set(prev).add(lineItemId));

@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react';
 import {
   ComposedChart,
   Line,
-  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -38,7 +37,7 @@ export default function RollingAvgChart({ categoryStats, categoryHistory }: Prop
   const toggleCategory = (cat: string) => {
     setVisible((prev) => {
       const next = new Set(prev);
-      next.has(cat) ? next.delete(cat) : next.add(cat);
+      if (next.has(cat)) { next.delete(cat); } else { next.add(cat); }
       return next;
     });
   };

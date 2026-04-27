@@ -172,11 +172,11 @@ export default function Home() {
         {/* Testimonial */}
         <section className="max-w-3xl mx-auto text-center px-6 mb-20 relative">
           <div className="relative border-l-4 border-blue-600 bg-white p-8 rounded-xl shadow">
-            <div className="absolute top-0 left-0 text-blue-600 text-6xl -mt-6 -ml-4 select-none">"</div>
+            <div className="absolute top-0 left-0 text-blue-600 text-6xl -mt-6 -ml-4 select-none">&ldquo;</div>
             <p className="text-lg italic text-gray-800">
               AetherFlow gave us clarity on where our operations were bleeding money. This tool doesn&apos;t just organize, it thinks for us.
             </p>
-            <div className="absolute bottom-0 right-0 text-blue-600 text-6xl -mb-6 -mr-4 select-none">"</div>
+            <div className="absolute bottom-0 right-0 text-blue-600 text-6xl -mb-6 -mr-4 select-none">&rdquo;</div>
           </div>
         </section>
 

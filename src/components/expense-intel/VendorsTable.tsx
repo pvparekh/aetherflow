@@ -41,7 +41,7 @@ export default function VendorsTable({ vendors, selectedCategory }: Props) {
   }, [selectedCategory]);
 
   const filtered = useMemo(() => {
-    let list =
+    const list =
       activeCategory && activeCategory !== 'All'
         ? vendors.filter((v) => v.primary_category === activeCategory)
         : vendors;
