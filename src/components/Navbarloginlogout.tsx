@@ -27,7 +27,7 @@ const LoginLogoutButton2 = () => {
           signout();
           setUser(null);
         }}
-        className="hover:text-blue-400 hover:scale-110 hover:cursor-pointer transition transform duration-200 inline-block text-sm"
+        className="hover:text-red-500 hover:scale-110 hover:cursor-pointer transition transform duration-200 inline-block text-sm"
       >
         Log Out
       </button>
