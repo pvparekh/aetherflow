@@ -52,19 +52,19 @@ export default function Home() {
             AetherFlow tracks your business expenses, categorizes every transaction with AI, catches anomalies, and gets smarter with every upload. Built for freelancers, solopreneurs, and small teams.
           </p>
 
-          <div className="w-full flex justify-center mt-6">
-            <div className={`flex ${isAuth ? "justify-center" : "gap-4"}`}>
-              <LoginLogoutButton />
-              {!isAuth && (
+          {!isAuth && (
+            <div className="w-full flex justify-center mt-6">
+              <div className="flex gap-4">
+                <LoginLogoutButton />
                 <button
                   onClick={() => router.push("/signup")}
                   className="px-6 py-3 rounded-lg bg-gray-500 text-white font-medium hover:scale-108 cursor-pointer hover:bg-black transition"
                 >
                   Sign Up
                 </button>
-              )}
+              </div>
             </div>
-          </div>
+          )}
         </section>
 
         {/* How It Works */}
