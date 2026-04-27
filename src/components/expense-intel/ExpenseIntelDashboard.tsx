@@ -240,6 +240,26 @@ export default function ExpenseIntelDashboard() {
 
           <motion.div {...stagger(1)}>
             <UploadZone onUploadComplete={handleUploadComplete} />
+            <p className="text-xs text-gray-400 text-center mt-3">
+              Don&apos;t have an expense file ready? Try these:{' '}
+              <a
+                href="/sample/Q2_Expense_Report.csv"
+                download
+                className="text-blue-500 hover:text-blue-700 underline underline-offset-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Q2 Sample
+              </a>
+              {' · '}
+              <a
+                href="/sample/Q3_Expense_Report.csv"
+                download
+                className="text-blue-500 hover:text-blue-700 underline underline-offset-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Q3 Sample
+              </a>
+            </p>
           </motion.div>
 
           {uploads.length > 0 && (
