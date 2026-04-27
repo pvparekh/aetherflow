@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import openai from '@/lib/openai';
+import { getOpenAI } from '@/lib/openai';
 import type { ParsedRow, ParseError, ParseResult, ParseFormat } from '../types';
 
 function detectFormat(headers: string[]): ParseFormat {
@@ -151,7 +151,7 @@ export async function parsePDF(buffer: Buffer): Promise<ParseResult> {
 
   const truncated = text.slice(0, 12000);
 
-  const response = await openai.responses.create({
+  const response = await getOpenAI().responses.create({
     model: 'gpt-4o-mini',
     instructions: PDF_INSTRUCTIONS,
     input: truncated,

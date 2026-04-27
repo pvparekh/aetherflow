@@ -1,4 +1,4 @@
-import openai from '@/lib/openai';
+import { getOpenAI } from '@/lib/openai';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Pass2Result } from '../types';
 
@@ -260,7 +260,7 @@ export async function runPass2(
 
   let response;
   try {
-    response = await openai.responses.create({
+    response = await getOpenAI().responses.create({
       model: 'gpt-4o',
       input,
       text: { format: { type: 'json_object' } },

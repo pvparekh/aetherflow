@@ -9,8 +9,21 @@ import { runPass2 } from '@/lib/expense-intel/ai/pass2';
 import type { UploadResponse } from '@/lib/expense-intel/types';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
+  try {
+    return await handleUpload(req);
+  } catch (err) {
+    console.error('[upload] Unhandled error:', err);
+    return NextResponse.json(
+      { error: `Upload failed: ${err instanceof Error ? err.message : String(err)}` },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleUpload(req: Request) {
   const authClient = await createClient();
   const { data: { user } } = await authClient.auth.getUser();
   if (!user) {

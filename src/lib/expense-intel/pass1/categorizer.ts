@@ -1,4 +1,4 @@
-import openai from '@/lib/openai';
+import { getOpenAI } from '@/lib/openai';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { CATEGORIES, type Category, type ParsedRow, type Pass1Item } from '../types';
 
@@ -52,7 +52,7 @@ async function categorizeBatch(batch: ParsedRow[], attempt = 1): Promise<Pass1It
   let outputText: string;
 
   try {
-    const response = await openai.responses.create({
+    const response = await getOpenAI().responses.create({
       model: 'gpt-4o-mini',
       input,
       text: { format: { type: 'json_object' } },

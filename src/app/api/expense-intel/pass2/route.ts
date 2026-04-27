@@ -4,6 +4,7 @@ import { createServiceClient } from '../../../../../utils/supabase/service';
 import { runPass2 } from '@/lib/expense-intel/ai/pass2';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 const PASS2_TIMEOUT_MS = 30_000;
 
