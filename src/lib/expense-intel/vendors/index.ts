@@ -229,7 +229,7 @@ export async function runVendorIntelligence(
           severity: 'warning',
           flag_type: 'statistical',
           title: 'Vendor Amount Creeping Up',
-          description: `You've been using ${vendorName} regularly and the amount has been creeping up — was $${oldAvg.toFixed(2)} when first logged, now averaging $${newAvg.toFixed(2)}.`,
+          description: `You've been using ${vendorName} regularly and the amount has been creeping up. Was $${oldAvg.toFixed(2)} when first logged, now averaging $${newAvg.toFixed(2)}.`,
           metric: `was $${oldAvg.toFixed(2)}, now $${newAvg.toFixed(2)}`,
           vendor: vendorName,
           amount: newAvg,
@@ -311,15 +311,13 @@ export async function runVendorIntelligence(
   for (const item of items) {
     const ez = effectiveZ(item, skewedCategories, madByCategory);
     const absEZ = Math.abs(ez);
-    const isSKewed = skewedCategories.includes(item.category);
-    const madNote = isSKewed ? ' (MAD-adjusted)' : '';
 
     if (duplicateIds.has(item.id)) {
       flags.push({
         severity: 'critical',
         flag_type: 'duplicate',
         title: 'Possible Duplicate Charge',
-        description: `You have two identical $${item.amount.toFixed(2)} charges from ${item.vendor} within 7 days — could be a double charge worth checking.`,
+        description: `You have two identical $${item.amount.toFixed(2)} charges from ${item.vendor} within 7 days. Could be a double charge worth checking.`,
         metric: `$${item.amount.toFixed(2)} × 2`,
         vendor: item.vendor,
         amount: item.amount,
@@ -363,12 +361,12 @@ export async function runVendorIntelligence(
     }
 
     if (absEZ > 2) {
-      const direction = ez > 0 ? 'higher' : 'lower';
+      const dir = ez > 0 ? 'higher' : 'lower';
       flags.push({
         severity: absEZ >= 2.5 ? 'critical' : 'warning',
         flag_type: 'statistical',
         title: ez > 0 ? 'Unusually High Charge' : 'Unusually Low Charge',
-        description: `${item.vendor} at $${item.amount.toFixed(2)} is significantly ${direction} than what you'd normally see in ${item.category}.`,
+        description: `${item.vendor} at $${item.amount.toFixed(2)} is significantly ${dir} than what you'd normally see in ${item.category}.`,
         metric: `$${item.amount.toFixed(2)}, well above typical`,
         vendor: item.vendor,
         amount: item.amount,
@@ -417,7 +415,7 @@ export async function runVendorIntelligence(
       severity: 'info',
       flag_type: 'statistical',
       title: 'Multiple Vendors, Same Purpose',
-      description: `You're using ${opp.vendors.length} different ${opp.subcategory} services in ${opp.category} — ${top3}${more}. Picking one or two could simplify things.`,
+      description: `You're using ${opp.vendors.length} different ${opp.subcategory} services in ${opp.category}: ${top3}${more}. Picking one or two could simplify things.`,
       metric: `${opp.vendors.length} vendors, $${opp.totalSpend.toFixed(2)} combined`,
       vendor: opp.category,
       amount: opp.totalSpend,

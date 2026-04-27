@@ -38,7 +38,7 @@ export default function UploadZone({ onUploadComplete, label = 'Drop your expens
         const contentType = res.headers.get('content-type') ?? '';
         if (!contentType.includes('application/json')) {
           setPhase('error');
-          setError(`Server error (${res.status}) — check console for details`);
+          setError(`Server error (${res.status}). Check console for details.`);
           return;
         }
         const data = await res.json();
@@ -50,7 +50,7 @@ export default function UploadZone({ onUploadComplete, label = 'Drop your expens
         uploadId = data.upload_id;
       } catch (err) {
         setPhase('error');
-        setError(`Network error — ${err instanceof Error ? err.message : 'please try again'}`);
+        setError(`Network error. ${err instanceof Error ? err.message : 'Please try again.'}`);
         return;
       }
 
@@ -159,7 +159,7 @@ export default function UploadZone({ onUploadComplete, label = 'Drop your expens
             )}
             <p className="font-semibold text-gray-800">
               {phase === 'done'
-                ? 'Analysis complete — drop another to analyze again'
+                ? 'Analysis complete. Drop another file to analyze again.'
                 : label}
             </p>
             <p className="text-sm mt-1 text-gray-500">

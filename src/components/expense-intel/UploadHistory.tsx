@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/expense-intel/ui-helpers';
 
 interface UploadListItem {
@@ -17,14 +19,36 @@ interface Props {
   uploads: UploadListItem[];
   activeUploadId: string | null;
   onSelect: (id: string) => void;
+  onDelete: (id: string) => Promise<void>;
 }
 
-export default function UploadHistory({ uploads, activeUploadId, onSelect }: Props) {
+export default function UploadHistory({ uploads, activeUploadId, onSelect, onDelete }: Props) {
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDeleteClick = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setConfirmingId(id);
+  };
+
+  const handleConfirm = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setConfirmingId(null);
+    setDeletingId(id);
+    await onDelete(id);
+    setDeletingId(null);
+  };
+
+  const handleCancelConfirm = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirmingId(null);
+  };
+
   if (uploads.length === 0) {
     return (
       <div className="ei-card-section rounded-xl p-6">
         <h3 className="font-semibold text-gray-800 mb-3">Upload History</h3>
-        <p className="text-sm text-gray-400">No uploads yet — drop a file to get started.</p>
+        <p className="text-sm text-gray-400">No uploads yet. Drop a file to get started.</p>
       </div>
     );
   }
@@ -35,6 +59,8 @@ export default function UploadHistory({ uploads, activeUploadId, onSelect }: Pro
       <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
         {uploads.map((upload) => {
           const isActive = upload.id === activeUploadId;
+          const isDeleting = deletingId === upload.id;
+          const isConfirming = confirmingId === upload.id;
           const scoreColor =
             upload.health_score == null
               ? 'text-gray-400'
@@ -45,13 +71,15 @@ export default function UploadHistory({ uploads, activeUploadId, onSelect }: Pro
                   : 'text-red-600';
 
           return (
-            <button
+            <div
               key={upload.id}
-              onClick={() => onSelect(upload.id)}
-              className={`w-full text-left px-3 py-3 rounded-lg border transition-all ${
-                isActive
-                  ? 'border-blue-300 bg-blue-50'
-                  : 'border-gray-100 bg-gray-50 hover:border-blue-200 hover:bg-blue-50/50'
+              onClick={() => !isDeleting && onSelect(upload.id)}
+              className={`group w-full text-left px-3 py-3 rounded-lg border transition-all cursor-pointer ${
+                isDeleting
+                  ? 'opacity-40 pointer-events-none border-gray-100 bg-gray-50'
+                  : isActive
+                    ? 'border-blue-300 bg-blue-50'
+                    : 'border-gray-100 bg-gray-50 hover:border-blue-200 hover:bg-blue-50/50'
               }`}
             >
               <div className="flex items-start justify-between gap-2">
@@ -59,14 +87,42 @@ export default function UploadHistory({ uploads, activeUploadId, onSelect }: Pro
                   <p className="text-sm font-medium text-gray-800 truncate">{upload.filename}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{formatDate(upload.uploaded_at)}</p>
                 </div>
-                <div className="text-right flex-shrink-0">
-                  {upload.total_amount != null && (
-                    <p className="text-sm font-semibold text-gray-700" style={{ fontFamily: 'var(--font-geist-mono), monospace' }}>
-                      {formatCurrency(Number(upload.total_amount))}
-                    </p>
-                  )}
-                  {upload.health_score != null && (
-                    <p className={`text-xs font-medium ${scoreColor}`} style={{ fontFamily: 'var(--font-geist-mono), monospace' }}>{upload.health_score}/10</p>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="text-right">
+                    {upload.total_amount != null && (
+                      <p className="text-sm font-semibold text-gray-700" style={{ fontFamily: 'var(--font-geist-mono), monospace' }}>
+                        {formatCurrency(Number(upload.total_amount))}
+                      </p>
+                    )}
+                    {upload.health_score != null && (
+                      <p className={`text-xs font-medium ${scoreColor}`} style={{ fontFamily: 'var(--font-geist-mono), monospace' }}>{upload.health_score}/10</p>
+                    )}
+                  </div>
+
+                  {/* Delete controls */}
+                  {isConfirming ? (
+                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={(e) => handleConfirm(e, upload.id)}
+                        className="px-2 py-1 rounded text-xs font-medium bg-red-600 text-white hover:bg-red-700 transition-colors"
+                      >
+                        Delete
+                      </button>
+                      <button
+                        onClick={handleCancelConfirm}
+                        className="px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={(e) => handleDeleteClick(e, upload.id)}
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                      title="Delete upload"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   )}
                 </div>
               </div>
@@ -74,7 +130,7 @@ export default function UploadHistory({ uploads, activeUploadId, onSelect }: Pro
                 <StatusBadge status={upload.pass1_status} label="P1" />
                 <StatusBadge status={upload.pass2_status} label="AI" />
               </div>
-            </button>
+            </div>
           );
         })}
       </div>

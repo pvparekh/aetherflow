@@ -132,7 +132,7 @@ export default function VendorsTable({ vendors, selectedCategory }: Props) {
               {visibleVendors.map((vendor) => (
                 <tr key={vendor.id} className="hover:bg-gray-50 transition-colors">
                   <td className="py-3 font-medium text-gray-800">{vendor.vendor_name}</td>
-                  <td className="py-3 text-gray-500">{vendor.primary_category ?? '—'}</td>
+                  <td className="py-3 text-gray-500">{vendor.primary_category ?? '-'}</td>
                   <td
                     className="py-3 text-gray-700 font-medium"
                     style={{ fontFamily: 'var(--font-geist-mono), monospace' }}
@@ -144,10 +144,10 @@ export default function VendorsTable({ vendors, selectedCategory }: Props) {
                     className="py-3 text-gray-600"
                     style={{ fontFamily: 'var(--font-geist-mono), monospace' }}
                   >
-                    {vendor.avg_amount ? formatCurrency(Number(vendor.avg_amount)) : '—'}
+                    {vendor.avg_amount ? formatCurrency(Number(vendor.avg_amount)) : '-'}
                   </td>
                   <td className="py-3 text-gray-500 text-xs">
-                    {vendor.last_seen_at ? formatDate(vendor.last_seen_at) : '—'}
+                    {vendor.last_seen_at ? formatDate(vendor.last_seen_at) : '-'}
                   </td>
                   <td className="py-3">
                     <span

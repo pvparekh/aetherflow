@@ -60,7 +60,7 @@ export default function SummaryCards({ upload, categoryStats, anomalyCount }: Pr
       <motion.div variants={item}>
         <Card
           label="Health Score"
-          value={upload.health_score != null ? `${upload.health_score}/10` : '—'}
+          value={upload.health_score != null ? `${upload.health_score}/10` : '-'}
           sub={
             upload.health_score == null
               ? 'Generate AI Insights'

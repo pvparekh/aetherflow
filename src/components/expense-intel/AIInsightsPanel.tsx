@@ -32,7 +32,7 @@ export default function AIInsightsPanel({ pass2, pass2Status, uploadId, onPass2C
       }
       onPass2Complete(data);
     } catch {
-      setError('Network error — please try again');
+      setError('Network error. Please try again.');
     } finally {
       setLoading(false);
     }

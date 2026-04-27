@@ -98,13 +98,13 @@ export async function runPass1(
   rows: ParsedRow[],
   supabase: SupabaseClient
 ): Promise<{ batchesProcessed: number; itemsWritten: number }> {
+  let itemsWritten = 0;
+  let batchesProcessed = 0;
 
   const batches: ParsedRow[][] = [];
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     batches.push(rows.slice(i, i + BATCH_SIZE));
   }
-
-  let itemsWritten = 0;
 
   for (let b = 0; b < batches.length; b++) {
     const batch = batches[b];
@@ -132,8 +132,9 @@ export async function runPass1(
     if (error) throw new Error(`[pass1] Supabase insert failed: ${error.message}`);
 
     itemsWritten += batch.length;
+    batchesProcessed++;
     console.log(`[pass1] Batch ${b + 1} written. Total so far: ${itemsWritten}`);
   }
 
-  return { batchesProcessed: batches.length, itemsWritten };
+  return { batchesProcessed, itemsWritten };
 }

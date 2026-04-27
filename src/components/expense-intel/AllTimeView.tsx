@@ -99,7 +99,7 @@ export default function AllTimeView() {
         <SummaryCard label="Total Uploads" value={String(data.total_uploads)} />
         <SummaryCard
           label="Avg Health Score"
-          value={data.avg_health_score != null ? `${data.avg_health_score}/10` : '—'}
+          value={data.avg_health_score != null ? `${data.avg_health_score}/10` : '-'}
           valueClass={scoreColor}
         />
         <SummaryCard label="Total Anomalies" value={String(data.total_anomalies)} />
@@ -190,19 +190,19 @@ export default function AllTimeView() {
                   <tr key={vendor.vendor_name} className="hover:bg-gray-50 transition-colors">
                     <td className="py-3 text-xs font-bold text-gray-300">{i + 1}</td>
                     <td className="py-3 font-medium text-gray-800">{vendor.vendor_name}</td>
-                    <td className="py-3 text-gray-500">{vendor.primary_category ?? '—'}</td>
+                    <td className="py-3 text-gray-500">{vendor.primary_category ?? '-'}</td>
                     <td className="py-3 font-semibold text-gray-800">
                       {formatCurrency(Number(vendor.total_spend ?? 0))}
                     </td>
                     <td className="py-3 text-gray-600">{vendor.total_occurrences ?? 0}</td>
                     <td className="py-3 text-gray-600">
-                      {vendor.avg_amount ? formatCurrency(Number(vendor.avg_amount)) : '—'}
+                      {vendor.avg_amount ? formatCurrency(Number(vendor.avg_amount)) : '-'}
                     </td>
                     <td className="py-3 text-gray-500 text-xs">
-                      {vendor.first_seen_at ? formatDate(vendor.first_seen_at) : '—'}
+                      {vendor.first_seen_at ? formatDate(vendor.first_seen_at) : '-'}
                     </td>
                     <td className="py-3 text-gray-500 text-xs">
-                      {vendor.last_seen_at ? formatDate(vendor.last_seen_at) : '—'}
+                      {vendor.last_seen_at ? formatDate(vendor.last_seen_at) : '-'}
                     </td>
                     <td className="py-3">
                       <span

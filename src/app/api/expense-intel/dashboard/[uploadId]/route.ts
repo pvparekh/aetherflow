@@ -196,9 +196,8 @@ export async function GET(
   }
   const historyCount = prevUploads?.length ?? 0;
 
-  // Build flags from line items
   const flags: Flag[] = [];
-  for (const item of lineItems ?? []) {
+  for (const item of (lineItems ?? [])) {
     const vendor = String(item.vendor ?? 'Unknown');
     const amount = Number(item.amount ?? 0);
     const category = String(item.category ?? 'Misc');
@@ -211,7 +210,7 @@ export async function GET(
         severity: 'critical',
         flag_type: 'duplicate' as FlagType,
         title: 'Possible Duplicate Charge',
-        description: `You have two identical $${amount.toFixed(2)} charges from ${vendor} within 7 days — could be a double charge worth checking.`,
+        description: `You have two identical $${amount.toFixed(2)} charges from ${vendor} within 7 days. Could be a double charge worth checking.`,
         metric: `$${amount.toFixed(2)} × 2`,
         vendor,
         amount,

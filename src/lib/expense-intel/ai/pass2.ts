@@ -163,9 +163,9 @@ export async function runPass2(
 
   const flagged_transactions = anomalies.slice(0, 10).map((i) => {
     const reasons: string[] = [];
-    if (i.is_possible_duplicate) reasons.push('same vendor and amount seen in another report recently — possible duplicate');
+    if (i.is_possible_duplicate) reasons.push('same vendor and amount seen in another upload recently, possible duplicate');
     if (i.is_first_time_vendor) reasons.push('first time seeing this vendor');
-    if (i.is_round_number) reasons.push('exact round number — sometimes signals a manual entry or estimate');
+    if (i.is_round_number) reasons.push('exact round number, sometimes signals a manual entry or estimate');
     if (reasons.length === 0) {
       const z = Number(i.z_score ?? 0);
       const rolling = stats.find((s) => s.category === i.category);
@@ -191,13 +191,13 @@ export async function runPass2(
     vendor: v.vendor,
     amount: fmt(Number(v.amount ?? 0)),
     category: v.category,
-    note: 'First time seeing this vendor — charge is higher than typical for this category',
+    note: 'First time seeing this vendor. Charge is higher than typical for this category.',
   }));
 
   const round_number_charges = roundNumbers.slice(0, 3).map((r) => ({
     vendor: r.vendor,
     amount: fmt(Number(r.amount ?? 0)),
-    note: 'Exact round number — worth confirming it was a real receipt',
+    note: 'Exact round number. Worth confirming it was a real receipt.',
   }));
 
   const categories_running_high = stats

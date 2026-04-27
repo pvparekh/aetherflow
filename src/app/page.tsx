@@ -85,7 +85,7 @@ export default function Home() {
               {
                 step: "3",
                 title: "Get clear insights",
-                desc: "Plain English explanations of your spending — what's normal, what's not, and what to pay attention to.",
+                desc: "Plain English explanations of your spending: what's normal, what's not, and what to pay attention to.",
               },
             ].map((s) => (
               <div key={s.step} className="text-center">
@@ -110,11 +110,11 @@ export default function Home() {
               },
               {
                 title: "Catches Duplicates & Anomalies",
-                desc: "Double charges, unusual amounts, first-time vendors, spending that's way off your baseline — all flagged automatically with plain-English explanations.",
+                desc: "Double charges, unusual amounts, first-time vendors, spending that's way off your baseline. All flagged automatically with plain-English explanations.",
               },
               {
                 title: "Learns Your Baseline",
-                desc: "After a few uploads, it knows what normal looks like for your business — and tells you clearly when something isn't.",
+                desc: "After a few uploads, it knows what normal looks like for your business and tells you clearly when something isn't.",
               },
               {
                 title: "Vendor Intelligence",
@@ -122,7 +122,7 @@ export default function Home() {
               },
               {
                 title: "Works With Any Format",
-                desc: "Expensify export, a spreadsheet you made yourself, or a scanned PDF — drop it in and we parse it. No templates required.",
+                desc: "Expensify export, a spreadsheet you made yourself, or a scanned PDF. Drop it in and we parse it. No templates required.",
               },
               {
                 title: "Gets Smarter Over Time",
@@ -155,7 +155,7 @@ export default function Home() {
               },
               {
                 title: "Anyone Managing Business Spend",
-                desc: "You're tracking expenses but not really analyzing them. Drop in a file and get a real picture — by category, by vendor, with anything unusual called out.",
+                desc: "You're tracking expenses but not really analyzing them. Drop in a file and get a real picture: by category, by vendor, with anything unusual called out.",
               },
             ].map((persona, index) => (
               <div

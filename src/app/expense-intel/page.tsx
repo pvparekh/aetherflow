@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+import ExpenseIntelDashboard from '@/components/expense-intel/ExpenseIntelDashboard';
 
 export default function ExpenseIntelPage() {
-  redirect('/expense-intel/reports');
+  return <ExpenseIntelDashboard />;
 }

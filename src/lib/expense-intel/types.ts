@@ -47,7 +47,6 @@ export interface ParsedRow {
   vendor: string;
   amount: number;
   transaction_date: string | null;
-  direction?: 'debit' | 'credit';
 }
 
 export interface ParseError {
@@ -81,13 +80,11 @@ export interface Upload {
   filename: string;
   uploaded_at: string;
   total_amount: number | null;
-  income_total: number | null;
   line_item_count: number | null;
   pass1_status: UploadStatus;
   pass2_status: UploadStatus;
   health_score: number | null;
   ai_analysis: unknown | null;
-  document_type: 'expense_report' | 'bank_statement';
 }
 
 export interface LineItem {
@@ -136,7 +133,6 @@ export interface Vendor {
   avg_amount: number | null;
   recurrence_tier: RecurrenceTier;
   primary_category: string | null;
-  // Resolved from upload dates in API responses
   last_seen_at?: string | null;
   first_seen_at?: string | null;
 }
@@ -173,8 +169,7 @@ export interface AnomalyExplanation {
 }
 
 export interface Pass2Result {
-  tone_context?: 'expense_report' | 'bank_statement';
-  health_score: number;          // 1–10
+  health_score: number;
   health_justification: string;
   narrative_summary: string;
   insights: InsightCard[];

@@ -65,6 +65,7 @@ export async function POST(req: Request) {
 
   try {
     const result = await withTimeout(runPass2(uploadId, user.id, supabase), PASS2_TIMEOUT_MS);
+
     console.log(`[pass2/route] Completed for upload ${uploadId}`);
     return NextResponse.json(result);
   } catch (err) {
@@ -90,7 +91,7 @@ export async function POST(req: Request) {
       })
       .eq('id', uploadId);
     return NextResponse.json(
-      { error: isTimeout ? 'Analysis timed out — hit Retry to try again.' : `Pass 2 failed: ${String(err)}` },
+      { error: isTimeout ? 'Analysis timed out. Hit Retry to try again.' : `Pass 2 failed: ${String(err)}` },
       { status: 500 }
     );
   }

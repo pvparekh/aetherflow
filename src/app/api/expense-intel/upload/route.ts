@@ -11,7 +11,6 @@ import type { UploadResponse } from '@/lib/expense-intel/types';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
-  // Auth check — no guest access for Expense Intelligence
   const authClient = await createClient();
   const { data: { user } } = await authClient.auth.getUser();
   if (!user) {
@@ -19,7 +18,6 @@ export async function POST(req: Request) {
   }
   const userId = user.id;
 
-  // Service client bypasses RLS for all DB writes
   const supabase = createServiceClient();
 
   let formData: FormData;
@@ -40,18 +38,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Only .csv, .txt, and .pdf files are supported' }, { status: 400 });
   }
 
-  const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+  const MAX_BYTES = 10 * 1024 * 1024;
   if (file.size > MAX_BYTES) {
     return NextResponse.json({ error: 'File exceeds the 10 MB limit' }, { status: 413 });
   }
 
   let parseResult: Awaited<ReturnType<typeof parseExpenseFile>>;
-  if (ext === 'pdf') {
-    const arrayBuffer = await file.arrayBuffer();
-    parseResult = await parsePDF(Buffer.from(arrayBuffer));
-  } else {
-    const content = await file.text();
-    parseResult = parseExpenseFile(content, filename);
+  try {
+    if (ext === 'pdf') {
+      const arrayBuffer = await file.arrayBuffer();
+      parseResult = await parsePDF(Buffer.from(arrayBuffer));
+    } else {
+      const content = await file.text();
+      parseResult = parseExpenseFile(content, filename);
+    }
+  } catch (parseErr) {
+    console.error('[upload] Parse failed:', parseErr);
+    return NextResponse.json(
+      { error: `Failed to parse file: ${String(parseErr)}` },
+      { status: 422 }
+    );
   }
 
   const { rows, errors: parseErrors, format } = parseResult;
@@ -64,7 +70,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // Create the upload record
   const { data: uploadRow, error: insertError } = await supabase
     .from('uploads')
     .insert({
@@ -87,7 +92,6 @@ export async function POST(req: Request) {
   const uploadId: string = uploadRow.id;
   console.log(`[upload] Created upload ${uploadId}`);
 
-  // Pass 1 — batched GPT-4o-mini categorization
   let batchesProcessed = 0;
   try {
     const result = await runPass1(uploadId, rows, supabase);
@@ -101,15 +105,13 @@ export async function POST(req: Request) {
     );
   }
 
-  const totalAmount = rows.reduce((sum, r) => sum + r.amount, 0);
-  const roundedTotal = Math.round(totalAmount * 100) / 100;
+  const totalAmount = Math.round(rows.reduce((sum, r) => sum + r.amount, 0) * 100) / 100;
 
   await supabase
     .from('uploads')
-    .update({ pass1_status: 'complete', total_amount: roundedTotal })
+    .update({ pass1_status: 'complete', total_amount: totalAmount })
     .eq('id', uploadId);
 
-  // Phase 2 — statistical layer: z-scores, rolling averages, trends
   let statsResult;
   try {
     statsResult = await computeAndWriteStats(uploadId, userId, supabase);
@@ -117,7 +119,6 @@ export async function POST(req: Request) {
     console.error(`[upload] Stats failed for ${uploadId}:`, err);
   }
 
-  // Phase 3 — vendor intelligence: first-time, duplicates, round numbers, flags
   try {
     await runVendorIntelligence(uploadId, userId, supabase, statsResult ?? {
       categoriesProcessed: [],
@@ -128,12 +129,8 @@ export async function POST(req: Request) {
     console.error(`[upload] Vendor intelligence failed for ${uploadId}:`, err);
   }
 
-  console.log(`[upload] Complete — upload_id=${uploadId} rows=${rows.length} batches=${batchesProcessed} total=$${roundedTotal}`);
+  console.log(`[upload] Complete — upload_id=${uploadId} rows=${rows.length} batches=${batchesProcessed} total=$${totalAmount}`);
 
-  // Phase 4 — fire Pass 2 in background; doesn't block the HTTP response.
-  // runPass2 sets pass2_status='complete' on success or 'error' on failure.
-  // If the serverless instance terminates early, status stays 'pending' and
-  // the user can trigger manually via the "Generate AI Insights" button.
   void runPass2(uploadId, userId, supabase).catch((err) => {
     console.error(`[upload] Background Pass 2 failed for ${uploadId}:`, err);
     void supabase
@@ -146,7 +143,7 @@ export async function POST(req: Request) {
     upload_id: uploadId,
     filename,
     line_item_count: rows.length,
-    total_amount: roundedTotal,
+    total_amount: totalAmount,
     batches_processed: batchesProcessed,
     parse_errors: parseErrors,
     pass1_status: 'complete',

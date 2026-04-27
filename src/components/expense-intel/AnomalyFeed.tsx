@@ -187,7 +187,7 @@ export default function AnomalyFeed({ flags, selectedCategory, resolvedItems, on
 
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h3 className="font-semibold text-gray-800">
-          Anomaly Feed{selectedCategory ? ` — ${selectedCategory}` : ''}
+          Anomaly Feed{selectedCategory ? `: ${selectedCategory}` : ''}
         </h3>
         <div className="flex items-center gap-3">
           <span className="text-xs text-gray-400">{categoryFiltered.length} total flags</span>
@@ -232,7 +232,7 @@ export default function AnomalyFeed({ flags, selectedCategory, resolvedItems, on
       {filtered.length === 0 ? (
         <p className="text-sm text-gray-400 py-4 text-center">
           {categoryFiltered.length === 0
-            ? 'No anomalies detected — spending looks normal.'
+            ? 'No anomalies detected. Spending looks normal.'
             : `No ${FILTER_LABELS[feedFilter].toLowerCase()} flags.`}
         </p>
       ) : (
@@ -440,7 +440,7 @@ function DuplicateTable({ context }: { context: DuplicateContext }) {
           <tr className="bg-blue-50">
             <td className="px-3 py-2 text-gray-700 font-medium max-w-[140px] truncate">{context.this_entry.filename}</td>
             <td className="px-3 py-2 text-gray-600" style={{ fontFamily: 'var(--font-geist-mono), monospace' }}>
-              {context.this_entry.transaction_date ? formatDate(context.this_entry.transaction_date) : '—'}
+              {context.this_entry.transaction_date ? formatDate(context.this_entry.transaction_date) : '-'}
             </td>
             <td className="px-3 py-2 text-right text-gray-900 font-medium" style={{ fontFamily: 'var(--font-geist-mono), monospace' }}>
               {formatCurrency(context.this_entry.amount)}
@@ -449,7 +449,7 @@ function DuplicateTable({ context }: { context: DuplicateContext }) {
           <tr>
             <td className="px-3 py-2 text-gray-700 font-medium max-w-[140px] truncate">{context.match.filename}</td>
             <td className="px-3 py-2 text-gray-600" style={{ fontFamily: 'var(--font-geist-mono), monospace' }}>
-              {context.match.transaction_date ? formatDate(context.match.transaction_date) : '—'}
+              {context.match.transaction_date ? formatDate(context.match.transaction_date) : '-'}
             </td>
             <td className="px-3 py-2 text-right text-gray-900 font-medium" style={{ fontFamily: 'var(--font-geist-mono), monospace' }}>
               {formatCurrency(context.match.amount)}

@@ -20,7 +20,6 @@ export async function computeAndWriteStats(
   userId: string,
   supabase: SupabaseClient
 ): Promise<StatsResult> {
-  // 1. Fetch all line items for this upload
   const { data: items, error: itemsError } = await supabase
     .from('line_items')
     .select('id, amount, category')
@@ -30,7 +29,7 @@ export async function computeAndWriteStats(
     throw new Error(`Failed to fetch line items: ${itemsError?.message}`);
   }
 
-  // 2. Fetch this user's previous upload IDs (exclude current — it has no stats yet)
+  // Previous uploads for this user (exclude current)
   const { data: prevUploads, error: prevError } = await supabase
     .from('uploads')
     .select('id')
@@ -41,7 +40,6 @@ export async function computeAndWriteStats(
 
   const prevUploadIds = (prevUploads ?? []).map((u) => u.id as string);
 
-  // 3. Fetch historical category_stats scoped to this user, newest first
   let rawHistory: { category: string; total_spend_period: number; pct_of_total_spend: number }[] = [];
   if (prevUploadIds.length > 0) {
     const { data, error: historyError } = await supabase
@@ -53,7 +51,6 @@ export async function computeAndWriteStats(
     rawHistory = data ?? [];
   }
 
-  // Group history by category for O(1) lookups
   const historyByCategory = new Map<string, { total: number; pct: number }[]>();
   for (const row of rawHistory) {
     const cat = row.category as string;
@@ -64,7 +61,6 @@ export async function computeAndWriteStats(
     });
   }
 
-  // 3. Group current upload's items by category
   const byCategory = new Map<string, { id: string; amount: number }[]>();
   for (const item of items) {
     const cat = (item.category as string) ?? 'Misc';
@@ -84,12 +80,10 @@ export async function computeAndWriteStats(
     anomaly_severity: string;
   }[] = [];
 
-  // 4. Compute per-category stats
   for (const [category, categoryItems] of byCategory) {
     const amounts = categoryItems.map((i) => i.amount);
     const agg = computeCategoryAggregates(amounts);
 
-    // Z-scores for every item in this category
     for (const item of categoryItems) {
       const z = computeZScore(item.amount, agg.mean, agg.stdDev);
       const severity = getAnomalySeverity(z);
@@ -105,27 +99,22 @@ export async function computeAndWriteStats(
     const historicalTotals = history.map((h) => h.total);
     const historicalPcts = history.map((h) => h.pct);
 
-    // Rolling averages: current upload + past uploads, newest first
     const allTotals = [agg.total, ...historicalTotals];
     const last5 = allTotals.slice(0, 5);
     const rolling_avg_5 = last5.reduce((s, v) => s + v, 0) / last5.length;
     const rolling_avg_alltime = allTotals.reduce((s, v) => s + v, 0) / allTotals.length;
     const total_spend_alltime = allTotals.reduce((s, v) => s + v, 0);
 
-    // Trend: current + 2 most recent vs the 3 before those (6 total)
     const recentTotals = allTotals.slice(0, 3);
     const priorTotals = allTotals.slice(3, 6);
     const trend_direction: TrendDirection = computeTrendDirection(recentTotals, priorTotals);
 
-    // Percentage of total spend for this upload
     const pct_of_total_spend = uploadTotal > 0 ? (agg.total / uploadTotal) * 100 : 0;
 
-    // Skew detection
     if (isSkewedByOutliers(agg.mean, agg.median)) {
       skewedCategories.push(category);
     }
 
-    // Category drift vs historical average pct
     if (historicalPcts.length > 0) {
       const historicalAvgPct = historicalPcts.reduce((s, v) => s + v, 0) / historicalPcts.length;
       const deltaPct = computeCategoryDrift(pct_of_total_spend, historicalAvgPct);
@@ -154,13 +143,11 @@ export async function computeAndWriteStats(
     });
   }
 
-  // 5. Write category_stats rows
   if (statsRows.length > 0) {
     const { error: statsError } = await supabase.from('category_stats').insert(statsRows);
     if (statsError) throw new Error(`Failed to write category_stats: ${statsError.message}`);
   }
 
-  // 6. Write z_score + anomaly back to line_items — all in parallel
   await Promise.all(
     lineItemUpdates.map((u) =>
       supabase
