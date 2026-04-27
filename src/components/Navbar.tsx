@@ -1,11 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { createClient } from '../../utils/supabase/client';
 import LoginLogoutButton2 from './Navbarloginlogout';
+import type { User } from '@supabase/supabase-js';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [user, setUser] = useState<User | null | undefined>(undefined);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+  }, []);
 
   const linkClass = (href: string) =>
     `hover:scale-110 transition transform duration-200 inline-block ${
@@ -13,6 +23,15 @@ export default function Navbar() {
         ? 'text-blue-600 font-medium'
         : 'text-gray-600 hover:text-gray-900'
     }`;
+
+  const handleProtectedLink = (href: string) => (e: React.MouseEvent) => {
+    if (!user) {
+      e.preventDefault();
+      router.push('/signup');
+    } else {
+      router.push(href);
+    }
+  };
 
   return (
     <nav className="bg-white border-b border-gray-200 shadow-sm px-6 py-4 flex justify-between items-center">
@@ -22,12 +41,20 @@ export default function Navbar() {
         <Link href="/" className={linkClass('/')}>
           Home
         </Link>
-        <Link href="/expense-intel" className={linkClass('/expense-intel')}>
+        <a
+          href="/expense-intel"
+          className={linkClass('/expense-intel')}
+          onClick={handleProtectedLink('/expense-intel')}
+        >
           Expense Intelligence
-        </Link>
-        <Link href="/account" className={linkClass('/account')}>
+        </a>
+        <a
+          href="/account"
+          className={linkClass('/account')}
+          onClick={handleProtectedLink('/account')}
+        >
           Account
-        </Link>
+        </a>
         <LoginLogoutButton2 />
       </div>
     </nav>
