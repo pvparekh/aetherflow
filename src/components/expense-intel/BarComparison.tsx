@@ -47,7 +47,7 @@ export default function BarComparison({ categoryStats, selectedCategory }: Props
     <div className="ei-card-section rounded-xl p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-gray-800">
-          Current vs Rolling Average{selectedCategory ? `: ${selectedCategory}` : ''}
+          Current Spending vs Category Average{selectedCategory ? `: ${selectedCategory}` : ''}
         </h3>
       </div>
       <ResponsiveContainer width="100%" height={300}>
