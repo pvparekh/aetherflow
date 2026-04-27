@@ -245,7 +245,7 @@ export default function ExpenseIntelDashboard() {
               <a
                 href="/sample/Q2_Expense_Report.csv"
                 download
-                className="text-blue-500 hover:text-blue-700 underline underline-offset-2"
+                className="text-blue-600 hover:text-blue-800 underline underline-offset-2 font-medium"
                 onClick={(e) => e.stopPropagation()}
               >
                 Q2 Sample
@@ -254,7 +254,7 @@ export default function ExpenseIntelDashboard() {
               <a
                 href="/sample/Q3_Expense_Report.csv"
                 download
-                className="text-blue-500 hover:text-blue-700 underline underline-offset-2"
+                className="text-blue-600 hover:text-blue-800 underline underline-offset-2 font-medium"
                 onClick={(e) => e.stopPropagation()}
               >
                 Q3 Sample
