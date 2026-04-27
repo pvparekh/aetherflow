@@ -31,7 +31,7 @@ export default function BarComparison({ categoryStats, selectedCategory }: Props
       .map((s) => ({
         category: s.category,
         'This Period': Number(s.total_spend_period ?? 0),
-        'Rolling Avg (5)': Number(s.rolling_avg_5 ?? 0),
+        'Category Average': Number(s.rolling_avg_5 ?? 0),
         isAnomalous:
           s.trend_direction === 'up' &&
           Number(s.total_spend_period) > Number(s.rolling_avg_5 ?? 0) * 1.25,
@@ -80,7 +80,7 @@ export default function BarComparison({ categoryStats, selectedCategory }: Props
             iconType="square"
             iconSize={10}
             formatter={(v) => (
-              <span className={`text-xs ${v === 'Rolling Avg (5)' ? 'text-gray-700 font-medium' : 'text-gray-600'}`}>
+              <span className={`text-xs ${v === 'Category Average' ? 'text-gray-700 font-medium' : 'text-gray-600'}`}>
                 {v}
               </span>
             )}
@@ -94,7 +94,7 @@ export default function BarComparison({ categoryStats, selectedCategory }: Props
               />
             ))}
           </Bar>
-          <Bar dataKey="Rolling Avg (5)" fill="#94A3B8" radius={[4, 4, 0, 0]} stroke="#64748B" strokeWidth={1} />
+          <Bar dataKey="Category Average" fill="#94A3B8" radius={[4, 4, 0, 0]} stroke="#64748B" strokeWidth={1} />
         </BarChart>
       </ResponsiveContainer>
     </div>
