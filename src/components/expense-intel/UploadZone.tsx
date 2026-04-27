@@ -11,7 +11,7 @@ interface Props {
 
 type Phase = 'idle' | 'uploading' | 'analyzing' | 'done' | 'error';
 
-export default function UploadZone({ onUploadComplete, label = 'Drop a .csv or .txt expense file here' }: Props) {
+export default function UploadZone({ onUploadComplete, label = 'Drop your expense file here' }: Props) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -35,6 +35,12 @@ export default function UploadZone({ onUploadComplete, label = 'Drop a .csv or .
       let uploadId: string;
       try {
         const res = await fetch('/api/expense-intel/upload', { method: 'POST', body: formData });
+        const contentType = res.headers.get('content-type') ?? '';
+        if (!contentType.includes('application/json')) {
+          setPhase('error');
+          setError(`Server error (${res.status}) — check console for details`);
+          return;
+        }
         const data = await res.json();
         if (!res.ok) {
           setPhase('error');
@@ -42,9 +48,9 @@ export default function UploadZone({ onUploadComplete, label = 'Drop a .csv or .
           return;
         }
         uploadId = data.upload_id;
-      } catch {
+      } catch (err) {
         setPhase('error');
-        setError('Network error — please try again');
+        setError(`Network error — ${err instanceof Error ? err.message : 'please try again'}`);
         return;
       }
 
@@ -159,6 +165,9 @@ export default function UploadZone({ onUploadComplete, label = 'Drop a .csv or .
             <p className="text-sm mt-1 text-gray-500">
               {phase === 'done' ? 'Dashboard updated with latest insights' : 'or click to browse'}
             </p>
+            {phase !== 'done' && (
+              <p className="text-xs mt-2 text-gray-400">PDF files may take up to 2 minutes</p>
+            )}
             {error && (
               <div className="mt-3 flex items-center gap-2 justify-center text-sm text-red-600">
                 <AlertCircle className="w-4 h-4" />

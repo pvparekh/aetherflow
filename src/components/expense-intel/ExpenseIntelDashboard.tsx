@@ -15,15 +15,6 @@ import UploadHistory from '@/components/expense-intel/UploadHistory';
 import AllTimeView from '@/components/expense-intel/AllTimeView';
 import type { Upload, LineItem, CategoryStats, Vendor, Flag, Pass2Result } from '@/lib/expense-intel/types';
 
-export interface DashboardConfig {
-  titleWord1: string;
-  titleWord2: string;
-  subtitle: string;
-  uploadLabel: string;
-  emptyStateHeading: string;
-  emptyStateBody: string;
-}
-
 interface UploadListItem {
   id: string;
   filename: string;
@@ -58,7 +49,7 @@ const stagger = (i: number) => ({
   transition: { duration: 0.5, delay: i * 0.07, ease },
 });
 
-export default function ExpenseIntelDashboard({ config }: { config: DashboardConfig }) {
+export default function ExpenseIntelDashboard() {
   const router = useRouter();
   const [uploads, setUploads] = useState<UploadListItem[]>([]);
   const [activeUploadId, setActiveUploadId] = useState<string | null>(null);
@@ -112,6 +103,26 @@ export default function ExpenseIntelDashboard({ config }: { config: DashboardCon
   const handleUploadComplete = async (uploadId: string) => {
     await fetchUploads();
     await loadDashboard(uploadId);
+  };
+
+  const handleDelete = async (uploadId: string) => {
+    const res = await fetch(`/api/expense-intel/uploads/${uploadId}`, { method: 'DELETE' });
+    if (!res.ok) {
+      console.error('[delete] failed:', await res.text());
+      return;
+    }
+    const listRes = await fetch('/api/expense-intel/uploads');
+    const fresh = listRes.ok ? ((await listRes.json()).uploads ?? []) : uploads.filter((u) => u.id !== uploadId);
+    setUploads(fresh);
+    if (activeUploadId === uploadId) {
+      // Deleted the currently-viewed upload — switch to the next one
+      setDashboardData(null);
+      setActiveUploadId(null);
+      if (fresh.length > 0) await loadDashboard(fresh[0].id);
+    } else if (activeUploadId) {
+      // Deleted a different upload — reload current dashboard so vendor stats reflect the recalculation
+      await loadDashboard(activeUploadId);
+    }
   };
 
   const handleResolve = async (lineItemId: string, resolution: 'expected' | 'investigate' | null) => {
@@ -170,7 +181,6 @@ export default function ExpenseIntelDashboard({ config }: { config: DashboardCon
 
   return (
     <Layout>
-      {/* Gradient hero header */}
       <section
         className="w-full px-4 py-12 text-white"
         style={{
@@ -189,7 +199,7 @@ export default function ExpenseIntelDashboard({ config }: { config: DashboardCon
                 transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                 style={{ display: 'inline-block' }}
               >
-                {config.titleWord1}
+                Expense
               </motion.span>
               {' '}
               <motion.span
@@ -199,7 +209,7 @@ export default function ExpenseIntelDashboard({ config }: { config: DashboardCon
                 style={{ display: 'inline-block' }}
                 className="text-blue-400"
               >
-                {config.titleWord2}
+                Intelligence
               </motion.span>
             </h1>
             <motion.p
@@ -208,7 +218,7 @@ export default function ExpenseIntelDashboard({ config }: { config: DashboardCon
               transition={{ duration: 0.5, delay: 0.25 }}
               className="text-sm mt-1 text-white/70"
             >
-              {config.subtitle}
+              AI-powered expense analysis for business reports
             </motion.p>
           </div>
           {dashboardData && activeTab === 'upload' && (
@@ -228,12 +238,10 @@ export default function ExpenseIntelDashboard({ config }: { config: DashboardCon
       <main className="min-h-screen py-8 px-4 bg-gray-50">
         <div className="max-w-7xl mx-auto space-y-6">
 
-          {/* Upload Zone */}
           <motion.div {...stagger(1)}>
-            <UploadZone onUploadComplete={handleUploadComplete} label={config.uploadLabel} />
+            <UploadZone onUploadComplete={handleUploadComplete} />
           </motion.div>
 
-          {/* Tab toggle */}
           {uploads.length > 0 && (
             <motion.div {...stagger(2)} className="flex gap-1 p-1 rounded-full bg-gray-100 w-fit">
               {(['upload', 'alltime'] as const).map((tab) => (
@@ -259,7 +267,6 @@ export default function ExpenseIntelDashboard({ config }: { config: DashboardCon
             </motion.div>
           )}
 
-          {/* All Time view */}
           <AnimatePresence mode="wait">
             {activeTab === 'alltime' && (
               <motion.div
@@ -274,31 +281,20 @@ export default function ExpenseIntelDashboard({ config }: { config: DashboardCon
             )}
           </AnimatePresence>
 
-          {/* Initial fetch spinner */}
           {activeTab === 'upload' && loadingInitial && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex items-center justify-center py-20 text-gray-500"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-center py-20 text-gray-500">
               <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mr-3" />
               Loading…
             </motion.div>
           )}
 
-          {/* Dashboard loading */}
           {activeTab === 'upload' && !loadingInitial && loadingDashboard && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex items-center justify-center py-20 text-gray-500"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-center py-20 text-gray-500">
               <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mr-3" />
               Loading dashboard…
             </motion.div>
           )}
 
-          {/* Dashboard data */}
           <AnimatePresence mode="wait">
             {activeTab === 'upload' && !loadingInitial && dashboardData && !loadingDashboard && (
               <motion.div
@@ -363,6 +359,7 @@ export default function ExpenseIntelDashboard({ config }: { config: DashboardCon
                   uploads={uploads}
                   activeUploadId={activeUploadId}
                   onSelect={(id) => { setActiveTab('upload'); loadDashboard(id); }}
+                  onDelete={handleDelete}
                 />
 
                 <div className="flex justify-end pb-4">
@@ -377,7 +374,6 @@ export default function ExpenseIntelDashboard({ config }: { config: DashboardCon
             )}
           </AnimatePresence>
 
-          {/* Empty state */}
           {activeTab === 'upload' && !loadingInitial && !dashboardData && !loadingDashboard && uploads.length === 0 && (
             <motion.div {...stagger(3)} className="text-center py-20">
               <div className="max-w-md mx-auto">
@@ -388,8 +384,10 @@ export default function ExpenseIntelDashboard({ config }: { config: DashboardCon
                     />
                   </svg>
                 </div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">{config.emptyStateHeading}</h2>
-                <p className="text-sm text-gray-500 leading-relaxed">{config.emptyStateBody}</p>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">Track your first expenses</h2>
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  Upload any CSV, TXT, or PDF of your business expenses. We&apos;ll categorize everything, spot patterns, and flag anything unusual.
+                </p>
               </div>
             </motion.div>
           )}

@@ -72,7 +72,7 @@ export default function AllTimeView() {
     return (
       <div className="text-center py-20 text-gray-400">
         <p className="text-lg font-medium">No data yet</p>
-        <p className="text-sm mt-1">Upload at least one expense report to see all-time stats.</p>
+        <p className="text-sm mt-1">Upload at least one expense file to see all-time stats.</p>
       </div>
     );
   }

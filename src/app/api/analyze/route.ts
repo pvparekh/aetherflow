@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import openai from '@/lib/openai';
 
 const SYSTEM_PROMPT = `You are AetherFlow, an intelligent workflow and expense analyst.
-Analyze the user's input (expense report, financial document, or business report) for red flags, inefficiencies, and actionable insights.
+Analyze the user's input (expense file, financial document, or business report) for red flags, inefficiencies, and actionable insights.
 
 Respond with ONLY a valid JSON object — no markdown, no code fences:
 {

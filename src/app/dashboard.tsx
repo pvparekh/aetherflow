@@ -1,5 +1,5 @@
 const mockData = [
-  { id: 1, name: "April Expense Report", score: 82, status: "Approved" },
+  { id: 1, name: "April Expenses", score: 82, status: "Approved" },
   { id: 2, name: "Marketing Budget", score: 61, status: "Review Needed" },
   { id: 3, name: "Supply Order Q2", score: 45, status: "Flagged" },
 ];

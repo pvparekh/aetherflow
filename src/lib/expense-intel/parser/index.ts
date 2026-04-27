@@ -44,17 +44,17 @@ function parseCsv(
   const vendorCol = findColumn(headers, ['vendor', 'description', 'merchant', 'payee', 'memo', 'name']);
   const dateCol = findColumn(headers, ['date', 'transaction date', 'posted date', 'trans date']);
 
-  let amountCol: string | null = null;
-  let debitCol: string | null = null;
-
-  if (format === 'bank') {
-    debitCol = findColumn(headers, ['debit', 'withdrawal', 'amount debit']);
-  } else {
-    amountCol = findColumn(headers, ['amount', 'total', 'price', 'cost', 'value']);
-  }
+  // For bank exports (split debit/credit columns) we only read the debit column.
+  // For standard/simple formats we read the single amount column (always stored positive).
+  const debitCol = format === 'bank'
+    ? findColumn(headers, ['debit', 'withdrawal', 'amount debit', 'debit amount'])
+    : null;
+  const amountCol = format !== 'bank'
+    ? findColumn(headers, ['amount', 'total', 'price', 'cost', 'value'])
+    : null;
 
   data.forEach((row, i) => {
-    const lineNum = i + 2; // 1-indexed + skip header row
+    const lineNum = i + 2;
     const rawText = Object.values(row).join(' | ');
 
     try {
@@ -66,9 +66,10 @@ function parseCsv(
 
       let amount: number | null = null;
 
-      if (format === 'bank' && debitCol) {
-        amount = parseAmount(row[debitCol]);
-        if (amount === null || amount === 0) return; // credit/empty row — skip silently
+      if (format === 'bank') {
+        // Bank export: only process rows with a debit value; ignore credit-only rows
+        amount = debitCol ? parseAmount(row[debitCol]) : null;
+        if (!amount) return; // skip credit-only rows silently
       } else if (amountCol) {
         amount = parseAmount(row[amountCol]);
       }
@@ -91,7 +92,6 @@ function parseCsv(
 function parseTxt(content: string): ParseResult {
   const rows: ParsedRow[] = [];
   const errors: ParseError[] = [];
-  // Matches: "any description text   $?digits[.cents]"
   const EXPENSE_RE = /^(.+?)\s+\$?([\d,]+(?:\.\d{1,2})?)\s*$/;
 
   content.split('\n').forEach((line, i) => {
@@ -120,13 +120,29 @@ function parseTxt(content: string): ParseResult {
 interface RawTransaction {
   description: string;
   amount: number;
-  direction: 'debit' | 'credit';
   date: string | null;
 }
 
+const PDF_INSTRUCTIONS = `You are an expense file parser. Extract every expense transaction from this document.
+
+Return ONLY valid JSON — no markdown, no code fences:
+{
+  "transactions": [
+    { "description": "vendor or merchant name", "amount": 0.00, "date": "YYYY-MM-DD or null" }
+  ]
+}
+
+Rules:
+- amount: always a positive number representing the expense cost
+- description: merchant or payee name only — clean and normalized, no dollar amounts embedded in it
+- date: YYYY-MM-DD format or null if not found
+- Skip: headers, footers, subtotals, grand totals, and any row without a clear vendor and amount
+- Include every individual expense line; one object per transaction`;
+
 export async function parsePDF(buffer: Buffer): Promise<ParseResult> {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pdfParse = require('pdf-parse/lib/pdf-parse') as (buf: Buffer) => Promise<{ text: string }>;
+  const pdfModule = require('pdf-parse') as ((buf: Buffer) => Promise<{ text: string }>) | { default: (buf: Buffer) => Promise<{ text: string }> };
+  const pdfParse = typeof pdfModule === 'function' ? pdfModule : pdfModule.default;
   const { text } = await pdfParse(buffer);
 
   if (!text?.trim()) {
@@ -137,18 +153,7 @@ export async function parsePDF(buffer: Buffer): Promise<ParseResult> {
 
   const response = await openai.responses.create({
     model: 'gpt-4o-mini',
-    instructions: `Extract every financial transaction from this document text. Return ONLY valid JSON — no markdown, no code fences:
-{
-  "transactions": [
-    { "description": "vendor or payee name", "amount": 0.00, "direction": "debit", "date": "YYYY-MM-DD or null" }
-  ]
-}
-Rules:
-- direction must be "debit" (money out) or "credit" (money in)
-- amount is always a positive number
-- description is the merchant/payee name, cleaned and normalized
-- Include every line item found; omit balance rows, headers, and totals
-- If unsure whether a row is a transaction, include it`,
+    instructions: PDF_INSTRUCTIONS,
     input: truncated,
   });
 
@@ -173,7 +178,6 @@ Rules:
       errors.push({ line: i + 1, raw: JSON.stringify(t), reason: 'Invalid amount' });
       return;
     }
-    if (t.direction === 'credit') return; // skip credits — only track outflows
     rows.push({
       raw_text: `${t.description} | ${t.amount}${t.date ? ` | ${t.date}` : ''}`,
       vendor: t.description.trim(),

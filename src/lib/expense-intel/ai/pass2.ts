@@ -2,15 +2,12 @@ import openai from '@/lib/openai';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Pass2Result } from '../types';
 
-// ─── System prompts ────────────────────────────────────────────────────────
-
-const SYSTEM_PROMPT_EXPENSE_REPORT = `You are a sharp, direct expense analyst reviewing a business expense report. You have the data — now give a real take. Be specific with numbers and vendor names. Sound like a trusted advisor, not a software report. Never use statistical jargon. Lead every insight with why it matters, not what the number is. If something looks fine, say so directly. If something looks off, say exactly why in plain english. Be concise — busy people are reading this.
+const SYSTEM_PROMPT = `You are a sharp, direct expense analyst reviewing business expenses. You have the data — now give a real take. Be specific with numbers and vendor names. Sound like a trusted advisor, not a software report. Never use statistical jargon. Lead every insight with why it matters, not what the number is. If something looks fine, say so directly. If something looks off, say exactly why in plain english. Be concise — busy people are reading this.
 
 Return ONLY valid JSON. No markdown, no asterisks, no preamble:
 {
-  "tone_context": "expense_report",
   "health_score": <integer 1-10>,
-  "health_justification": "<one plain-english sentence — what's the main takeaway on this report's health>",
+  "health_justification": "<one plain-english sentence — what's the main takeaway on this expense file's health>",
   "narrative_summary": "<2-3 conversational sentences — what happened this period, what stands out, what to check>",
   "insights": [
     {
@@ -52,58 +49,7 @@ Rules:
 - If everything looks normal, say so — do not manufacture concern to seem thorough.
 - Never say "z-score", "rolling average", "std dev", "anomaly severity", "statistical", "baseline", or any technical metric term.
 - Always reference actual vendor names and dollar amounts.
-- Short sentences. No corporate filler like "It is worth noting that..."`;
-
-const SYSTEM_PROMPT_BANK_STATEMENT = `You are a sharp, direct personal finance advisor reviewing someone's bank statement. You can see what came in and what went out. Give a real, honest take on their month. Be warm but direct. Specific vendor names and dollar amounts make insights useful — use them. Never use financial jargon or statistical terms. Lead with cash flow first (did they come out ahead?), then spending patterns, then anything that looks off. If their finances look healthy, say so clearly. Don't manufacture concern.
-
-Return ONLY valid JSON. No markdown, no asterisks, no preamble:
-{
-  "tone_context": "bank_statement",
-  "health_score": <integer 1-10>,
-  "health_justification": "<one plain-english sentence about their financial health this period>",
-  "narrative_summary": "<2-3 conversational sentences — cash flow first, then what stands out, then anything to check>",
-  "insights": [
-    {
-      "title": "<short, direct title>",
-      "description": "<1-2 sentences with specific vendor names and dollar amounts>",
-      "severity": "<success|info|warning|critical>",
-      "category": "<category name, or null>",
-      "metric": "<plain comparison — no jargon>"
-    }
-  ],
-  "savings_opportunities": [
-    {
-      "title": "<short actionable title>",
-      "description": "<specific recommendation with vendor names where possible>",
-      "estimated_impact": "<dollar amount or plain description>"
-    }
-  ],
-  "anomaly_explanations": [
-    {
-      "vendor": "<vendor name>",
-      "amount": <number>,
-      "reason": "<one sentence, plain english>",
-      "severity": "<warning|critical>"
-    }
-  ]
-}
-
-Scoring guide (1-10):
-9-10 = healthy cash flow, spending well within income, consistent habits
-7-8 = came out ahead but a few things worth watching
-5-6 = broke even or slight overspend, nothing catastrophic
-3-4 = spending materially more than coming in, patterns to address
-1-2 = significant cash flow problem this period
-
-Rules:
-- Lead with whether they came out ahead financially.
-- If they did well, say so warmly and directly — don't bury the good news.
-- Only flag things that genuinely deserve attention.
-- Specific vendor names and amounts, always.
-- Max 5 anomaly explanations.
-- No jargon. No filler. Short sentences.`;
-
-// ─── Helpers ──────────────────────────────────────────────────────────────
+- Short sentences. No corporate filler.`;
 
 function fmt(n: number): string {
   return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -127,13 +73,10 @@ function vsPrev(period: number, prevTotal: number | null): string {
   return `down ${pct}% from last period (was ${fmt(prevTotal)})`;
 }
 
-// ─── Main function ────────────────────────────────────────────────────────
-
 export async function runPass2(
   uploadId: string,
   userId: string,
-  supabase: SupabaseClient,
-  documentType: 'expense_report' | 'bank_statement' = 'expense_report'
+  supabase: SupabaseClient
 ): Promise<Pass2Result> {
   const { data: upload, error: uploadError } = await supabase
     .from('uploads')
@@ -142,11 +85,8 @@ export async function runPass2(
     .eq('user_id', userId)
     .single();
   if (uploadError || !upload) {
-    console.error('[pass2] Upload fetch failed:', uploadError?.message);
     throw new Error(`Upload not found: ${uploadError?.message}`);
   }
-
-  console.log('[pass2] Starting analysis for upload:', upload.filename);
 
   const [
     { data: allItems, error: itemsErr },
@@ -173,8 +113,6 @@ export async function runPass2(
   if (itemsErr) console.error('[pass2] line_items fetch error:', itemsErr.message);
   if (statsErr) console.error('[pass2] category_stats fetch error:', statsErr.message);
 
-  console.log('[pass2] Data fetched — items:', allItems?.length, 'categories:', catStats?.length, 'vendors:', allVendors?.length);
-
   const { data: prevUpload } = await supabase
     .from('uploads')
     .select('id')
@@ -199,14 +137,8 @@ export async function runPass2(
 
   const anomalies = items.filter((i) => i.anomaly_severity !== 'none');
   const duplicates = items.filter((i) => i.is_possible_duplicate);
-  const firstTimeHighSpend = items.filter(
-    (i) => i.is_first_time_vendor && i.anomaly_severity !== 'none'
-  );
-  const roundNumbers = items.filter(
-    (i) => i.is_round_number && i.anomaly_severity !== 'none'
-  );
-
-  // ── Build plain-english context — no jargon keys ─────────────────────
+  const firstTimeHighSpend = items.filter((i) => i.is_first_time_vendor && i.anomaly_severity !== 'none');
+  const roundNumbers = items.filter((i) => i.is_round_number && i.anomaly_severity !== 'none');
 
   const spending_by_category = [...stats]
     .sort((a, b) => Number(b.total_spend_period ?? 0) - Number(a.total_spend_period ?? 0))
@@ -232,7 +164,7 @@ export async function runPass2(
   const flagged_transactions = anomalies.slice(0, 10).map((i) => {
     const reasons: string[] = [];
     if (i.is_possible_duplicate) reasons.push('same vendor and amount seen in another report recently — possible duplicate');
-    if (i.is_first_time_vendor) reasons.push("first time seeing this vendor");
+    if (i.is_first_time_vendor) reasons.push('first time seeing this vendor');
     if (i.is_round_number) reasons.push('exact round number — sometimes signals a manual entry or estimate');
     if (reasons.length === 0) {
       const z = Number(i.z_score ?? 0);
@@ -322,12 +254,9 @@ export async function runPass2(
     },
   };
 
-  const systemPrompt =
-    documentType === 'bank_statement' ? SYSTEM_PROMPT_BANK_STATEMENT : SYSTEM_PROMPT_EXPENSE_REPORT;
+  const input = `${SYSTEM_PROMPT}\n\nHere is the data:\n\n${JSON.stringify(context, null, 2)}`;
 
-  const input = `${systemPrompt}\n\nHere is the data:\n\n${JSON.stringify(context, null, 2)}`;
-
-  console.log('[pass2] Sending to OpenAI — context size:', input.length, 'chars, doc type:', documentType);
+  console.log('[pass2] Sending to OpenAI — context size:', input.length, 'chars');
 
   let response;
   try {
@@ -337,11 +266,8 @@ export async function runPass2(
       text: { format: { type: 'json_object' } },
     });
   } catch (openaiErr) {
-    console.error('[pass2] OpenAI API call failed:', openaiErr);
     throw new Error(`OpenAI API failed: ${String(openaiErr)}`);
   }
-
-  console.log('[pass2] Response received, output length:', response.output_text?.length);
 
   let result: Pass2Result;
   try {
