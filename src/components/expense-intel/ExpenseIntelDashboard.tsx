@@ -240,26 +240,31 @@ export default function ExpenseIntelDashboard() {
 
           <motion.div {...stagger(1)}>
             <UploadZone onUploadComplete={handleUploadComplete} />
-            <p className="text-xs text-gray-400 text-center mt-3">
-              Don&apos;t have an expense file ready? Try these:{' '}
-              <a
-                href="/sample/Q2_Expense_Report.csv"
-                download
-                className="text-blue-600 hover:text-blue-800 underline underline-offset-2 font-medium"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Q2 Sample
-              </a>
-              {' · '}
-              <a
-                href="/sample/Q3_Expense_Report.csv"
-                download
-                className="text-blue-600 hover:text-blue-800 underline underline-offset-2 font-medium"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Q3 Sample
-              </a>
-            </p>
+            <div className="mt-3 space-y-1.5 text-center">
+              <p className="text-sm text-gray-500 font-medium">
+                Don&apos;t have an expense file ready? Try these:{' '}
+                <a
+                  href="/sample/Q2_Expense_Report.csv"
+                  download
+                  className="text-blue-600 hover:text-blue-800 underline underline-offset-2 font-medium"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Q2 Sample
+                </a>
+                {' · '}
+                <a
+                  href="/sample/Q3_Expense_Report.csv"
+                  download
+                  className="text-blue-600 hover:text-blue-800 underline underline-offset-2 font-medium"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Q3 Sample
+                </a>
+              </p>
+              <p className="text-xs text-gray-400">
+                Best results with structured CSV exports from banking platforms. PDF and TXT support may require additional normalization depending on format.
+              </p>
+            </div>
           </motion.div>
 
           {uploads.length > 0 && (
