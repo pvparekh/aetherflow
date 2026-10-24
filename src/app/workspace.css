@@ -1379,3 +1379,42 @@ h2 {
     min-height: 36px;
   }
 }
+
+/* Balanced workspace canvas for large displays.
+   The rail stays at the edge; content is centered inside the remaining area. */
+.af-app > #content {
+  padding-left: 205px;
+  min-width: 0;
+}
+.af-app .workspace-content {
+  width: 100%;
+  max-width: 1920px;
+  min-width: 0;
+  margin: 0 auto;
+  border-left: 0;
+  padding-inline: clamp(24px, 2.5vw, 64px);
+}
+.af-app .workspace-content > * {
+  min-width: 0;
+}
+@media (max-width: 1100px) {
+  .af-app > #content {
+    padding-left: 170px;
+  }
+  .af-app .workspace-content {
+    padding-inline: 24px;
+  }
+}
+@media (max-width: 768px) {
+  .af-app > #content {
+    padding-left: 0;
+  }
+  .af-app .workspace-content {
+    padding: 27px 20px;
+  }
+}
+@media (max-width: 390px) {
+  .af-app .workspace-content {
+    padding-inline: 14px;
+  }
+}
