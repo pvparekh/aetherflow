@@ -29,6 +29,15 @@ export function classifyImportFailure(error: unknown): FailureDetail {
         : "unknown";
   const status = typeof obj.status === "number" ? obj.status : 0;
   const code = typeof obj.code === "string" ? obj.code : "";
+  const type = typeof obj.type === "string" ? obj.type : "";
+  const quotaCodes = new Set([
+    "insufficient_quota",
+    "organization_usage_limit_exceeded",
+    "organization_spend_limit_exceeded",
+    "project_spend_limit_exceeded",
+    "credit_balance_exhausted",
+  ]);
+  const exhausted = quotaCodes.has(code) || type === "insufficient_quota";
   const message = error instanceof Error ? error.message : "";
 
   const diagnostic = [name, status || null, code || null]
@@ -49,7 +58,7 @@ export function classifyImportFailure(error: unknown): FailureDetail {
   const provider =
     /^(APIError|AuthenticationError|PermissionDeniedError|RateLimitError|NotFoundError|BadRequestError|InternalServerError|APIConnectionError|APIConnectionTimeoutError)$/.test(
       name,
-    ) || code === "insufficient_quota" || code === "invalid_api_key";
+    ) || exhausted || code === "invalid_api_key";
   if (provider) {
     if (status === 401 || code === "invalid_api_key")
       return {
@@ -65,7 +74,7 @@ export function classifyImportFailure(error: unknown): FailureDetail {
         status: 503,
         diagnostic,
       };
-    if (code === "insufficient_quota")
+    if (exhausted)
       return {
         error:
           "OpenAI API credits or spending limits are exhausted. Check billing and project limits before retrying; your review is saved.",
