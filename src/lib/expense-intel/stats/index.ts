@@ -1,8 +1,12 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { computeCategoryAggregates } from './aggregates';
-import { computeZScore, getAnomalySeverity } from './zscore';
-import { computeTrendDirection, isSkewedByOutliers, computeCategoryDrift } from './trends';
-import type { TrendDirection } from '../types';
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { computeCategoryAggregates } from "./aggregates";
+import { computeZScore, getAnomalySeverity } from "./zscore";
+import {
+  computeTrendDirection,
+  isSkewedByOutliers,
+  computeCategoryDrift,
+} from "./trends";
+import type { TrendDirection } from "../types";
 
 export interface StatsResult {
   categoriesProcessed: string[];
@@ -18,12 +22,12 @@ export interface StatsResult {
 export async function computeAndWriteStats(
   uploadId: string,
   userId: string,
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
 ): Promise<StatsResult> {
   const { data: items, error: itemsError } = await supabase
-    .from('line_items')
-    .select('id, amount, category')
-    .eq('upload_id', uploadId);
+    .from("line_items")
+    .select("id, amount, category")
+    .eq("upload_id", uploadId);
 
   if (itemsError || !items) {
     throw new Error(`Failed to fetch line items: ${itemsError?.message}`);
@@ -31,24 +35,39 @@ export async function computeAndWriteStats(
 
   // Previous uploads for this user (exclude current)
   const { data: prevUploads, error: prevError } = await supabase
-    .from('uploads')
-    .select('id')
-    .eq('user_id', userId)
-    .neq('id', uploadId);
+    .from("uploads")
+    .select("id,uploaded_at")
+    .eq("user_id", userId)
+    .neq("id", uploadId)
+    .eq("pass1_status", "complete")
+    .order("uploaded_at", { ascending: false })
+    .order("id", { ascending: false });
 
-  if (prevError) throw new Error(`Failed to fetch previous uploads: ${prevError.message}`);
+  if (prevError)
+    throw new Error(`Failed to fetch previous uploads: ${prevError.message}`);
 
   const prevUploadIds = (prevUploads ?? []).map((u) => u.id as string);
 
-  let rawHistory: { category: string; total_spend_period: number; pct_of_total_spend: number }[] = [];
+  let rawHistory: {
+    category: string;
+    total_spend_period: number;
+    pct_of_total_spend: number;
+    upload_id: string;
+  }[] = [];
   if (prevUploadIds.length > 0) {
     const { data, error: historyError } = await supabase
-      .from('category_stats')
-      .select('category, total_spend_period, pct_of_total_spend')
-      .in('upload_id', prevUploadIds)
-      .order('computed_at', { ascending: false });
-    if (historyError) throw new Error(`Failed to fetch category history: ${historyError.message}`);
-    rawHistory = data ?? [];
+      .from("category_stats")
+      .select("category, total_spend_period, pct_of_total_spend,upload_id")
+      .in("upload_id", prevUploadIds)
+      .order("computed_at", { ascending: false });
+    if (historyError)
+      throw new Error(
+        `Failed to fetch category history: ${historyError.message}`,
+      );
+    rawHistory = (data ?? []).sort(
+      (a, b) =>
+        prevUploadIds.indexOf(a.upload_id) - prevUploadIds.indexOf(b.upload_id),
+    );
   }
 
   const historyByCategory = new Map<string, { total: number; pct: number }[]>();
@@ -63,15 +82,17 @@ export async function computeAndWriteStats(
 
   const byCategory = new Map<string, { id: string; amount: number }[]>();
   for (const item of items) {
-    const cat = (item.category as string) ?? 'Misc';
+    const cat = (item.category as string) ?? "Misc";
     if (!byCategory.has(cat)) byCategory.set(cat, []);
-    byCategory.get(cat)!.push({ id: item.id as string, amount: Number(item.amount) });
+    byCategory
+      .get(cat)!
+      .push({ id: item.id as string, amount: Number(item.amount) });
   }
 
   const uploadTotal = items.reduce((sum, i) => sum + Number(i.amount), 0);
 
   const skewedCategories: string[] = [];
-  const categoryDrift: StatsResult['categoryDrift'] = [];
+  const categoryDrift: StatsResult["categoryDrift"] = [];
   const statsRows: object[] = [];
   const lineItemUpdates: {
     id: string;
@@ -90,7 +111,7 @@ export async function computeAndWriteStats(
       lineItemUpdates.push({
         id: item.id,
         z_score: Math.round(z * 10000) / 10000,
-        is_anomaly: severity !== 'none',
+        is_anomaly: severity !== "none",
         anomaly_severity: severity,
       });
     }
@@ -102,22 +123,31 @@ export async function computeAndWriteStats(
     const allTotals = [agg.total, ...historicalTotals];
     const last5 = allTotals.slice(0, 5);
     const rolling_avg_5 = last5.reduce((s, v) => s + v, 0) / last5.length;
-    const rolling_avg_alltime = allTotals.reduce((s, v) => s + v, 0) / allTotals.length;
+    const rolling_avg_alltime =
+      allTotals.reduce((s, v) => s + v, 0) / allTotals.length;
     const total_spend_alltime = allTotals.reduce((s, v) => s + v, 0);
 
     const recentTotals = allTotals.slice(0, 3);
     const priorTotals = allTotals.slice(3, 6);
-    const trend_direction: TrendDirection = computeTrendDirection(recentTotals, priorTotals);
+    const trend_direction: TrendDirection = computeTrendDirection(
+      recentTotals,
+      priorTotals,
+    );
 
-    const pct_of_total_spend = uploadTotal > 0 ? (agg.total / uploadTotal) * 100 : 0;
+    const pct_of_total_spend =
+      uploadTotal > 0 ? (agg.total / uploadTotal) * 100 : 0;
 
     if (isSkewedByOutliers(agg.mean, agg.median)) {
       skewedCategories.push(category);
     }
 
     if (historicalPcts.length > 0) {
-      const historicalAvgPct = historicalPcts.reduce((s, v) => s + v, 0) / historicalPcts.length;
-      const deltaPct = computeCategoryDrift(pct_of_total_spend, historicalAvgPct);
+      const historicalAvgPct =
+        historicalPcts.reduce((s, v) => s + v, 0) / historicalPcts.length;
+      const deltaPct = computeCategoryDrift(
+        pct_of_total_spend,
+        historicalAvgPct,
+      );
       if (Math.abs(deltaPct) > 15) {
         categoryDrift.push({
           category,
@@ -143,29 +173,22 @@ export async function computeAndWriteStats(
     });
   }
 
-  if (statsRows.length > 0) {
-    const { error: statsError } = await supabase.from('category_stats').insert(statsRows);
-    if (statsError) throw new Error(`Failed to write category_stats: ${statsError.message}`);
-  }
-
-  await Promise.all(
-    lineItemUpdates.map((u) =>
-      supabase
-        .from('line_items')
-        .update({
-          z_score: u.z_score,
-          is_anomaly: u.is_anomaly,
-          anomaly_severity: u.anomaly_severity,
-        })
-        .eq('id', u.id)
-    )
-  );
-
+  const { error: writeError } = await supabase.rpc("write_expense_statistics", {
+    p_owner: userId,
+    p_upload: uploadId,
+    p_stats: statsRows,
+    p_items: lineItemUpdates,
+  });
+  if (writeError) throw new Error("Could not persist computed statistics");
   const categories = [...byCategory.keys()];
   console.log(
-    `[stats] upload=${uploadId} categories=[${categories.join(', ')}]` +
-      (skewedCategories.length ? ` skewed=[${skewedCategories.join(', ')}]` : '') +
-      (categoryDrift.length ? ` drift=[${categoryDrift.map((d) => d.category).join(', ')}]` : '')
+    `[stats] upload=${uploadId} categories=[${categories.join(", ")}]` +
+      (skewedCategories.length
+        ? ` skewed=[${skewedCategories.join(", ")}]`
+        : "") +
+      (categoryDrift.length
+        ? ` drift=[${categoryDrift.map((d) => d.category).join(", ")}]`
+        : ""),
   );
 
   return { categoriesProcessed: categories, skewedCategories, categoryDrift };

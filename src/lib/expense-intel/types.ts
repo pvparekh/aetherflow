@@ -1,10 +1,15 @@
-export type UploadStatus = 'pending' | 'processing' | 'complete' | 'error';
-export type FlagSeverity = 'success' | 'info' | 'warning' | 'critical';
-export type FlagType = 'duplicate' | 'first_time' | 'round_number' | 'statistical';
+export type UploadStatus = "pending" | "processing" | "complete" | "error";
+export type FlagSeverity = "success" | "info" | "warning" | "critical";
+export type FlagType =
+  "duplicate" | "first_time" | "round_number" | "statistical";
 
 export interface DuplicateContext {
-  this_entry: { filename: string; transaction_date: string | null; amount: number };
-  match:      { filename: string; transaction_date: string | null; amount: number };
+  this_entry: {
+    filename: string;
+    transaction_date: string | null;
+    amount: number;
+  };
+  match: { filename: string; transaction_date: string | null; amount: number };
 }
 
 export interface Flag {
@@ -20,22 +25,22 @@ export interface Flag {
   related_line_item_ids: string[];
   duplicate_context?: DuplicateContext;
 }
-export type AnomalySeverity = 'none' | 'low' | 'medium' | 'high';
-export type RecurrenceTier = 'one_time' | 'occasional' | 'regular' | 'core';
-export type TrendDirection = 'up' | 'down' | 'stable';
-export type UserResolution = 'expected' | 'investigate' | null;
-export type ParseFormat = 'standard' | 'bank' | 'simple' | 'txt' | 'pdf';
+export type AnomalySeverity = "none" | "low" | "medium" | "high";
+export type RecurrenceTier = "one_time" | "occasional" | "regular" | "core";
+export type TrendDirection = "up" | "down" | "stable";
+export type UserResolution = "expected" | "investigate" | null;
+export type ParseFormat = "standard" | "bank" | "simple" | "txt" | "pdf";
 
 export const CATEGORIES = [
-  'Food/Dining',
-  'Travel/Transport',
-  'Accommodation',
-  'Software/SaaS',
-  'Office/Supplies',
-  'Marketing/Ads',
-  'Entertainment',
-  'Utilities',
-  'Misc',
+  "Food/Dining",
+  "Travel/Transport",
+  "Accommodation",
+  "Software/SaaS",
+  "Office/Supplies",
+  "Marketing/Ads",
+  "Entertainment",
+  "Utilities",
+  "Misc",
 ] as const;
 
 export type Category = (typeof CATEGORIES)[number];
@@ -97,6 +102,7 @@ export interface LineItem {
   category: string | null;
   subcategory: string | null;
   confidence: number | null;
+  category_origin?: string;
   z_score: number | null;
   is_anomaly: boolean;
   anomaly_severity: AnomalySeverity;
@@ -165,7 +171,7 @@ export interface AnomalyExplanation {
   vendor: string;
   amount: number;
   reason: string;
-  severity: 'warning' | 'critical';
+  severity: "warning" | "critical";
 }
 
 export interface Pass2Result {
