@@ -86,6 +86,41 @@ describe("connected workspace interactions", () => {
     );
     expect(screen.queryByRole("button", { name: "Reset" })).toBeNull();
   });
+  it("prefers a completed report over a newer interrupted upload", async () => {
+    const ready = sampleData();
+    const interrupted = {
+      ...ready.upload,
+      id: "interrupted-upload",
+      filename: "interrupted.csv",
+      pass1_status: "error",
+    };
+    request.mockImplementation(async (url: string) => {
+      if (url === "/api/expense-intel/uploads")
+        return { uploads: [interrupted, ready.upload] };
+      if (url === `/api/expense-intel/dashboard/${ready.upload.id}`)
+        return ready;
+      throw new Error(`Unexpected API request: ${url}`);
+    });
+    render(<Workspace />);
+    expect(await screen.findByText("Rolling category context")).toBeTruthy();
+    expect(screen.queryByText("Your report needs to finish processing.")).toBeNull();
+    expect(request.mock.calls.some(([url]) => url === "/api/expense-intel/dashboard/interrupted-upload")).toBe(false);
+  });
+  it("keeps imports accessible when a saved-review request fails", async () => {
+    request.mockImplementation(async (url: string) => {
+      if (url === "/api/expense-intel/uploads") return { uploads: [] };
+      if (url === "/api/imports") throw new Error("Saved reviews unavailable");
+      throw new Error(`Unexpected API request: ${url}`);
+    });
+    const user = userEvent.setup();
+    render(<Workspace />);
+    await screen.findByText("Your first clear picture.");
+    await user.click(screen.getAllByRole("button", { name: /Import expenses/ })[0]);
+    expect(await screen.findByLabelText("Choose expense file")).toBeTruthy();
+    expect(await screen.findByText(/Saved reviews are temporarily unavailable/)).toBeTruthy();
+    expect(screen.queryByText("Your first clear picture.")).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
   it("does not render partial statistics as a completed analysis", async () => {
     const d = sampleData();
     d.upload.pass1_status = "processing";
