@@ -8,17 +8,17 @@ import type { User } from "@supabase/supabase-js";
 const LoginLogoutButton = () => {
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
-  const supabase = createClient();
 
   useEffect(() => {
+    const supabase = createClient();
     const fetchUser = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
       setUser(user);
     };
-    fetchUser();
-  }, [supabase]);
+    fetchUser().catch(() => setUser(null));
+  }, []);
 
   if (user) {
     return (
