@@ -1,51 +1,93 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '../../../../../utils/supabase/server';
-import { createServiceClient } from '../../../../../utils/supabase/service';
-import JSZip from 'jszip';
+import { NextResponse } from "next/server";
+import { createClient } from "../../../../../utils/supabase/server";
+import { createServiceClient } from "../../../../../utils/supabase/service";
+import JSZip from "jszip";
+import { csvExport } from "@/lib/expense-intel/csv";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const authClient = await createClient();
-  const { data: { user } } = await authClient.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  const {
+    data: { user },
+  } = await authClient.auth.getUser();
+  if (!user)
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 },
+    );
 
   const supabase = createServiceClient();
 
   const { data: uploads, error: uploadsErr } = await supabase
-    .from('uploads')
-    .select('id, filename, uploaded_at, total_amount, line_item_count, health_score, ai_analysis')
-    .eq('user_id', user.id)
-    .order('uploaded_at', { ascending: false });
+    .from("uploads")
+    .select(
+      "id, filename, uploaded_at, total_amount, line_item_count, health_score, ai_analysis",
+    )
+    .eq("user_id", user.id)
+    .order("uploaded_at", { ascending: false });
 
-  if (uploadsErr) return NextResponse.json({ error: uploadsErr.message }, { status: 500 });
+  if (uploadsErr)
+    return NextResponse.json({ error: uploadsErr.message }, { status: 500 });
 
   const uploadIds = (uploads ?? []).map((u) => u.id as string);
 
-  const { data: lineItems, error: liErr } = uploadIds.length > 0
-    ? await supabase
-        .from('line_items')
-        .select('id, upload_id, vendor, description, amount, category, transaction_date, z_score, is_anomaly, is_possible_duplicate, is_first_time_vendor, is_round_number, user_resolution')
-        .in('upload_id', uploadIds)
-        .order('upload_id')
-        .order('transaction_date', { ascending: false })
-    : { data: [], error: null };
+  const { data: lineItems, error: liErr } =
+    uploadIds.length > 0
+      ? await supabase
+          .from("line_items")
+          .select(
+            "id, upload_id, vendor, raw_text, amount, category, transaction_date, z_score, is_anomaly, is_possible_duplicate, is_first_time_vendor, is_round_number, user_resolution",
+          )
+          .in("upload_id", uploadIds)
+          .order("upload_id")
+          .order("transaction_date", { ascending: false })
+      : { data: [], error: null };
 
-  if (liErr) return NextResponse.json({ error: liErr.message }, { status: 500 });
+  if (liErr)
+    return NextResponse.json({ error: liErr.message }, { status: 500 });
 
+  const [
+    { data: drafts, error: draftsError },
+    { data: corrections, error: correctionsError },
+  ] = await Promise.all([
+    supabase
+      .from("import_drafts")
+      .select("id,status,review,upload_id,created_at,updated_at")
+      .eq("user_id", user.id),
+    supabase
+      .from("category_corrections")
+      .select("line_item_id,old_category,new_category,created_at")
+      .eq("user_id", user.id),
+  ]);
+  if (draftsError || correctionsError)
+    return NextResponse.json(
+      { error: "Your full data export could not be prepared. Retry shortly." },
+      { status: 503 },
+    );
   const zip = new JSZip();
 
-  // analyzed_expenses.csv
-  const csvHeaders = ['upload_id', 'vendor', 'description', 'amount', 'category', 'transaction_date', 'z_score', 'is_anomaly', 'is_possible_duplicate', 'is_first_time_vendor', 'is_round_number', 'user_resolution'];
-  const csvRows = (lineItems ?? []).map((li) =>
-    csvHeaders.map((h) => {
-      const val = (li as Record<string, unknown>)[h];
-      if (val == null) return '';
-      const s = String(val);
-      return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
-    }).join(',')
+  zip.file("import_reviews.json", JSON.stringify(drafts ?? [], null, 2));
+  zip.file(
+    "category_corrections.json",
+    JSON.stringify(corrections ?? [], null, 2),
   );
-  zip.file('analyzed_expenses.csv', [csvHeaders.join(','), ...csvRows].join('\n'));
+  // analyzed_expenses.csv
+  const csvHeaders = [
+    "upload_id",
+    "vendor",
+    "raw_text",
+    "amount",
+    "category",
+    "transaction_date",
+    "z_score",
+    "is_anomaly",
+    "is_possible_duplicate",
+    "is_first_time_vendor",
+    "is_round_number",
+    "user_resolution",
+  ];
+  zip.file("analyzed_expenses.csv", csvExport(lineItems ?? [], csvHeaders));
 
   // summary.json
   const summary = (uploads ?? []).map((u) => ({
@@ -57,17 +99,22 @@ export async function GET() {
     health_score: u.health_score,
     ai_analysis: u.ai_analysis,
   }));
-  zip.file('summary.json', JSON.stringify(summary, null, 2));
+  zip.file("summary.json", JSON.stringify(summary, null, 2));
 
   const dateStr = new Date().toISOString().slice(0, 10);
-  const zipBuffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+  const zipBuffer = await zip.generateAsync({
+    type: "nodebuffer",
+    compression: "DEFLATE",
+  });
 
-  console.log(`[export] user=${user.id} uploads=${uploadIds.length} transactions=${(lineItems ?? []).length}`);
+  console.log(
+    `[export] user=${user.id} uploads=${uploadIds.length} transactions=${(lineItems ?? []).length}`,
+  );
 
   return new NextResponse(zipBuffer, {
     headers: {
-      'Content-Type': 'application/zip',
-      'Content-Disposition': `attachment; filename="aetherflow_export_${dateStr}.zip"`,
+      "Content-Type": "application/zip",
+      "Content-Disposition": `attachment; filename="aetherflow_export_${dateStr}.zip"`,
     },
   });
 }

@@ -1,169 +1,58 @@
-# AetherFlow — Expense Intelligence
+# AetherFlow — expense intelligence
 
-AI-powered expense tracking and analysis. Upload a CSV, TXT, or PDF of your business expenses and get automated categorization, anomaly detection, vendor intelligence, and insights.
+AetherFlow helps an individual operator review expense files, inspect transactions and understand spending patterns. It is an expense-review product, not a bank ledger or accounting platform.
 
+Production: https://aetherflow-three.vercel.app/ . The product-upgrade branch is a release candidate until its migration and deployment acceptance checks are complete.
 
-## Live Demo
+## Workflow
 
-[aetherflow-three.vercel.app](https://aetherflow-three.vercel.app/)
+1. Choose a CSV, TXT or PDF and specify amount direction, date order and optional CSV column names.
+2. Review a saved draft. Correct descriptions, amounts and dates; explicitly exclude credits, transfers and ambiguous rows. Every PDF candidate starts unselected.
+3. Confirm the selected positive USD expenses. Categorization checkpoints at 25 rows. Repeating the same import/settings reuses its draft; commit replay cannot publish it twice.
+4. Inspect computed totals, category history, vendor aggregates and review signals. Resolve a signal or correct a category. Category corrections retain source evidence and an audit record, then recalculate deterministic results.
+5. Optionally generate AI commentary from aggregates. Provider failure leaves computed results available. Filter transaction rows and export the same matching rows, across all pages.
 
----
+`/demo` uses labeled synthetic records in browser state and makes no import/analysis requests. Changes in the demo are discarded on reload. It is not a substitute for an authenticated integration test.
 
-## What It Does
+## Supported limits
 
-AetherFlow runs every uploaded expense file through a two-pass AI pipeline:
+- UTF-8 CSV/TXT; common headers, quoted delimiters/newlines, BOM/CRLF, up to 19 preamble records, custom columns, US decimal format, strict ISO or selected day/month date order.
+- Separate debit/credit or a signed-amount convention. Ambiguous double-populated columns and known non-USD currency are excluded. No currency conversion.
+- 4 MB, 500 candidate rows and 20 PDF pages. Native text uses page-tagged PDF.js extraction; scanned or mixed pages use visual PDF input through the existing OpenAI provider. Native extraction is capped at five 18,000-character segments. No text is silently truncated into a claimed complete import.
+- All PDFs require source review. Extraction completeness and statement reconciliation are unknown; a complex layout, unsupported language or poor scan may require a CSV export. Scanned extraction accuracy has not been measured against real bank statements.
+- Extraction attempts are limited to 20 per account per hour and one concurrent extraction. Categorization uses at most three bounded attempts per 25-row checkpoint. Normal import progress survives navigation; unsaved review edits must be saved before leaving the page.
 
-**Pass 1 — Categorization (GPT-4o-mini)**
-Every transaction is classified into one of 9 canonical categories in batches of 25. Fast and cheap.
+## Analytics contracts
 
-**Pass 2 — Narrative Analysis (GPT-4o)**
-A deeper AI pass that reads pre-aggregated stats and writes plain-English insights, a 1–10 health score, savings opportunities, and anomaly explanations. Runs asynchronously so it never blocks the upload.
+Nine canonical categories, positive expense amounts, 25-row categorization, and code-computed formulas remain. Reviewed amounts and dates cannot be overwritten by model output. Recent averages include the current report and up to four prior category report totals; all-history averages include every recorded report for that category. Reports can have different coverage or overlap. Missing dates are excluded by date filters.
 
-In between, all statistical computation is hardcoded — z-scores, rolling averages, trend detection, and duplicate flagging, So the AI has everything it needs and only does what it's good at.
+Anomaly signals are review cues, not findings of fraud. Category confidence and optional model commentary are not audited financial assessments. Narrative requests contain precomputed category/vendor summaries, not individual transaction records. Health scoring is retained in storage for compatibility but is not the principal financial metric in the new workspace.
 
----
+## Development
 
-## Features
+Use Node 24 (or a supported runtime satisfying PDF.js's Node >=22.3 requirement) and `npm ci`.
 
-### Expense Intelligence Dashboard
-- Upload CSV, TXT, or PDF expense files — drag-and-drop or click to browse
-- Automatic format detection (standard CSV, bank export with debit/credit split, plain text, PDF)
-- Category donut chart with click-to-filter
-- Current vs Category Average bar chart per category
-- Anomaly feed with severity levels (critical, warning, info), filter pills, and per-item resolve/dismiss actions
-- AI Insights panel with health score, narrative summary, savings opportunities, and anomaly explanations
-- Vendor table tracking spend, occurrences, average amount, and recurrence tier across all uploads
-- Upload history with per-upload delete and rolling stat recalculation
-- All-time view aggregating stats across every upload
-- Export line items as CSV
+Configure these names in a local, ignored environment file:
 
-### Statistical Engine
-- Z-score per transaction: `(amount - category_mean) / category_stdDev`
-- Anomaly severity: high (|z| ≥ 3), medium (|z| ≥ 2), low (|z| ≥ 1)
-- Rolling averages: last-5-uploads and all-time, recalculated on every upload and delete
-- Trend direction: compares recent 3-upload mean vs prior 3-upload mean (>10% threshold)
-- Category drift: flags when a category's share of total spend shifts >15 percentage points
-- MAD z-scores for skewed distributions (where `|mean - median| / |median| > 0.25`)
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (server only)
+- `OPENAI_API_KEY` (server only)
 
-### Vendor Intelligence
-- First-time vendor detection across all user uploads
-- Duplicate charge detection: same vendor + same amount within 7 days, within and across uploads
-- Round-number flagging: amounts ≥ $100 that are multiples of $50
-- Recurrence tiers: one-time → occasional → regular → core (based on occurrence count)
-- Price creep detection: warns when a recurring vendor's average amount increases >10%
-- Consolidation opportunities: flags when 3+ vendors serve the same subcategory purpose
+Use an isolated Supabase database for upgrade testing. Apply `supabase/migrations/20261024_import_review.sql` once using an authorized migration runner before running this branch. It expects the existing uploads, line_items, category_stats and vendors tables; the minimal automated-test schema is **not** a production schema migration.
 
-### Account & Data Management
-- Profile display (name, email, join date)
-- Usage stats: total uploads, transactions analyzed, tracking since, average health score
-- Export all data as a ZIP (analyzed_expenses.csv + summary.json)
-- Delete all uploads (typed confirmation: "DELETE")
-- Delete account (typed confirmation: "DELETE MY ACCOUNT", cascades all data)
-- Email digest preference (UI placeholder, coming soon)
+Run `npm run dev`. Google OAuth and confirmation URLs must allow the candidate origin's `/auth/callback` and existing `/auth/confirm` routes. Do not point an unvalidated preview at production data.
 
-### Auth
-- Email/password sign-up and login
-- Google OAuth
-- Protected routes redirect unauthenticated users to sign-up
+Validation:
 
-
----
-
-## Tech Stack
-
-| | |
-|---|---|
-| Framework | Next.js 15.3 (App Router) |
-| Frontend | React 19, Tailwind CSS 4, Framer Motion, Recharts |
-| Database & Auth | Supabase (PostgreSQL + Auth) |
-| AI | OpenAI GPT-4o (Pass 2), GPT-4o-mini (Pass 1, PDF parsing) |
-| File Parsing | PapaParse (CSV), pdf-parse (PDF) |
-| Export | JSZip |
-| Icons | Lucide React |
-| Testing | Vitest |
-
----
-
-## Canonical Categories
-
-All expenses are classified into exactly one of:
-
-`Food/Dining` · `Travel/Transport` · `Accommodation` · `Software/SaaS` · `Office/Supplies` · `Marketing/Ads` · `Entertainment` · `Utilities` · `Misc`
-
----
-
-## Getting Started
-
-### Prerequisites
-- Node.js 18+
-- A Supabase project
-- An OpenAI API key
-
-### Environment Variables
-
-Create a `.env.local` file:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-OPENAI_API_KEY=your-openai-api-key
+```sh
+npm run verify
 ```
 
-### Install and Run
+This runs TypeScript, ESLint, the full Vitest suite and the optimized build. Tests cover statistical fixtures, import parsing, real PDF text extraction with mocked provider responses, real Postgres transactions/RLS via PGlite, route lifecycle/retry behavior and component interactions. A mocked provider is not an OCR-quality evaluation; PGlite is not a live Supabase deployment test; DOM tests do not certify responsive visual appearance.
 
-```bash
-npm install
-npm run dev
-```
+## Data and operations
 
-Open [http://localhost:3000](http://localhost:3000).
+Supabase stores accounts, extracted review evidence, selected expenses, category corrections, aggregates and interpretation. Raw uploaded files are not persisted as downloadable originals. Existing OpenAI services receive descriptions for categorization and PDF content for extraction. Account export includes drafts and correction history; deleting expense data removes both saved reports and unfinished reviews. Account deletion removes the owning auth user and associated rows according to database foreign keys. Verify the existing production cascade contract before releasing.
 
-### Build for Production
-
-```bash
-npm run build
-npm start
-```
-
----
-
-## Project Structure
-
-```
-src/
-├── app/
-│   ├── (auth)/              # Login, signup, logout pages
-│   ├── api/
-│   │   ├── account/         # Stats, export, delete uploads, delete account
-│   │   ├── analyze/         # Free one-shot analysis (guest)
-│   │   └── expense-intel/   # Upload, dashboard, pass2, resolve, anomaly, aggregate
-│   ├── account/             # Account page
-│   ├── analyze/             # Free analysis page
-│   ├── expense-intel/       # Main dashboard page
-│   └── page.tsx             # Landing page
-├── components/
-│   ├── expense-intel/       # Dashboard components (charts, anomaly feed, etc.)
-│   └── ...                  # Navbar, Layout, Footer, auth buttons
-└── lib/
-    └── expense-intel/
-        ├── parser/          # CSV, TXT, PDF ingestion
-        ├── pass1/           # Batch AI categorization
-        ├── ai/              # Pass 2 narrative analysis
-        ├── stats/           # Z-scores, rolling averages, trend detection
-        ├── vendors/         # Vendor intelligence and flag generation
-        └── types.ts         # Shared TypeScript types
-utils/
-└── supabase/                # Browser, server, service role, middleware clients
-```
-
----
-
-## Architecture Notes
-
-- **Pass 1 always batches** — 25 line items per API call, never one per item
-- **Pass 2 receives pre-aggregated stats** — never raw line items, keeps prompts small and focused
-- **All math happens in code** — AI does categorization and narrative only, never arithmetic (In order to lessen compute)
-- **Vendor table rebuilds atomically** — on any upload delete, the entire vendor table for that user is wiped and reconstructed from remaining line items to prevent stale data
-- **Rolling averages recalculate on every change** — upload, delete, or resolve all trigger a recalc so historical baselines are always accurate
-- **Service role is backend-only** — the Supabase service role key (bypasses RLS) is never imported in any client component
+See [the runbook and acceptance record](docs/product-upgrade/02-release-and-verification.md) for deployment, migration, recovery and rollback instructions. Local-model migration, banking connections, payments, taxes and subscriptions are deferred.
