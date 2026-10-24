@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
-import { importAccess, importFailure } from "@/lib/imports/access";
+import { importAccess, importFailure, classifyImportFailure } from "@/lib/imports/access";
 import { validateReview } from "@/lib/imports/contract";
 import { categorizeBatch } from "@/lib/expense-intel/pass1/categorizer";
 import { computeAndWriteStats } from "@/lib/expense-intel/stats";
@@ -19,6 +19,7 @@ export async function POST(
     );
   const { id } = await context.params;
   let run: string | undefined;
+  let phase = "claim";
   try {
     const { data: d, error } = await a.db
       .from("import_drafts")
@@ -90,6 +91,7 @@ export async function POST(
         amount: r.amount,
         transaction_date: r.date,
       }));
+      phase = "categorization";
       const categories = await categorizeBatch(raw);
       const chunk = raw.map((r, i) => ({
         ...r,
@@ -97,6 +99,7 @@ export async function POST(
         subcategory: categories[i].subcategory,
         confidence: categories[i].confidence,
       }));
+      phase = "publication";
       const { data, error: commitError } = await a.db.rpc(
         "append_import_chunk",
         {
@@ -119,7 +122,9 @@ export async function POST(
           .eq("user_id", a.user.id)
           .single();
         if (u?.pass1_status !== "complete") {
+          phase = "statistics";
           const stats = await computeAndWriteStats(uploadId, a.user.id, a.db);
+          phase = "vendors";
           await runVendorIntelligence(uploadId, a.user.id, a.db, stats);
           const { error: finalError } = await a.db
             .from("uploads")
@@ -128,6 +133,7 @@ export async function POST(
             .eq("user_id", a.user.id);
           if (finalError) throw finalError;
         }
+        phase = "finalization";
         const { error: invalidate } = await a.db
           .from("uploads")
           .update({
@@ -163,13 +169,17 @@ export async function POST(
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (e) {
+    const classification = classifyImportFailure(e, phase);
+    // Persist only safe stage/error class diagnostics for support without
+    // recording statement text, model output, secrets or provider messages.
+    console.error("[imports.commit] failed", phase, classification.diagnostic);
     if (run)
       await a.db
         .from("import_drafts")
         .update({
           status: "error",
           run_id: null,
-          error: "Import paused. Retry to resume saved progress.",
+          error: `${phase}:${classification.diagnostic}`.slice(0, 150),
           updated_at: new Date().toISOString(),
         })
         .eq("id", id)
@@ -177,6 +187,6 @@ export async function POST(
         .eq("run_id", run);
     if (e instanceof BusyError)
       return NextResponse.json({ error: e.message }, { status: 409 });
-    return importFailure(e);
+    return importFailure(e, phase);
   }
 }
