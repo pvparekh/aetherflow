@@ -16,7 +16,7 @@ type FailureDetail = {
   diagnostic: string;
 };
 
-export function classifyImportFailure(error: unknown): FailureDetail {
+export function classifyImportFailure(error: unknown, phase?: string): FailureDetail {
   const obj =
     typeof error === "object" && error !== null
       ? (error as Record<string, unknown>)
@@ -130,16 +130,29 @@ export function classifyImportFailure(error: unknown): FailureDetail {
       diagnostic,
     };
 
+  const messages: Record<string, string> = {
+    claim: "The saved import could not start processing. Review its state and retry.",
+    categorization:
+      "AI categorization failed before any expenses were published. Your review is saved. Check the configured OpenAI project, quota and model, then retry.",
+    publication:
+      "The database rejected the reviewed expense publication. No complete report was published. Your review is saved.",
+    statistics:
+      "Expense rows were saved, but statistical computation failed. Resume the saved import to finish safely.",
+    vendors:
+      "Expense statistics were saved, but vendor analysis failed. Resume to complete the report.",
+    finalization:
+      "The expense report could not be finalized. Your import progress is saved and can be resumed.",
+  };
   return {
-    error:
+    error: (phase && messages[phase]) ||
       "Expense processing failed. Your saved review is intact. Check the server logs for this request before retrying.",
     status: 503,
     diagnostic,
   };
 }
 
-export function importFailure(error: unknown) {
-  const failure = classifyImportFailure(error);
+export function importFailure(error: unknown, phase?: string) {
+  const failure = classifyImportFailure(error, phase);
   // Deliberately log only class/status/provider code, never prompt contents,
   // API credentials, statement evidence, or provider response bodies.
   console.error("[import] operation_failed", failure.diagnostic);
