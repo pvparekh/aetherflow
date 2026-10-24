@@ -19,6 +19,7 @@ interface Props {
 export default function ImportReview({ onComplete, onCancel }: Props) {
   const [draft, setDraft] = useState<ImportDraft | null>(null);
   const [drafts, setDrafts] = useState<ImportDraft[]>([]);
+  const [draftsError, setDraftsError] = useState("");
   const [options, setOptions] = useState<ImportOptions>(DEFAULT_OPTIONS);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -49,10 +50,16 @@ export default function ImportReview({ onComplete, onCancel }: Props) {
       .then((v) => {
         if (!Array.isArray(v.drafts))
           throw new Error("Saved reviews could not be read. Retry shortly.");
-        if (alive.current) setDrafts(v.drafts);
+        if (alive.current) {
+          setDrafts(v.drafts);
+          setDraftsError("");
+        }
       })
       .catch((e) => {
-        if (alive.current) setError(e.message);
+        if (alive.current) {
+          console.warn("[imports] saved reviews unavailable", e instanceof Error ? e.name : "unknown");
+          setDraftsError("Saved reviews are temporarily unavailable. You can still choose a new expense file.");
+        }
       });
     return () => {
       alive.current = false;
@@ -220,6 +227,11 @@ export default function ImportReview({ onComplete, onCancel }: Props) {
       {progress && (
         <div className="notice info" role="status">
           {progress}
+        </div>
+      )}
+      {!draft && draftsError && (
+        <div className="notice info" role="status">
+          {draftsError}
         </div>
       )}
       {!draft ? (
