@@ -42,6 +42,19 @@ describe("import failure classification", () => {
     expect(result.error).toContain("Supabase");
   });
 
+  it("identifies which stage failed when the provider error is otherwise unknown", () => {
+    const result = classifyImportFailure(new TypeError("private provider body"), "categorization");
+    expect(result.error).toContain("AI categorization failed");
+    expect(result.error).toContain("before any expenses were published");
+    expect(result.error).not.toContain("private provider body");
+  });
+
+  it("separates persistence from AI categorization failures", () => {
+    const result = classifyImportFailure(new Error("some private SQL text"), "publication");
+    expect(result.error).toContain("database rejected");
+    expect(result.error).not.toContain("private SQL text");
+  });
+
   it("does not expose raw unknown error bodies", () => {
     const result = classifyImportFailure(new Error("Sensitive statement details"));
     expect(result.error).toContain("server logs");
