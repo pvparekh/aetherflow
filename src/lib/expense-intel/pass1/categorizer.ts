@@ -10,6 +10,26 @@ import {
 const BATCH_SIZE = 25;
 const MAX_RETRIES = 3;
 
+// Credentials, project spending limits and unsupported requests cannot be
+// repaired by repeatedly calling the provider with the same payload.
+function nonRetryableProviderError(error: unknown): boolean {
+  if (error instanceof Error &&
+      error.message.includes("OPENAI_API_KEY environment variable is not set"))
+    return true;
+  if (!error || typeof error !== "object") return false;
+  const failure = error as { status?: number; code?: string; type?: string };
+  return [400, 401, 403, 404].includes(failure.status ?? 0) ||
+    [
+      "insufficient_quota",
+      "credit_balance_exhausted",
+      "organization_usage_limit_exceeded",
+      "organization_spend_limit_exceeded",
+      "project_spend_limit_exceeded",
+      "invalid_api_key",
+    ].includes(failure.code ?? "") ||
+    failure.type === "insufficient_quota";
+}
+
 const SYSTEM_PROMPT = `You are a business expense categorizer. Given a list of expense line items, classify each one into exactly one canonical category.
 
 Canonical categories (use the exact string, including slash and capitalization):
@@ -76,7 +96,7 @@ export async function categorizeBatch(
     );
     outputText = response.output_text;
   } catch (err) {
-    if (attempt >= MAX_RETRIES) throw err;
+    if (attempt >= MAX_RETRIES || nonRetryableProviderError(err)) throw err;
     await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
     return categorizeBatch(batch, attempt + 1);
   }
