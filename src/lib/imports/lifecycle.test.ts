@@ -11,6 +11,11 @@ const state = vi.hoisted(() => ({
 vi.mock("@/lib/imports/access", () => ({
   importAccess: async () =>
     state.owner ? { user: { id: state.owner }, db: state.client } : null,
+  classifyImportFailure: (e: unknown, phase?: string) => ({
+    error: "Retry safely",
+    status: 503,
+    diagnostic: `${phase ?? "unknown"}:${e instanceof Error ? e.name : "unknown"}`,
+  }),
   importFailure: (e: unknown) =>
     NextResponse.json(
       { error: "Retry safely", detail: e instanceof Error ? e.message : e },
