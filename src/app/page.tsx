@@ -8,19 +8,24 @@ import GreetUser from "../components/GreetUser";
 import { createClient } from "../../utils/supabase/client";
 
 export default function Home() {
-  const [isAuth, setIsAuth] = useState<boolean | null>(null);
+  const [isAuth, setIsAuth] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    let active = true;
     const supabase = createClient();
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuth(!!session?.user);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (active) setIsAuth(!!session?.user);
+      } catch {
+        if (active) setIsAuth(false);
+      }
     };
     checkSession();
+    return () => { active = false; };
   }, []);
 
-  if (isAuth === null) return null;
 
   return (
     <Layout>

@@ -1,7 +1,9 @@
-import { type NextRequest } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from './utils/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
+  // Public content must remain available when authentication is slow.
+  if (request.nextUrl.pathname === '/') return NextResponse.next()
   return await updateSession(request)
 }
 
