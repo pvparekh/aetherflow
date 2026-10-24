@@ -80,7 +80,10 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
         );
         if (current !== sequence.current) return;
         setUploads(v.uploads);
-        const next = id ?? v.uploads[0]?.id;
+        const next =
+          id ??
+          v.uploads.find((u) => u.pass1_status === "complete")?.id ??
+          v.uploads[0]?.id;
         if (next) {
           const d = await api<DashboardData>(
             `/api/expense-intel/dashboard/${next}`,
@@ -119,6 +122,10 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
     );
     if (selected) setTab(selected);
   }, [searchKey]);
+  function openImport() {
+    setError("");
+    setImporting(true);
+  }
   function chooseTab(next: Tab) {
     setTab(next);
     const url = new URL(window.location.href);
@@ -307,7 +314,7 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
               Get started <ArrowUpRight size={14} />
             </Link>
           ) : (
-            <button className="btn primary" onClick={() => setImporting(true)}>
+            <button className="btn primary" onClick={openImport}>
               <Plus size={14} />
               Import expenses
             </button>
@@ -323,7 +330,7 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
             }}
           />
         )}
-        {error && (
+        {!importing && error && (
           <div className="notice error" role="alert">
             {error}{" "}
             <button
@@ -335,7 +342,7 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
             · <Link href="/login">Sign in</Link>
           </div>
         )}
-        {loading ? (
+        {importing ? null : loading ? (
           <div role="status" aria-label="Loading workspace">
             <div className="skeleton" />
             <p className="micro">Loading your workspace…</p>
@@ -355,7 +362,7 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
             <div className="button-row" style={{ justifyContent: "center" }}>
               <button
                 className="btn primary"
-                onClick={() => setImporting(true)}
+                onClick={openImport}
               >
                 Import expenses <ArrowRight size={14} />
               </button>
@@ -398,7 +405,7 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
               >
                 {busy === "rebuild" ? "Finishing…" : "Retry computed analysis"}
               </button>
-              <button className="btn subtle" onClick={() => setImporting(true)}>
+              <button className="btn subtle" onClick={openImport}>
                 Open saved reviews
               </button>
             </div>
@@ -415,7 +422,7 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
                 >
                   {uploads.map((u) => (
                     <option value={u.id} key={u.id}>
-                      {u.filename}
+                      {u.filename}{u.pass1_status !== "complete" ? " · needs processing" : ""}
                     </option>
                   ))}
                 </select>
