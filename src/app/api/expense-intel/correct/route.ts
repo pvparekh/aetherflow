@@ -4,6 +4,7 @@ import { importAccess, importFailure } from "@/lib/imports/access";
 import { withExpenseLease, BusyError } from "@/lib/imports/lease";
 import { CATEGORIES } from "@/lib/expense-intel/types";
 import { rebuildUpload } from "@/lib/expense-intel/rebuild";
+import { learnFromCorrection } from "@/lib/expense-intel/rules/store";
 export const maxDuration = 120;
 export async function PATCH(req: Request) {
   const a = await importAccess();
@@ -22,7 +23,7 @@ export async function PATCH(req: Request) {
     return await withExpenseLease(a.db, a.user.id, async () => {
       const { data: owned } = await a.db
         .from("line_items")
-        .select("upload_id,uploads!inner(user_id)")
+        .select("upload_id,vendor,uploads!inner(user_id)")
         .eq("id", line_item_id)
         .eq("uploads.user_id", a.user.id)
         .maybeSingle();
@@ -37,6 +38,8 @@ export async function PATCH(req: Request) {
         p_category: category,
       });
       if (error) throw error;
+      if (owned.vendor)
+        await learnFromCorrection(a.db, a.user.id, owned.vendor, category);
       await rebuildUpload(a.db, a.user.id, id);
       const { data: latest } = await a.db
         .from("uploads")
