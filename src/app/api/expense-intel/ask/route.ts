@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { importAccess } from "@/lib/imports/access";
 import { loadUserTxns } from "@/lib/expense-intel/txns";
+import { buildLeakReport } from "@/lib/expense-intel/leaks";
 import { LlmUnavailableError } from "@/lib/llm";
 import { askSpending, type AskResponse } from "@/lib/expense-intel/ask/service";
 import { MAX_QUESTION_LENGTH } from "@/lib/expense-intel/ask/translate";
@@ -67,10 +68,9 @@ export async function POST(req: Request) {
   try {
     const txns = await loadUserTxns(access.db, access.user.id);
     const today = new Date().toISOString().slice(0, 10);
-    // No leak report yet: recurringOnly falls back to vendors charged in 3+
-    // distinct months. Pass `report: buildLeakReport(txns, today)` once the
-    // leak engine is merged.
-    const response = await askSpending(question, txns, { today });
+    // The leak report defines which charges are recurring for recurringOnly.
+    const report = buildLeakReport(txns, today);
+    const response = await askSpending(question, txns, { today, report });
     return json(serialise(response));
   } catch (error) {
     // Log the error class only; never the question or the user's data.
