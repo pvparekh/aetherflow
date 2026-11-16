@@ -31,10 +31,10 @@ class Query {
   }
   upsert(
     rows: Row | Row[],
-    options: { onConflict: string; ignoreDuplicates: boolean },
+    options: { onConflict: string; ignoreDuplicates?: boolean },
   ) {
     this.insert(rows);
-    this.ignore = options.ignoreDuplicates;
+    this.ignore = options.ignoreDuplicates ?? false;
     this.conflict = options.onConflict;
     return this;
   }
@@ -88,8 +88,12 @@ class Query {
     try {
       const args: unknown[] = [];
       const param = (value: unknown) => {
+        // String arrays go through PGlite's own serializer so they bind to
+        // text[] columns (and still to jsonb), like PostgREST does.
+        const stringArray =
+          Array.isArray(value) && value.every((v) => typeof v === "string");
         args.push(
-          value !== null && typeof value === "object"
+          value !== null && typeof value === "object" && !stringArray
             ? JSON.stringify(value)
             : value,
         );
@@ -127,7 +131,21 @@ class Query {
           .join(",")}${where} returning *`;
       if (this.action === "insert") {
         const keys = Object.keys(this.records[0]);
-        sql = `insert into ${table} (${keys.map(identifier).join(",")}) values ${this.records.map((r) => "(" + keys.map((k) => param(r[k])).join(",") + ")").join(",")}${this.conflict && this.ignore ? " on conflict (" + this.conflict.split(",").map(identifier).join(",") + ") do nothing" : ""} returning *`;
+        const conflictColumns = this.conflict
+          .split(",")
+          .map((c) => c.trim())
+          .filter(Boolean);
+        const updatable = keys.filter((k) => !conflictColumns.includes(k));
+        const onConflict = !conflictColumns.length
+          ? ""
+          : ` on conflict (${conflictColumns.map(identifier).join(",")}) ` +
+            (this.ignore || !updatable.length
+              ? "do nothing"
+              : "do update set " +
+                updatable
+                  .map((k) => `${identifier(k)}=excluded.${identifier(k)}`)
+                  .join(","));
+        sql = `insert into ${table} (${keys.map(identifier).join(",")}) values ${this.records.map((r) => "(" + keys.map((k) => param(r[k])).join(",") + ")").join(",")}${onConflict} returning *`;
       }
       const result = await this.db.query<Row>(sql, args);
       if (this.one && !result.rows.length && !this.optional)

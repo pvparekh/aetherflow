@@ -6,6 +6,10 @@ import { PGlite } from "@electric-sql/pglite";
 
 const OWNER = "10000000-0000-4000-8000-000000000001";
 
+// Each test boots its own PGlite, which can exceed the 5s default under a
+// parallel run; 20s matches the other PGlite suites.
+const BOOT_TIMEOUT_MS = 20000;
+
 async function database() {
   const db = new PGlite();
   await db.exec(readFileSync("src/lib/imports/test-schema.sql", "utf8"));
@@ -33,7 +37,7 @@ describe("leak-finder migration", () => {
       "select column_name from information_schema.columns where table_name='line_items' and column_name in ('tags','note') order by 1",
     );
     expect(tags.rows.map((r) => r.column_name)).toEqual(["note", "tags"]);
-  });
+  }, BOOT_TIMEOUT_MS);
 
   it("rejects non-canonical categories and duplicate rules", async () => {
     const db = await database();
@@ -53,5 +57,5 @@ describe("leak-finder migration", () => {
         [OWNER],
       ),
     ).rejects.toThrow();
-  });
+  }, BOOT_TIMEOUT_MS);
 });
