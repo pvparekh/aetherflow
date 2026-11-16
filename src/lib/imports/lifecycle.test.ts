@@ -2,11 +2,13 @@ import { it, expect, vi, beforeAll, afterAll } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
 import { NextResponse } from "next/server";
+import type { JsonRequest } from "@/lib/llm";
 import { testClient } from "./test-db";
 const state = vi.hoisted(() => ({
   owner: "10000000-0000-4000-8000-000000000001" as string | null,
   client: {} as unknown,
   fail: false,
+  modelRows: 0,
 }));
 vi.mock("@/lib/imports/access", () => ({
   importAccess: async () =>
@@ -22,28 +24,30 @@ vi.mock("@/lib/imports/access", () => ({
       { status: 503 },
     ),
 }));
-vi.mock("@/lib/openai", () => ({
-  getOpenAI: () => ({
-    responses: {
-      create: async ({ input }: { input: string }) => {
-        if (state.fail) throw new Error("Provider unavailable");
-        const n = Number(/Categorize these (\d+)/.exec(input)?.[1]);
-        return {
-          output_text: JSON.stringify({
-            items: Array.from({ length: n }, () => ({
-              vendor: "ignored normalization",
-              amount: 999,
-              date: "1999-01-01",
-              category: "Software/SaaS",
-              subcategory: "Subscription",
-              confidence: 0.9,
-            })),
-          }),
-        };
-      },
+vi.mock("@/lib/llm", async (importOriginal) => {
+  const llm = await importOriginal<typeof import("@/lib/llm")>();
+  return {
+    ...llm,
+    completeJson: async (request: JsonRequest<unknown>) => {
+      if (state.fail)
+        throw new llm.LlmUnavailableError("Model provider is not reachable", false);
+      const ids = [...request.user.matchAll(/"id":"(\d+)"/g)].map((m) => m[1]);
+      state.modelRows += ids.length;
+      const items = ids.map((id) => ({
+        id,
+        vendor: "ignored normalization",
+        category: "Software/SaaS",
+        subcategory: "Subscription",
+      }));
+      return {
+        value: request.validate({ items }),
+        provider: "ollama",
+        model: "test",
+        latencyMs: 1,
+      };
     },
-  }),
-}));
+  };
+});
 import { POST as preview } from "@/app/api/imports/preview/route";
 import { POST as commit } from "@/app/api/imports/[id]/commit/route";
 import { PATCH as save } from "@/app/api/imports/[id]/route";
@@ -53,6 +57,9 @@ beforeAll(async () => {
   await db.exec(readFileSync("src/lib/imports/test-schema.sql", "utf8"));
   await db.exec(
     readFileSync("supabase/migrations/20261024_import_review.sql", "utf8"),
+  );
+  await db.exec(
+    readFileSync("supabase/migrations/20261116_leak_finder.sql", "utf8"),
   );
   state.client = testClient(db);
 }, 20000);
@@ -125,6 +132,14 @@ it("runs CSV → persisted review → exclusion → categorization → determini
     amount: "2",
     transaction_date: new Date("2026-10-01T00:00:00.000Z"),
   });
+  expect(
+    (
+      await db.query(
+        "select distinct category_origin,confidence from line_items where upload_id=$1",
+        [result.upload_id],
+      )
+    ).rows,
+  ).toEqual([{ category_origin: "model", confidence: "0.7" }]);
   const replay = await commit(
     new Request("http://local", { method: "POST" }),
     context(draft.id),
@@ -210,4 +225,64 @@ it("resumes the second chunk after provider failure without duplicating the firs
       )
     ).rows,
   ).toEqual([{ total_spend: "52.00", total_occurrences: 26 }]);
+}, 20000);
+it("resolves rules and history before the model and records how each row was categorised", async () => {
+  state.owner = "10000000-0000-4000-8000-000000000001";
+  state.fail = false;
+  // The first test published 25 Figma rows, so history votes Software/SaaS for Figma.
+  await db.query(
+    "select upsert_merchant_rule($1,'blue bottle','Food/Dining','Blue Bottle','correction')",
+    [state.owner],
+  );
+  const form = new FormData();
+  form.append(
+    "file",
+    new File(
+      [
+        "Vendor,Amount,Date\n" +
+          "FIGMA MONTHLY,45.00,2026-10-03\n" +
+          "SQ *BLUE BOTTLE 0423 OAKLAND CA,6.50,2026-10-04\n" +
+          "Brand New Vendor,12.00,2026-10-05",
+      ],
+      "third.csv",
+      { type: "text/csv" },
+    ),
+  );
+  const { draft } = await (
+    await preview(new Request("http://local", { method: "POST", body: form }))
+  ).json();
+  const modelRowsBefore = state.modelRows;
+  const done = await commit(
+    new Request("http://local", { method: "POST" }),
+    context(draft.id),
+  );
+  const { upload_id } = await done.json();
+  expect(state.modelRows - modelRowsBefore).toBe(1);
+  expect(
+    (
+      await db.query(
+        "select vendor,category,category_origin,confidence from line_items where upload_id=$1 order by amount",
+        [upload_id],
+      )
+    ).rows,
+  ).toEqual([
+    {
+      vendor: "SQ *BLUE BOTTLE 0423 OAKLAND CA",
+      category: "Food/Dining",
+      category_origin: "rule",
+      confidence: "1",
+    },
+    {
+      vendor: "Brand New Vendor",
+      category: "Software/SaaS",
+      category_origin: "model",
+      confidence: "0.7",
+    },
+    {
+      vendor: "FIGMA MONTHLY",
+      category: "Software/SaaS",
+      category_origin: "history",
+      confidence: "0.9",
+    },
+  ]);
 }, 20000);

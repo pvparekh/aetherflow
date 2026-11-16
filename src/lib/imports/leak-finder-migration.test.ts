@@ -22,7 +22,8 @@ async function database() {
   return db;
 }
 
-describe("leak-finder migration", () => {
+// PGlite start-up dominates; match the 20 s budget of the other database suites.
+describe("leak-finder migration", { timeout: 20000 }, () => {
   it("adds tags, notes, budgets and merchant rules", async () => {
     const db = await database();
     await db.query(

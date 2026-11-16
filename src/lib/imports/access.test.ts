@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { classifyImportFailure } from "./access";
+import { LlmUnavailableError, type LlmConfig } from "@/lib/llm";
+import { classifyImportFailure, modelFailure } from "./access";
+
+const OLLAMA: LlmConfig = {
+  provider: "ollama",
+  baseURL: "http://localhost:11434/v1",
+  apiKey: "ollama",
+  model: "qwen3.5:9b",
+};
 
 function providerError(name: string, status: number, code?: string, type?: string) {
   return Object.assign(new Error("Provider request failed"), { name, status, code, type });
@@ -53,6 +61,36 @@ describe("import failure classification", () => {
     const result = classifyImportFailure(new Error("some private SQL text"), "publication");
     expect(result.error).toContain("database rejected");
     expect(result.error).not.toContain("private SQL text");
+  });
+
+  it("explains an inactive billing account from the model layer", () => {
+    const result = classifyImportFailure(
+      new LlmUnavailableError("Model provider rejected the request: 429: billing_not_active", true, 429, "billing_not_active"),
+      "categorization",
+    );
+    expect(result.error).toContain("no active billing");
+    expect(result.error).toContain("review is saved");
+    expect(result.diagnostic).toBe("LlmUnavailableError:429:billing_not_active");
+  });
+
+  it("tells the user to start a local model that is not reachable", () => {
+    const unreachable = new LlmUnavailableError("Model provider is not reachable", false);
+    expect(modelFailure(unreachable, OLLAMA)?.message).toContain(
+      "http://localhost:11434/v1 is not reachable. Start Ollama",
+    );
+    expect(modelFailure(unreachable, { ...OLLAMA, provider: "cloudflare" })?.message).toContain(
+      "could not be reached",
+    );
+  });
+
+  it("names the missing model and how to install it", () => {
+    const missing = new LlmUnavailableError("Model provider rejected the request: 404", true, 404, "model_not_found");
+    expect(modelFailure(missing, OLLAMA)?.message).toContain('ollama pull qwen3.5:9b');
+  });
+
+  it("does not treat database or programming errors as model failures", () => {
+    expect(modelFailure(new TypeError("boom"), OLLAMA)).toBeNull();
+    expect(modelFailure({ code: "42P01" }, OLLAMA)).toBeNull();
   });
 
   it("does not expose raw unknown error bodies", () => {

@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { importAccess, importFailure, classifyImportFailure } from "@/lib/imports/access";
 import { validateReview } from "@/lib/imports/contract";
-import { categorizeBatch } from "@/lib/expense-intel/pass1/categorizer";
+import { categorizeRows } from "@/lib/expense-intel/pass1/categorizer";
+import { loadKnownCategories } from "@/lib/expense-intel/rules/store";
 import { computeAndWriteStats } from "@/lib/expense-intel/stats";
 import { runVendorIntelligence } from "@/lib/expense-intel/vendors";
 import { withExpenseLease, BusyError } from "@/lib/imports/lease";
@@ -91,13 +92,16 @@ export async function POST(
         amount: r.amount,
         transaction_date: r.date,
       }));
+      phase = "rules";
+      const known = await loadKnownCategories(a.db, a.user.id);
       phase = "categorization";
-      const categories = await categorizeBatch(raw);
+      const categories = await categorizeRows(raw, known);
       const chunk = raw.map((r, i) => ({
         ...r,
         category: categories[i].category,
         subcategory: categories[i].subcategory,
         confidence: categories[i].confidence,
+        category_origin: categories[i].origin,
       }));
       phase = "publication";
       const { data, error: commitError } = await a.db.rpc(
