@@ -1,5 +1,4 @@
 import Papa from 'papaparse';
-import { getOpenAI } from '@/lib/openai';
 import type { ParsedRow, ParseError, ParseResult, ParseFormat } from '../types';
 
 function detectFormat(headers: string[]): ParseFormat {
@@ -115,78 +114,6 @@ function parseTxt(content: string): ParseResult {
   });
 
   return { rows, errors, format: 'txt' };
-}
-
-interface RawTransaction {
-  description: string;
-  amount: number;
-  date: string | null;
-}
-
-const PDF_INSTRUCTIONS = `You are an expense file parser. Extract every expense transaction from this document.
-
-Return ONLY valid JSON — no markdown, no code fences:
-{
-  "transactions": [
-    { "description": "vendor or merchant name", "amount": 0.00, "date": "YYYY-MM-DD or null" }
-  ]
-}
-
-Rules:
-- amount: always a positive number representing the expense cost
-- description: merchant or payee name only — clean and normalized, no dollar amounts embedded in it
-- date: YYYY-MM-DD format or null if not found
-- Skip: headers, footers, subtotals, grand totals, and any row without a clear vendor and amount
-- Include every individual expense line; one object per transaction`;
-
-export async function parsePDF(buffer: Buffer): Promise<ParseResult> {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pdfModule = require('pdf-parse') as ((buf: Buffer) => Promise<{ text: string }>) | { default: (buf: Buffer) => Promise<{ text: string }> };
-  const pdfParse = typeof pdfModule === 'function' ? pdfModule : pdfModule.default;
-  const { text } = await pdfParse(buffer);
-
-  if (!text?.trim()) {
-    return { rows: [], errors: [{ line: 0, raw: '', reason: 'PDF contained no extractable text' }], format: 'pdf' };
-  }
-
-  const truncated = text.slice(0, 12000);
-
-  const response = await getOpenAI().responses.create({
-    model: 'gpt-4o-mini',
-    instructions: PDF_INSTRUCTIONS,
-    input: truncated,
-  });
-
-  let transactions: RawTransaction[] = [];
-  try {
-    const raw = response.output_text ?? '';
-    const json = JSON.parse(raw.replace(/```json|```/g, '').trim()) as { transactions: RawTransaction[] };
-    transactions = json.transactions ?? [];
-  } catch {
-    return { rows: [], errors: [{ line: 0, raw: '', reason: 'AI could not parse transactions from PDF' }], format: 'pdf' };
-  }
-
-  const rows: ParsedRow[] = [];
-  const errors: ParseError[] = [];
-
-  transactions.forEach((t, i) => {
-    if (!t.description?.trim()) {
-      errors.push({ line: i + 1, raw: JSON.stringify(t), reason: 'Missing description' });
-      return;
-    }
-    if (typeof t.amount !== 'number' || isNaN(t.amount) || t.amount <= 0) {
-      errors.push({ line: i + 1, raw: JSON.stringify(t), reason: 'Invalid amount' });
-      return;
-    }
-    rows.push({
-      raw_text: `${t.description} | ${t.amount}${t.date ? ` | ${t.date}` : ''}`,
-      vendor: t.description.trim(),
-      amount: t.amount,
-      transaction_date: t.date ?? null,
-    });
-  });
-
-  return { rows, errors, format: 'pdf' };
 }
 
 export function parseExpenseFile(content: string, filename: string): ParseResult {
