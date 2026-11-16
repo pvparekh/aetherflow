@@ -49,7 +49,8 @@ const rows = [
 const native = () => readFileSync("src/lib/imports/fixtures/native-statement.pdf");
 const sparse = () => readFileSync("src/lib/imports/fixtures/sparse-statement.pdf");
 
-describe("PDF transport and source validation (provider mocked, no OCR accuracy claim)", () => {
+// Real PDF.js parsing can exceed the 5s default under a parallel run.
+describe("PDF transport and source validation (provider mocked, no OCR accuracy claim)", { timeout: 20000 }, () => {
   beforeEach(() => {
     completeJson.mockReset();
     visualProvider.mockReset();

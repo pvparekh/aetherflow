@@ -48,7 +48,7 @@ export const CANCEL_GUIDE: CancelGuideEntry[] = [
     "Select your subscription and choose Cancel Subscription.",
     APP_STORE_STEP,
   ]),
-  entry("hbo-max", "HBO Max", [/^hbo ?max/, /^max ?com\b/, /^hbo\b/], "https://help.hbomax.com/us/Answer/Detail/000002526", [
+  entry("hbo-max", "HBO Max", [/^hbo ?max/, /^max ?com\b/, /^hbo\b/, /^max$/], "https://help.hbomax.com/us/Answer/Detail/000002526", [
     "Sign in at hbomax.com and open Subscription.",
     "Check who bills you; if it is a partner, cancel through them.",
     "Choose Cancel Your Subscription and note the end date shown.",
