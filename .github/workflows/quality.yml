@@ -1,7 +1,7 @@
 name: Candidate verification
 on:
   push:
-    branches: [main, feat/product-upgrade]
+    branches: [main, feat/product-upgrade, feat/leak-finder]
   pull_request:
 permissions:
   contents: read
@@ -16,4 +16,8 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      # Deterministic, offline eval checks (golden set, normaliser, demo data,
+      # planted leaks). Never calls a model; `npm run eval` is manual only.
+      - name: Eval checks
+        run: npm run eval:ci
       - run: npm run verify

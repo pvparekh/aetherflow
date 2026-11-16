@@ -1,0 +1,8 @@
+{
+  "dataset": {
+    "name": "categorize-golden",
+    "rows": 233,
+    "description": "Hand-labelled raw bank descriptors across all 9 categories, including ambiguous merchants (evals/golden/categorize.jsonl)."
+  },
+  "runs": []
+}

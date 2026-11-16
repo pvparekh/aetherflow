@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint src utils middleware.ts --max-warnings 0",
     "test": "vitest",
+    "eval": "tsx evals/run.ts",
+    "eval:ci": "eslint evals --max-warnings 0 && vitest run evals src/lib/demo --reporter=verbose",
     "verify": "node scripts/verify.mjs"
   },
   "dependencies": {
@@ -47,6 +49,7 @@
     "jsdom": "^30.1.3",
     "prettier": "^3.9.10",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "tw-animate-css": "^1.3.5",
     "typescript": "^5",
     "vitest": "^4.1.5"
