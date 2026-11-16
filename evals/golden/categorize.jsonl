@@ -1,0 +1,233 @@
+{"id":"food-001","descriptor":"SQ *BLUE BOTTLE COFFEE 0611 BROOKLYN NY","amount":7.25,"category":"Food/Dining","vendor":"Blue Bottle Coffee"}
+{"id":"food-002","descriptor":"TST* JOE'S PIZZA - CARMINE ST NEW YORK NY","amount":9.8,"category":"Food/Dining","vendor":"Joe's Pizza"}
+{"id":"food-003","descriptor":"STARBUCKS STORE 11823 NEW YORK NY","amount":6.45,"category":"Food/Dining","vendor":"Starbucks"}
+{"id":"food-004","descriptor":"DD *DOORDASH SWEETGREEN 855-973-1040 CA","amount":18.62,"category":"Food/Dining","vendor":"DoorDash","hard":true,"notes":"Marketplace of record is DoorDash; the restaurant name follows. Display vendor is the marketplace, as with Amazon Marketplace sellers."}
+{"id":"food-005","descriptor":"UBER   *EATS 8005928996 CA","amount":31.47,"category":"Food/Dining","vendor":"Uber Eats","hard":true,"notes":"Must not be confused with Uber rides (Travel/Transport)."}
+{"id":"food-006","descriptor":"TRADER JOE S #558 BROOKLYN NY","amount":64.18,"category":"Food/Dining","vendor":"Trader Joe's","notes":"Groceries count as Food/Dining; there is no separate groceries category."}
+{"id":"food-007","descriptor":"WHOLEFDS GWS 10254 BROOKLYN NY","amount":87.33,"category":"Food/Dining","vendor":"Whole Foods","hard":true,"notes":"Bank abbreviation WHOLEFDS plus a store code."}
+{"id":"food-008","descriptor":"KEY FOOD #1123 BROOKLYN NY","amount":23.4,"category":"Food/Dining","vendor":"Key Food"}
+{"id":"food-009","descriptor":"SWEETGREEN FLATIRON NEW YORK NY","amount":16.95,"category":"Food/Dining","vendor":"Sweetgreen","hard":true,"notes":"Neighbourhood name (Flatiron) is a location, not part of the brand."}
+{"id":"food-010","descriptor":"CHIPOTLE 2841 NEW YORK NY","amount":13.85,"category":"Food/Dining","vendor":"Chipotle"}
+{"id":"food-011","descriptor":"SQ *DEVOCION WILLIAMSBURG BROOKLYN NY","amount":5.75,"category":"Food/Dining","vendor":"Devocion","notes":"Brand is written Devocion on bank statements (no accent)."}
+{"id":"food-012","descriptor":"TST* LILIA BROOKLYN NY","amount":142.6,"category":"Food/Dining","vendor":"Lilia"}
+{"id":"food-013","descriptor":"SEAMLSS*THAI VILLA 800-905-9322 NY","amount":28.4,"category":"Food/Dining","vendor":"Seamless","hard":true,"notes":"SEAMLSS is Seamless (food delivery marketplace)."}
+{"id":"food-014","descriptor":"GRUBHUB*HALALGUYS GRUBHUB.COM NY","amount":15.25,"category":"Food/Dining","vendor":"Grubhub"}
+{"id":"food-015","descriptor":"PRET A MANGER #US066 NEW YORK NY","amount":11.42,"category":"Food/Dining","vendor":"Pret A Manger"}
+{"id":"food-016","descriptor":"DUNKIN #348925 Q35 BROOKLYN NY","amount":4.29,"category":"Food/Dining","vendor":"Dunkin"}
+{"id":"food-017","descriptor":"SHAKE SHACK #1104 BROOKLYN NY","amount":19.36,"category":"Food/Dining","vendor":"Shake Shack"}
+{"id":"food-018","descriptor":"SQ *VAN LEEUWEN ICE CREAM BROOKLYN NY","amount":8.5,"category":"Food/Dining","vendor":"Van Leeuwen Ice Cream"}
+{"id":"food-019","descriptor":"CARBONE NEW YORK NY","amount":286,"category":"Food/Dining","vendor":"Carbone","hard":true,"notes":"Large restaurant bill (client dinner). Amount must not push it to Entertainment."}
+{"id":"food-020","descriptor":"MCDONALD'S F12345 BROOKLYN NY","amount":9.47,"category":"Food/Dining","vendor":"McDonald's"}
+{"id":"food-021","descriptor":"SQ *PARTNERS COFFEE WILLIAMSBURG BROOKLYN NY","amount":6,"category":"Food/Dining","vendor":"Partners Coffee"}
+{"id":"food-022","descriptor":"INSTACART*SUBSCRIPTION SAN FRANCISCO CA","amount":9.99,"category":"Food/Dining","vendor":"Instacart","hard":true,"notes":"Instacart+ membership. A subscription, but to grocery delivery, so Food/Dining rather than Software/SaaS."}
+{"id":"food-023","descriptor":"INSTACART HTTPSINSTACAR CA","amount":112.4,"category":"Food/Dining","vendor":"Instacart","hard":true,"notes":"Truncated URL in the descriptor (HTTPSINSTACAR)."}
+{"id":"food-024","descriptor":"BLUE APRON 888-278-4349 NY","amount":69.93,"category":"Food/Dining","vendor":"Blue Apron"}
+{"id":"food-025","descriptor":"STARBUCKS CARD RELOAD 800-782-7282 WA","amount":25,"category":"Food/Dining","vendor":"Starbucks","hard":true,"notes":"Gift card reload is prepaid coffee."}
+{"id":"food-026","descriptor":"TST* BAR GOTO NEW YORK NY","amount":58.7,"category":"Food/Dining","vendor":"Bar Goto","hard":true,"notes":"Bars count as Food/Dining (food and drink), not Entertainment."}
+{"id":"travel-001","descriptor":"UBER *TRIP 8005928996 CA","amount":18.4,"category":"Travel/Transport","vendor":"Uber"}
+{"id":"travel-002","descriptor":"LYFT   *RIDE THU 8AM 855-865-9553 CA","amount":16.21,"category":"Travel/Transport","vendor":"Lyft"}
+{"id":"travel-003","descriptor":"MTA*NYCT PAYGO 2 NEW YORK NY","amount":2.9,"category":"Travel/Transport","vendor":"MTA","hard":true,"notes":"OMNY subway tap. MTA is the brand; NYCT PAYGO is the fare product."}
+{"id":"travel-004","descriptor":"MTA*METROCARD/MVM 0123 NEW YORK NY","amount":33,"category":"Travel/Transport","vendor":"MTA"}
+{"id":"travel-005","descriptor":"DELTA AIR 0062349183456 DELTA.COM GA","amount":386.2,"category":"Travel/Transport","vendor":"Delta Air Lines"}
+{"id":"travel-006","descriptor":"JETBLUE 2792142345678 SALT LAKE CTY UT","amount":214.6,"category":"Travel/Transport","vendor":"JetBlue","notes":"Salt Lake City is JetBlue's billing location, not the trip."}
+{"id":"travel-007","descriptor":"UNITED 0162334567891 800-932-2732 TX","amount":512.4,"category":"Travel/Transport","vendor":"United Airlines"}
+{"id":"travel-008","descriptor":"AMTRAK .CO2690512345678 WASHINGTON DC","amount":89,"category":"Travel/Transport","vendor":"Amtrak"}
+{"id":"travel-009","descriptor":"LYFT   *CITI BIKE BIKE SHARE 855-245-3311 NY","amount":4.79,"category":"Travel/Transport","vendor":"Citi Bike","hard":true,"notes":"Citi Bike is billed through Lyft. Same category either way; the display vendor should be Citi Bike."}
+{"id":"travel-010","descriptor":"SHELL OIL 57444380300 BROOKLYN NY","amount":48.32,"category":"Travel/Transport","vendor":"Shell","notes":"Fuel."}
+{"id":"travel-011","descriptor":"EXXONMOBIL 4712 JERSEY CITY NJ","amount":52.1,"category":"Travel/Transport","vendor":"ExxonMobil"}
+{"id":"travel-012","descriptor":"NJ TRANSIT MOBILE NEWARK NJ","amount":5.9,"category":"Travel/Transport","vendor":"NJ Transit"}
+{"id":"travel-013","descriptor":"E-ZPASS NY 800-333-8655 NY","amount":25,"category":"Travel/Transport","vendor":"E-ZPass","notes":"Toll account top-up."}
+{"id":"travel-014","descriptor":"ICON PARKING 0123 NEW YORK NY","amount":38,"category":"Travel/Transport","vendor":"Icon Parking"}
+{"id":"travel-015","descriptor":"SPOTHERO 312-566-7768 IL","amount":22.5,"category":"Travel/Transport","vendor":"SpotHero","hard":true,"notes":"Parking booking app; a transport cost, not software."}
+{"id":"travel-016","descriptor":"HERTZ RENT-A-CAR BOSTON MA","amount":214.66,"category":"Travel/Transport","vendor":"Hertz","notes":"Car rental is transport, not Accommodation."}
+{"id":"travel-017","descriptor":"ZIPCAR INC 866-494-7227 MA","amount":67.8,"category":"Travel/Transport","vendor":"Zipcar"}
+{"id":"travel-018","descriptor":"NYC TAXI 5H44 NEW YORK NY","amount":21.3,"category":"Travel/Transport","vendor":"NYC Taxi"}
+{"id":"travel-019","descriptor":"SOUTHWES 5262345678901 800-435-9792 TX","amount":248.96,"category":"Travel/Transport","vendor":"Southwest Airlines","hard":true,"notes":"Truncated airline name SOUTHWES."}
+{"id":"travel-020","descriptor":"AMERICAN AIR0012345678901 FORT WORTH TX","amount":329.4,"category":"Travel/Transport","vendor":"American Airlines","hard":true,"notes":"Ticket number glued to the name."}
+{"id":"travel-021","descriptor":"CLEAR *CLEARME.COM NEW YORK NY","amount":209,"category":"Travel/Transport","vendor":"CLEAR","hard":true,"notes":"CLEAR Plus airport security membership. Annual and subscription-like, but its only use is travel."}
+{"id":"travel-022","descriptor":"GOGOAIR.COM 877-350-0038 IL","amount":19.95,"category":"Travel/Transport","vendor":"Gogo","hard":true,"notes":"In-flight wifi pass: a travel cost, not a home or office utility."}
+{"id":"travel-023","descriptor":"PATH TAPP PAYGO JERSEY CITY NJ","amount":2.75,"category":"Travel/Transport","vendor":"PATH","hard":true,"notes":"PATH train fare."}
+{"id":"travel-024","descriptor":"LIME*2 RIDES 888-546-3345 CA","amount":7.84,"category":"Travel/Transport","vendor":"Lime"}
+{"id":"travel-025","descriptor":"REVEL TRANSIT BROOKLYN NY","amount":18.7,"category":"Travel/Transport","vendor":"Revel"}
+{"id":"travel-026","descriptor":"UBER   *TRIP 2PQ7X HELP.UBER.COM CA","amount":74.2,"category":"Travel/Transport","vendor":"Uber","notes":"Airport ride; reference id must not leak into the vendor."}
+{"id":"lodging-001","descriptor":"MARRIOTT SAN FRANCISCO M SAN FRANCISCO CA","amount":612.4,"category":"Accommodation","vendor":"Marriott"}
+{"id":"lodging-002","descriptor":"HILTON GARDEN INN BOSTON BOSTON MA","amount":289.1,"category":"Accommodation","vendor":"Hilton Garden Inn"}
+{"id":"lodging-003","descriptor":"AIRBNB * HMQ2K8TT4C 415-800-5959 CA","amount":356.8,"category":"Accommodation","vendor":"Airbnb"}
+{"id":"lodging-004","descriptor":"HOTEL ZETTA SAN FRANCISCO CA","amount":498.75,"category":"Accommodation","vendor":"Hotel Zetta"}
+{"id":"lodging-005","descriptor":"ACE HOTEL NEW YORK NEW YORK NY","amount":342,"category":"Accommodation","vendor":"Ace Hotel"}
+{"id":"lodging-006","descriptor":"HYATT REGENCY AUSTIN AUSTIN TX","amount":415.32,"category":"Accommodation","vendor":"Hyatt Regency"}
+{"id":"lodging-007","descriptor":"BOOKING.COM 888-850-3958 NLD","amount":228.4,"category":"Accommodation","vendor":"Booking.com"}
+{"id":"lodging-008","descriptor":"EXPEDIA 72384958123 EXPEDIA.COM WA","amount":389.6,"category":"Accommodation","vendor":"Expedia","hard":true,"notes":"Expedia sells flights too. Hotel bookings are its most common charge, so Accommodation."}
+{"id":"lodging-009","descriptor":"HOTELS.COM 1234567890 HOTELS.COM TX","amount":176.2,"category":"Accommodation","vendor":"Hotels.com"}
+{"id":"lodging-010","descriptor":"VRBO *HA-1234567 AUSTIN TX","amount":640,"category":"Accommodation","vendor":"Vrbo"}
+{"id":"lodging-011","descriptor":"THE HOXTON WILLIAMSBURG BROOKLYN NY","amount":265,"category":"Accommodation","vendor":"The Hoxton"}
+{"id":"lodging-012","descriptor":"CITIZENM NEW YORK BOWERY NEW YORK NY","amount":219.5,"category":"Accommodation","vendor":"citizenM","hard":true,"notes":"Brand is written citizenM; compare case-insensitively."}
+{"id":"lodging-013","descriptor":"KIMPTON HOTEL PALOMAR PHILADELPHIA PA","amount":254.88,"category":"Accommodation","vendor":"Kimpton Hotel Palomar"}
+{"id":"lodging-014","descriptor":"COURTYARD CHICAGO DWNTWN CHICAGO IL","amount":198.45,"category":"Accommodation","vendor":"Courtyard by Marriott","hard":true,"notes":"No HOTEL keyword; Courtyard is a Marriott hotel brand."}
+{"id":"lodging-015","descriptor":"HAMPTON INNS PHILADELPHIA PA","amount":164.3,"category":"Accommodation","vendor":"Hampton Inn"}
+{"id":"lodging-016","descriptor":"HOLIDAY INN EXPRESS LONG ISLAND CITY NY","amount":149,"category":"Accommodation","vendor":"Holiday Inn Express"}
+{"id":"lodging-017","descriptor":"HI NYC HOSTEL NEW YORK NY","amount":62,"category":"Accommodation","vendor":"HI NYC Hostel"}
+{"id":"lodging-018","descriptor":"THE STANDARD HIGH LINE NEW YORK NY","amount":389,"category":"Accommodation","vendor":"The Standard","hard":true,"notes":"High Line is a location, not part of the brand."}
+{"id":"lodging-019","descriptor":"W AUSTIN AUSTIN TX","amount":455.2,"category":"Accommodation","vendor":"W Hotels","hard":true,"notes":"Single-letter brand with no HOTEL keyword."}
+{"id":"lodging-020","descriptor":"SHERATON BOSTON HOTEL BOSTON MA","amount":301.17,"category":"Accommodation","vendor":"Sheraton"}
+{"id":"lodging-021","descriptor":"AIRBNB * HM4FZ9QXJW 415-800-5959 CA","amount":1284,"category":"Accommodation","vendor":"Airbnb","notes":"Long stay; amount alone must not change the category."}
+{"id":"lodging-022","descriptor":"RESIDENCE INN SEATTLE DOWNTOWN SEATTLE WA","amount":233.9,"category":"Accommodation","vendor":"Residence Inn"}
+{"id":"lodging-023","descriptor":"BEST WESTERN PLUS PORTLAND OR","amount":142.8,"category":"Accommodation","vendor":"Best Western"}
+{"id":"lodging-024","descriptor":"HOTELTONIGHT* 415-562-4740 CA","amount":189,"category":"Accommodation","vendor":"HotelTonight"}
+{"id":"lodging-025","descriptor":"LA QUINTA INN 0812 DENVER CO","amount":118.6,"category":"Accommodation","vendor":"La Quinta Inn"}
+{"id":"software-001","descriptor":"ADOBE *ACROPRO SUBS 800-833-6687 CA","amount":19.99,"category":"Software/SaaS","vendor":"Adobe"}
+{"id":"software-002","descriptor":"FIGMA* ANNUAL PLAN SAN FRANCISCO CA","amount":144,"category":"Software/SaaS","vendor":"Figma"}
+{"id":"software-003","descriptor":"NOTION.SO NEW YORK NY","amount":10,"category":"Software/SaaS","vendor":"Notion"}
+{"id":"software-004","descriptor":"GOOGLE *WORKSPACE_ACMEDESIGN G.CO/HELPPAY# CA","amount":14,"category":"Software/SaaS","vendor":"Google Workspace"}
+{"id":"software-005","descriptor":"GOOGLE *Google One G.CO/HELPPAY# CA","amount":2.99,"category":"Software/SaaS","vendor":"Google One","notes":"Cloud storage plan."}
+{"id":"software-006","descriptor":"OPENAI *CHATGPT SUBSCR SAN FRANCISCO CA","amount":20,"category":"Software/SaaS","vendor":"OpenAI"}
+{"id":"software-007","descriptor":"GITHUB, INC. GITHUB.COM CA","amount":4,"category":"Software/SaaS","vendor":"GitHub"}
+{"id":"software-008","descriptor":"SLACK T0123ABCD DUBLIN IE","amount":8.75,"category":"Software/SaaS","vendor":"Slack"}
+{"id":"software-009","descriptor":"ZOOM.US 888-799-9666 CA","amount":15.99,"category":"Software/SaaS","vendor":"Zoom"}
+{"id":"software-010","descriptor":"DROPBOX*4HQ8TZ2K DROPBOX.COM CA","amount":11.99,"category":"Software/SaaS","vendor":"Dropbox"}
+{"id":"software-011","descriptor":"MSFT * E0200ABCD1 425-681-6830 WA","amount":9.99,"category":"Software/SaaS","vendor":"Microsoft","hard":true,"notes":"Microsoft 365 billing descriptor with an invoice id."}
+{"id":"software-012","descriptor":"APPLE.COM/BILL ONE APPLE PARK WAY 866-712-7753 CA","amount":9.99,"category":"Software/SaaS","vendor":"Apple","hard":true,"notes":"Ambiguous: apple.com/bill covers iCloud, App Store apps and Apple TV+. iCloud and app subscriptions are the most common business reading, so Software/SaaS. Hardware from Apple retail is Office/Supplies."}
+{"id":"software-013","descriptor":"AMAZON WEB SERVICES AWS.AMAZON.CO WA","amount":3.42,"category":"Software/SaaS","vendor":"Amazon Web Services","hard":true,"notes":"Cloud hosting. Must not be swept into Amazon retail (Office/Supplies)."}
+{"id":"software-014","descriptor":"GOOGLE *CLOUD_01F2A3 CC@GOOGLE.COM CA","amount":1.27,"category":"Software/SaaS","vendor":"Google Cloud"}
+{"id":"software-015","descriptor":"VERCEL INC. VERCEL.COM CA","amount":20,"category":"Software/SaaS","vendor":"Vercel"}
+{"id":"software-016","descriptor":"WEBFLOW INC SAN FRANCISCO CA","amount":29,"category":"Software/SaaS","vendor":"Webflow","notes":"Website builder and hosting. Website platforms are Software/SaaS, even when the site is a marketing asset."}
+{"id":"software-017","descriptor":"FRAMER B.V. AMSTERDAM NLD","amount":15,"category":"Software/SaaS","vendor":"Framer"}
+{"id":"software-018","descriptor":"CANVA* 03998-12345678 SURRY HILLS AU","amount":14.99,"category":"Software/SaaS","vendor":"Canva","hard":true,"notes":"Design tool, so Software/SaaS, even though it is often used for marketing graphics."}
+{"id":"software-019","descriptor":"1PASSWORD* AGILEBITS TORONTO ON","amount":35.88,"category":"Software/SaaS","vendor":"1Password","hard":true,"notes":"Brand starts with a digit; legal name AgileBits follows."}
+{"id":"software-020","descriptor":"LOOM, INC. SAN FRANCISCO CA","amount":12.5,"category":"Software/SaaS","vendor":"Loom"}
+{"id":"software-021","descriptor":"CALENDLY ATLANTA GA","amount":10,"category":"Software/SaaS","vendor":"Calendly"}
+{"id":"software-022","descriptor":"MIRO.COM SAN FRANCISCO CA","amount":8,"category":"Software/SaaS","vendor":"Miro"}
+{"id":"software-023","descriptor":"PADDLE.NET* SKETCH","amount":10,"category":"Software/SaaS","vendor":"Sketch","hard":true,"notes":"Paddle is the reseller of record; the product is Sketch."}
+{"id":"software-024","descriptor":"LINEAR ORBIT INC SAN FRANCISCO CA","amount":8,"category":"Software/SaaS","vendor":"Linear","hard":true,"notes":"Legal entity name (Linear Orbit, Inc.) rather than the product name."}
+{"id":"software-025","descriptor":"SQSP* DOMAIN 7G3K2 SQUARESPACE.COM NY","amount":20,"category":"Software/SaaS","vendor":"Squarespace","hard":true,"notes":"SQSP is Squarespace. Domain renewals are Software/SaaS."}
+{"id":"software-026","descriptor":"NAME-CHEAP.COM* 4H8KQ2 PHOENIX AZ","amount":13.98,"category":"Software/SaaS","vendor":"Namecheap"}
+{"id":"software-027","descriptor":"GODADDY.COM 480-505-8855 AZ","amount":21.99,"category":"Software/SaaS","vendor":"GoDaddy"}
+{"id":"office-001","descriptor":"AMZN Mktp US*RT4KQ81Z0 AMZN.COM/BILL WA","amount":34.99,"category":"Office/Supplies","vendor":"Amazon","hard":true,"notes":"Ambiguous: Amazon sells everything. For a business expense the most common purchase is supplies and small equipment, so Office/Supplies."}
+{"id":"office-002","descriptor":"Amazon.com*2H8XK47T3 Amzn.com/bill WA","amount":89.97,"category":"Office/Supplies","vendor":"Amazon","hard":true,"notes":"Same reasoning as other Amazon retail rows."}
+{"id":"office-003","descriptor":"STAPLES 00119 NEW YORK NY","amount":42.18,"category":"Office/Supplies","vendor":"Staples"}
+{"id":"office-004","descriptor":"BLICK ART 0332 NEW YORK NY","amount":63.25,"category":"Office/Supplies","vendor":"Blick Art Materials"}
+{"id":"office-005","descriptor":"B&H PHOTO 420 9TH AVE NEW YORK NY","amount":349,"category":"Office/Supplies","vendor":"B&H Photo","notes":"Equipment counts as Office/Supplies."}
+{"id":"office-006","descriptor":"APPLE STORE #R102 BROOKLYN NY","amount":199,"category":"Office/Supplies","vendor":"Apple Store","hard":true,"notes":"Apple retail store: hardware and accessories, not the apple.com/bill subscription feed."}
+{"id":"office-007","descriptor":"BEST BUY 00012345 BROOKLYN NY","amount":129.99,"category":"Office/Supplies","vendor":"Best Buy"}
+{"id":"office-008","descriptor":"FEDEX OFFIC52300004418 NEW YORK NY","amount":37.4,"category":"Office/Supplies","vendor":"FedEx Office","hard":true,"notes":"Truncated OFFIC glued to a store number. Printing is Office/Supplies."}
+{"id":"office-009","descriptor":"USPS PO 3528900123 BROOKLYN NY","amount":9.85,"category":"Office/Supplies","vendor":"USPS","notes":"Postage and shipping go to Office/Supplies (no shipping category)."}
+{"id":"office-010","descriptor":"THE UPS STORE 4532 BROOKLYN NY","amount":24.6,"category":"Office/Supplies","vendor":"The UPS Store"}
+{"id":"office-011","descriptor":"COSTCO WHSE #1104 BROOKLYN NY","amount":186.43,"category":"Office/Supplies","vendor":"Costco","hard":true,"notes":"Ambiguous: Costco is groceries for households. The most common business reading is bulk supplies and pantry stock for the workplace, so Office/Supplies. Costco Gas would be Travel/Transport."}
+{"id":"office-012","descriptor":"WEWORK*COWORKING DAY PASS NEW YORK NY","amount":29,"category":"Office/Supplies","vendor":"WeWork","hard":true,"notes":"Co-working workspace is an office cost, not Accommodation."}
+{"id":"office-013","descriptor":"INDUSTRIOUS NYC BROOKLYN NY","amount":45,"category":"Office/Supplies","vendor":"Industrious","hard":true,"notes":"Co-working operator."}
+{"id":"office-014","descriptor":"OFFICE DEPOT #1123 JERSEY CITY NJ","amount":27.89,"category":"Office/Supplies","vendor":"Office Depot"}
+{"id":"office-015","descriptor":"IKEA BROOKLYN BROOKLYN NY","amount":249,"category":"Office/Supplies","vendor":"IKEA","hard":true,"notes":"Furniture for a workspace (desk, shelving) is the business reading."}
+{"id":"office-016","descriptor":"WACOM TECHNOLOGY CORP VANCOUVER WA","amount":379.95,"category":"Office/Supplies","vendor":"Wacom","notes":"Drawing tablet hardware."}
+{"id":"office-017","descriptor":"PAPER SOURCE #12 NEW YORK NY","amount":18.5,"category":"Office/Supplies","vendor":"Paper Source"}
+{"id":"office-018","descriptor":"MUJI 5TH AVE NEW YORK NY","amount":22,"category":"Office/Supplies","vendor":"Muji","hard":true,"notes":"Muji sells clothing too; stationery is the common business purchase."}
+{"id":"office-019","descriptor":"DELL MARKETING LP 800-624-9897 TX","amount":289.99,"category":"Office/Supplies","vendor":"Dell","hard":true,"notes":"Dell's sales entity is called Dell Marketing L.P.; this is hardware, not Marketing/Ads."}
+{"id":"office-020","descriptor":"LOGITECH INC NEWARK CA","amount":99.99,"category":"Office/Supplies","vendor":"Logitech"}
+{"id":"office-021","descriptor":"UPS* 1ZA2B3C4D5 800-742-5877 GA","amount":18.2,"category":"Office/Supplies","vendor":"UPS"}
+{"id":"office-022","descriptor":"TARGET 00012345 BROOKLYN NY","amount":54.32,"category":"Office/Supplies","vendor":"Target","hard":true,"notes":"Ambiguous general retailer; supplies are the business reading."}
+{"id":"office-023","descriptor":"MICRO CENTER #095 BROOKLYN NY","amount":74.99,"category":"Office/Supplies","vendor":"Micro Center"}
+{"id":"office-024","descriptor":"NEWEGG INC 800-390-1119 CA","amount":59.99,"category":"Office/Supplies","vendor":"Newegg"}
+{"id":"office-025","descriptor":"STAPLES.COM 800-333-3330 MA","amount":76.24,"category":"Office/Supplies","vendor":"Staples"}
+{"id":"office-026","descriptor":"AMAZON PRIME*2K3J45LP0 AMZN.COM/BILL WA","amount":14.99,"category":"Office/Supplies","vendor":"Amazon Prime","hard":true,"notes":"Ambiguous: Prime is a membership. For a business it pays for shipping on supply orders, so Office/Supplies; heavy Prime Video use would argue for Entertainment."}
+{"id":"marketing-001","descriptor":"FACEBK *ADS J4K2L9QD82 FB.ME/ADS CA","amount":150,"category":"Marketing/Ads","vendor":"Meta Ads","hard":true,"notes":"FACEBK is Meta's ads billing descriptor."}
+{"id":"marketing-002","descriptor":"META ADS 7Q2X9 MENLO PARK CA","amount":75,"category":"Marketing/Ads","vendor":"Meta Ads"}
+{"id":"marketing-003","descriptor":"GOOGLE *ADS4567891234 CC@GOOGLE.COM CA","amount":220.4,"category":"Marketing/Ads","vendor":"Google Ads","hard":true,"notes":"Account number glued to ADS; must not become Google Workspace or Google Cloud."}
+{"id":"marketing-004","descriptor":"LNKD_ADS_8K2J4 LINKEDIN.COM CA","amount":300,"category":"Marketing/Ads","vendor":"LinkedIn Ads"}
+{"id":"marketing-005","descriptor":"LINKEDIN PREMIUM 855-655-5653 CA","amount":39.99,"category":"Marketing/Ads","vendor":"LinkedIn Premium","hard":true,"notes":"Ambiguous: a subscription, but for a freelancer it is a prospecting and visibility tool, so Marketing/Ads rather than Software/SaaS."}
+{"id":"marketing-006","descriptor":"MOO PRINT LTD 4JK2 MOO.COM RI","amount":64,"category":"Marketing/Ads","vendor":"MOO","notes":"Business cards."}
+{"id":"marketing-007","descriptor":"VISTAPRINT 866-614-8002 MA","amount":42.98,"category":"Marketing/Ads","vendor":"Vistaprint","hard":true,"notes":"Printed promotional material, not office printing."}
+{"id":"marketing-008","descriptor":"MAILCHIMP *MONTHLY ATLANTA GA","amount":20,"category":"Marketing/Ads","vendor":"Mailchimp","hard":true,"notes":"Ambiguous: software, but its only purpose is email marketing; accountants usually book it as marketing."}
+{"id":"marketing-009","descriptor":"DRIBBBLE HOLDINGS LTD VICTORIA BC","amount":8,"category":"Marketing/Ads","vendor":"Dribbble","hard":true,"notes":"Pro membership for portfolio visibility and client leads."}
+{"id":"marketing-010","descriptor":"X ADS 8K3J2 SAN FRANCISCO CA","amount":50,"category":"Marketing/Ads","vendor":"X Ads"}
+{"id":"marketing-011","descriptor":"TIKTOK ADS 9238412 CULVER CITY CA","amount":100,"category":"Marketing/Ads","vendor":"TikTok Ads"}
+{"id":"marketing-012","descriptor":"PINTEREST ADS SAN FRANCISCO CA","amount":60,"category":"Marketing/Ads","vendor":"Pinterest Ads"}
+{"id":"marketing-013","descriptor":"REDDIT INC ADS SAN FRANCISCO CA","amount":45,"category":"Marketing/Ads","vendor":"Reddit Ads"}
+{"id":"marketing-014","descriptor":"MSFT * BING ADS 800-518-5689 WA","amount":38.5,"category":"Marketing/Ads","vendor":"Microsoft Advertising","hard":true,"notes":"Microsoft prefix, but this is search advertising, not Microsoft 365."}
+{"id":"marketing-015","descriptor":"BUFFER PUBLISHING SAN FRANCISCO CA","amount":6,"category":"Marketing/Ads","vendor":"Buffer","hard":true,"notes":"Social media scheduling; same reasoning as Mailchimp."}
+{"id":"marketing-016","descriptor":"STICKER MULE AMSTERDAM NY","amount":89,"category":"Marketing/Ads","vendor":"Sticker Mule","hard":true,"notes":"Promotional stickers. Amsterdam NY is a town, not the Dutch city."}
+{"id":"marketing-017","descriptor":"4IMPRINT 877-446-7746 WI","amount":215,"category":"Marketing/Ads","vendor":"4imprint","notes":"Branded promotional items."}
+{"id":"marketing-018","descriptor":"BUYSELLADS.COM PHILADELPHIA PA","amount":450,"category":"Marketing/Ads","vendor":"BuySellAds"}
+{"id":"marketing-019","descriptor":"YELP INC ADVERTISING SAN FRANCISCO CA","amount":300,"category":"Marketing/Ads","vendor":"Yelp Ads"}
+{"id":"marketing-020","descriptor":"CLUTCH.CO WASHINGTON DC","amount":400,"category":"Marketing/Ads","vendor":"Clutch","hard":true,"notes":"Paid agency directory listing."}
+{"id":"marketing-021","descriptor":"UPWORK -123456789REF SAN FRANCISCO CA","amount":15,"category":"Marketing/Ads","vendor":"Upwork","hard":true,"notes":"Ambiguous: Upwork Connects are bought to bid on client work, i.e. lead generation. Service fees deducted from earnings never appear as card charges."}
+{"id":"marketing-022","descriptor":"PAYPAL *AWWWARDS 4029357733","amount":60,"category":"Marketing/Ads","vendor":"Awwwards","hard":true,"notes":"Design award submission fee, paid for exposure."}
+{"id":"marketing-023","descriptor":"GOOGLE*ADS7712345678 MOUNTAIN VIEW CA","amount":87.13,"category":"Marketing/Ads","vendor":"Google Ads"}
+{"id":"marketing-024","descriptor":"FACEBK *X9K2LMB3D2","amount":41.27,"category":"Marketing/Ads","vendor":"Meta Ads","hard":true,"notes":"No ADS keyword at all; FACEBK charges on a business card are almost always ads."}
+{"id":"marketing-025","descriptor":"SEMRUSH 800-815-9959 PA","amount":139.95,"category":"Marketing/Ads","vendor":"Semrush","hard":true,"notes":"SEO and competitor research platform; booked as marketing like Mailchimp."}
+{"id":"ent-001","descriptor":"NETFLIX.COM LOS GATOS CA","amount":17.99,"category":"Entertainment","vendor":"Netflix"}
+{"id":"ent-002","descriptor":"Spotify P2D4F6A8C1 Stockholm SE","amount":11.99,"category":"Entertainment","vendor":"Spotify"}
+{"id":"ent-003","descriptor":"HLU*HULU 1234567 HULU.COM/BILLCA","amount":18.99,"category":"Entertainment","vendor":"Hulu","hard":true,"notes":"HLU prefix and a glued state code (BILLCA)."}
+{"id":"ent-004","descriptor":"DISNEY PLUS 888-905-7888 CA","amount":9.99,"category":"Entertainment","vendor":"Disney+"}
+{"id":"ent-005","descriptor":"AMC ONLINE #1225 LEAWOOD KS","amount":32.48,"category":"Entertainment","vendor":"AMC Theatres"}
+{"id":"ent-006","descriptor":"NITEHAWK CINEMA WILLIAMSBURG BROOKLYN NY","amount":21,"category":"Entertainment","vendor":"Nitehawk Cinema"}
+{"id":"ent-007","descriptor":"TICKETMASTER *EVENT 800-653-8000 CA","amount":148.3,"category":"Entertainment","vendor":"Ticketmaster"}
+{"id":"ent-008","descriptor":"STEAM PURCHASE 425-952-2985 WA","amount":19.99,"category":"Entertainment","vendor":"Steam"}
+{"id":"ent-009","descriptor":"PLAYSTATION NETWORK 877-971-7669 CA","amount":69.99,"category":"Entertainment","vendor":"PlayStation Network"}
+{"id":"ent-010","descriptor":"NINTENDO AMERICA 800-255-3700 WA","amount":29.99,"category":"Entertainment","vendor":"Nintendo"}
+{"id":"ent-011","descriptor":"MAX.COM 855-442-6629 NY","amount":16.99,"category":"Entertainment","vendor":"Max","hard":true,"notes":"HBO's streaming service, now called Max; a very short brand name."}
+{"id":"ent-012","descriptor":"GOOGLE *YouTubePremium g.co/helppay# CA","amount":13.99,"category":"Entertainment","vendor":"YouTube Premium","hard":true,"notes":"Google prefix, but a streaming subscription, not Google Workspace."}
+{"id":"ent-013","descriptor":"AUDIBLE*2K8HJ4Q1 AMZN.COM/BILL NJ","amount":14.95,"category":"Entertainment","vendor":"Audible","hard":true,"notes":"Amazon billing domain, but audiobooks, not Amazon retail."}
+{"id":"ent-014","descriptor":"KINDLE SVCS*4K2J9QW1 888-802-3080 WA","amount":12.99,"category":"Entertainment","vendor":"Kindle","hard":true,"notes":"E-books. Could be a work reference book; leisure reading is the more common case."}
+{"id":"ent-015","descriptor":"BROOKLYN BOWL WILLIAMSBURG BROOKLYN NY","amount":42,"category":"Entertainment","vendor":"Brooklyn Bowl"}
+{"id":"ent-016","descriptor":"SQ *SMALLS JAZZ CLUB NEW YORK NY","amount":30,"category":"Entertainment","vendor":"Smalls Jazz Club","hard":true,"notes":"Jazz club cover charge: a show, unlike a bar tab."}
+{"id":"ent-017","descriptor":"MOMA ADMISSIONS NEW YORK NY","amount":30,"category":"Entertainment","vendor":"MoMA"}
+{"id":"ent-018","descriptor":"SEATGEEK *TICKETS NEW YORK NY","amount":186,"category":"Entertainment","vendor":"SeatGeek"}
+{"id":"ent-019","descriptor":"STUBHUB 866-788-2482 CA","amount":212.4,"category":"Entertainment","vendor":"StubHub"}
+{"id":"ent-020","descriptor":"PARAMOUNT+ 888-274-5343 CA","amount":12.99,"category":"Entertainment","vendor":"Paramount+"}
+{"id":"ent-021","descriptor":"PEACOCK PREMIUM NEW YORK NY","amount":7.99,"category":"Entertainment","vendor":"Peacock"}
+{"id":"ent-022","descriptor":"SIRIUSXM 888-635-5144 NY","amount":10.99,"category":"Entertainment","vendor":"SiriusXM"}
+{"id":"ent-023","descriptor":"FANDANGO 866-857-5191 CA","amount":31.98,"category":"Entertainment","vendor":"Fandango"}
+{"id":"ent-024","descriptor":"EB *BROOKLYN COMEDY NIGHT 801-528-5400 CA","amount":25,"category":"Entertainment","vendor":"Eventbrite","hard":true,"notes":"Eventbrite also sells conference tickets; the event name here is a comedy show."}
+{"id":"ent-025","descriptor":"CRUNCHYROLL*MEMBERSHIP SAN FRANCISCO CA","amount":7.99,"category":"Entertainment","vendor":"Crunchyroll"}
+{"id":"ent-026","descriptor":"PATREON* MEMBERSHIP INTERNET CA","amount":5,"category":"Entertainment","vendor":"Patreon","hard":true,"notes":"Creator membership; INTERNET stands where a city would be."}
+{"id":"util-001","descriptor":"CON ED OF NY CONED.COM NY","amount":112.37,"category":"Utilities","vendor":"Con Edison","hard":true,"notes":"Electricity; CON ED and CONED both mean Con Edison."}
+{"id":"util-002","descriptor":"CONED BILL PAYMENT 800-752-6633 NY","amount":86.2,"category":"Utilities","vendor":"Con Edison"}
+{"id":"util-003","descriptor":"NATIONAL GRID NY ONLINE PMT BROOKLYN NY","amount":64.15,"category":"Utilities","vendor":"National Grid","notes":"Gas."}
+{"id":"util-004","descriptor":"VERIZON WRLS P2223-01 800-922-0204 FL","amount":91.37,"category":"Utilities","vendor":"Verizon","notes":"Mobile phone service counts as Utilities."}
+{"id":"util-005","descriptor":"VZWRLSS*IVR VB 800-922-0204 FL","amount":85,"category":"Utilities","vendor":"Verizon","hard":true,"notes":"VZWRLSS is Verizon Wireless."}
+{"id":"util-006","descriptor":"SPECTRUM.COM 866-874-2389 MO","amount":69.99,"category":"Utilities","vendor":"Spectrum","notes":"Home internet."}
+{"id":"util-007","descriptor":"T-MOBILE*AUTO PAY 800-937-8997 WA","amount":70,"category":"Utilities","vendor":"T-Mobile"}
+{"id":"util-008","descriptor":"AT&T*BILL PAYMENT 800-288-2020 TX","amount":65,"category":"Utilities","vendor":"AT&T"}
+{"id":"util-009","descriptor":"GOOGLE *FI 7KQH2 G.CO/HELPPAY# CA","amount":35,"category":"Utilities","vendor":"Google Fi","hard":true,"notes":"Google prefix, but this is a mobile phone plan."}
+{"id":"util-010","descriptor":"MINT MOBILE 800-683-7392 CA","amount":30,"category":"Utilities","vendor":"Mint Mobile"}
+{"id":"util-011","descriptor":"OPTIMUM 7000 866-950-3278 NY","amount":89.99,"category":"Utilities","vendor":"Optimum"}
+{"id":"util-012","descriptor":"XFINITY MOBILE 888-936-4968 PA","amount":45,"category":"Utilities","vendor":"Xfinity Mobile"}
+{"id":"util-013","descriptor":"COMCAST CABLE COMM 800-266-2278 PA","amount":79.99,"category":"Utilities","vendor":"Comcast"}
+{"id":"util-014","descriptor":"NYC WATER BOARD 718-595-7000 NY","amount":48.6,"category":"Utilities","vendor":"NYC Water Board"}
+{"id":"util-015","descriptor":"PSEG LI ONLINE PMT 800-490-0025 NY","amount":102.8,"category":"Utilities","vendor":"PSEG Long Island"}
+{"id":"util-016","descriptor":"PSE&G 800-436-7734 NJ","amount":74.1,"category":"Utilities","vendor":"PSE&G"}
+{"id":"util-017","descriptor":"STARLINK INTERNET HAWTHORNE CA","amount":120,"category":"Utilities","vendor":"Starlink"}
+{"id":"util-018","descriptor":"VONAGE BUSINESS 877-761-1736 NJ","amount":29.99,"category":"Utilities","vendor":"Vonage","notes":"Business phone line."}
+{"id":"util-019","descriptor":"GOOGLE *VOICE G.CO/HELPPAY# CA","amount":10,"category":"Utilities","vendor":"Google Voice","hard":true,"notes":"Phone service sold as software. Booked with other phone lines (Utilities) rather than Software/SaaS."}
+{"id":"util-020","descriptor":"OOMA INC 888-711-6662 CA","amount":24.95,"category":"Utilities","vendor":"Ooma"}
+{"id":"util-021","descriptor":"AIRALO ESIM SINGAPORE","amount":9.5,"category":"Utilities","vendor":"Airalo","hard":true,"notes":"Travel eSIM: mobile data, so Utilities, though it is bought for trips."}
+{"id":"util-022","descriptor":"BOINGO WIRELESS 800-880-4117 CA","amount":9.99,"category":"Utilities","vendor":"Boingo","hard":true,"notes":"Wifi subscription; unlike a one-off in-flight pass it is ongoing connectivity."}
+{"id":"util-023","descriptor":"EVERSOURCE ENERGY 800-592-2000 MA","amount":98.4,"category":"Utilities","vendor":"Eversource"}
+{"id":"util-024","descriptor":"ARCADIA POWER WASHINGTON DC","amount":55.3,"category":"Utilities","vendor":"Arcadia","notes":"Community solar electricity."}
+{"id":"util-025","descriptor":"WASTE MANAGEMENT 866-834-2080 TX","amount":38,"category":"Utilities","vendor":"Waste Management"}
+{"id":"util-026","descriptor":"CRICKET WIRELESS 800-274-2538 GA","amount":55,"category":"Utilities","vendor":"Cricket Wireless"}
+{"id":"misc-001","descriptor":"CVS/PHARMACY #10423 BROOKLYN NY","amount":18.47,"category":"Misc","vendor":"CVS Pharmacy","notes":"No health category; pharmacy goes to Misc."}
+{"id":"misc-002","descriptor":"DUANE READE #14376 NEW YORK NY","amount":12.29,"category":"Misc","vendor":"Duane Reade"}
+{"id":"misc-003","descriptor":"WALGREENS #11873 BROOKLYN NY","amount":22.64,"category":"Misc","vendor":"Walgreens"}
+{"id":"misc-004","descriptor":"ONLINE TRANSFER TO GREENPOINT REALTY CO REF #IB0K2Q7XLM","amount":1600,"category":"Misc","vendor":"Greenpoint Realty Co","hard":true,"notes":"Rent to a landlord. Not Accommodation (that is travel lodging) and not Utilities."}
+{"id":"misc-005","descriptor":"VENMO *PAYMENT 855-812-4430 NY","amount":40,"category":"Misc","vendor":"Venmo","hard":true,"notes":"Person-to-person payment with no purpose stated."}
+{"id":"misc-006","descriptor":"ATM WITHDRAWAL 00423 FULTON ST BROOKLYN NY","amount":100,"category":"Misc","vendor":"ATM Withdrawal"}
+{"id":"misc-007","descriptor":"MONTHLY SERVICE FEE","amount":12,"category":"Misc","vendor":"Monthly Service Fee","notes":"Bank fee."}
+{"id":"misc-008","descriptor":"FOREIGN TRANSACTION FEE","amount":3.12,"category":"Misc","vendor":"Foreign Transaction Fee","hard":true,"notes":"Bank fee, even though it follows a travel purchase."}
+{"id":"misc-009","descriptor":"IRS USATAXPYMT 270612345678901","amount":2500,"category":"Misc","vendor":"IRS","hard":true,"notes":"Estimated tax payment."}
+{"id":"misc-010","descriptor":"NYS DTF PIT TAX PAYMENT ALBANY NY","amount":650,"category":"Misc","vendor":"NYS DTF","hard":true,"notes":"New York State income tax."}
+{"id":"misc-011","descriptor":"STATE FARM INSURANCE 800-956-6310 IL","amount":94.5,"category":"Misc","vendor":"State Farm","notes":"Insurance has no category of its own."}
+{"id":"misc-012","descriptor":"HISCOX INC 866-283-7545 NY","amount":29.17,"category":"Misc","vendor":"Hiscox","hard":true,"notes":"Business liability insurance; Misc, as with other insurance."}
+{"id":"misc-013","descriptor":"PLANET FITNESS 844-880-7180 NH","amount":15,"category":"Misc","vendor":"Planet Fitness","hard":true,"notes":"Gym membership: no health category. Misc rather than Entertainment."}
+{"id":"misc-014","descriptor":"EQUINOX 0123 BROOKLYN NY","amount":260,"category":"Misc","vendor":"Equinox","hard":true,"notes":"Gym, as Planet Fitness."}
+{"id":"misc-015","descriptor":"SQ *GREENPOINT BARBER CO BROOKLYN NY","amount":45,"category":"Misc","vendor":"Greenpoint Barber Co","notes":"Personal care."}
+{"id":"misc-016","descriptor":"SEPHORA 0412 NEW YORK NY","amount":38,"category":"Misc","vendor":"Sephora"}
+{"id":"misc-017","descriptor":"UNIQLO USA 5TH AVE NEW YORK NY","amount":59.8,"category":"Misc","vendor":"Uniqlo","notes":"Clothing."}
+{"id":"misc-018","descriptor":"AIGA MEMBERSHIP NEW YORK NY","amount":250,"category":"Misc","vendor":"AIGA","hard":true,"notes":"Professional association dues. Not advertising."}
+{"id":"misc-019","descriptor":"LEGALZOOM* LLC FORMATION GLENDALE CA","amount":79,"category":"Misc","vendor":"LegalZoom","notes":"Legal and filing fees."}
+{"id":"misc-020","descriptor":"NYS DMV ALBANY NY","amount":32.5,"category":"Misc","vendor":"NYS DMV","hard":true,"notes":"Licence fee: government, not transport spending."}
+{"id":"misc-021","descriptor":"1LIFE HEALTHCARE ONE MEDICAL SAN FRANCISCO CA","amount":199,"category":"Misc","vendor":"One Medical","hard":true,"notes":"Healthcare membership under the legal entity name; no health category."}
+{"id":"misc-022","descriptor":"SQ *SUDS LAUNDROMAT BROOKLYN NY","amount":18,"category":"Misc","vendor":"Suds Laundromat"}
+{"id":"misc-023","descriptor":"PETCO 1234 BROOKLYN NY","amount":46.88,"category":"Misc","vendor":"Petco"}
+{"id":"misc-024","descriptor":"1-800-FLOWERS.COM 800-468-1141 NY","amount":64.99,"category":"Misc","vendor":"1-800-Flowers","hard":true,"notes":"Client gift. Gifts have no category; Misc rather than Marketing/Ads."}
+{"id":"misc-025","descriptor":"GOFUNDME* DONATION REDWOOD CITY CA","amount":50,"category":"Misc","vendor":"GoFundMe"}
+{"id":"misc-026","descriptor":"INTEREST CHARGE ON PURCHASES","amount":21.4,"category":"Misc","vendor":"Interest Charge"}
