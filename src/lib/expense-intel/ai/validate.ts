@@ -1,8 +1,15 @@
 import { CATEGORIES, type Pass2Result } from "../types";
-export function validateAnalysis(value: unknown): Pass2Result {
+
+/** Who wrote the narrative: the model (checked for faithfulness) or the template fallback. */
+export type NarrativeSource = "model" | "template";
+
+/** `Pass2Result` plus where it came from. `source` is absent on analyses stored before it existed. */
+export type NarrativeResult = Pass2Result & { source?: NarrativeSource };
+
+export function validateAnalysis(value: unknown): NarrativeResult {
   if (!value || typeof value !== "object")
     throw new Error("Invalid interpretation");
-  const r = value as Pass2Result;
+  const r = value as NarrativeResult;
   const text = (s: unknown) => typeof s === "string" && s.length <= 6000;
   if (
     !Number.isFinite(r.health_score) ||
@@ -16,6 +23,8 @@ export function validateAnalysis(value: unknown): Pass2Result {
     r.anomaly_explanations.length > 5
   )
     throw new Error("Invalid interpretation schema");
+  if (r.source !== undefined && r.source !== "model" && r.source !== "template")
+    throw new Error("Invalid narrative source");
   if (
     r.insights.some(
       (i) =>
