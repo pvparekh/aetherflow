@@ -1,6 +1,12 @@
 // Unusually large charges, judged against the vendor's own history when it
 // has at least 5 charges, else against the category.
 //
+// Category comparisons are deliberately narrower than vendor ones. Some
+// categories are lumpy by nature (a flight next to subway fares, a camera next
+// to printer paper), so they are never judged at category level; elsewhere a
+// charge must sit far beyond anything usually spent there (a multiple of the
+// category's 95th percentile), not merely score high on a wide distribution.
+//
 // Spending is skewed (many small charges, a few large ones), so the score is a
 // robust one on log amounts: 0.6745 * (ln x - median) / MAD. A plain z-score
 // cannot exceed (n-1)/sqrt(n), so with a short history it never fires
@@ -21,6 +27,15 @@ const MIN_SCORE = 3.5;
 const MIN_EXCESS_USD = 20;
 const MIN_RATIO = { vendor: 2, category: 5 } as const;
 const CRITICAL = { score: 6, ratio: 4 } as const;
+/** A category charge must exceed this multiple of the category's 95th-percentile charge. */
+const CATEGORY_RANGE_MULTIPLE = 3;
+/** Categories whose charges vary by design; only vendor history is meaningful there. */
+const LUMPY_CATEGORIES: ReadonlySet<string> = new Set([
+  "Travel/Transport",
+  "Accommodation",
+  "Office/Supplies",
+  "Marketing/Ads",
+]);
 const MAX_RESULTS = 25;
 
 interface Baseline {
@@ -28,6 +43,8 @@ interface Baseline {
   typical: number;
   logMedian: number;
   logSpread: number;
+  /** 95th-percentile charge; used only for category baselines. */
+  p95: number;
 }
 
 interface Assessment {
@@ -39,14 +56,17 @@ interface Assessment {
 export function detectUnusual(txns: Txn[], excludedIds: ReadonlySet<string>): UnusualCharge[] {
   const candidates = txns.filter((t) => !excludedIds.has(t.id) && !isNonMerchant(t));
   const byVendor = groupBy(candidates, (t) => t.vendorKey);
-  const byCategory = groupBy(candidates, (t) => t.category);
+  const byCategory = groupBy(
+    candidates.filter((t) => !LUMPY_CATEGORIES.has(t.category)),
+    (t) => t.category,
+  );
   const vendorBaselines = baselines(byVendor, "vendor", MIN_VENDOR_CHARGES);
   const categoryBaselines = baselines(byCategory, "category", MIN_CATEGORY_CHARGES);
 
   const flagged: { charge: UnusualCharge; ratio: number }[] = [];
   for (const txn of candidates) {
     const screen = vendorBaselines.get(txn.vendorKey) ?? categoryBaselines.get(txn.category);
-    if (!screen || !assess(txn, screen).clear) continue;
+    if (!screen || !assess(txn, screen, { screening: true }).clear) continue;
     // Confirm against the other charges only, so "your usual" never includes
     // the charge being judged.
     const peers = (screen.kind === "vendor" ? byVendor.get(txn.vendorKey) : byCategory.get(txn.category))!;
@@ -79,13 +99,18 @@ export function detectUnusual(txns: Txn[], excludedIds: ReadonlySet<string>): Un
     .map((f) => f.charge);
 }
 
-function assess(txn: Txn, baseline: Baseline): Assessment {
+/**
+ * While screening, the baseline still contains the charge itself, so the
+ * category range test is left to the confirmation pass, which excludes it.
+ */
+function assess(txn: Txn, baseline: Baseline, { screening = false } = {}): Assessment {
   const ratio = txn.amount / baseline.typical;
   const score = (MAD_TO_SIGMA * (Math.log(txn.amount) - baseline.logMedian)) / baseline.logSpread;
+  const shared = ratio >= MIN_RATIO[baseline.kind] && txn.amount - baseline.typical >= MIN_EXCESS_USD;
   const clear =
-    score >= MIN_SCORE &&
-    ratio >= MIN_RATIO[baseline.kind] &&
-    txn.amount - baseline.typical >= MIN_EXCESS_USD;
+    baseline.kind === "vendor"
+      ? shared && score >= MIN_SCORE
+      : shared && (screening || txn.amount >= CATEGORY_RANGE_MULTIPLE * baseline.p95);
   return { ratio, score, clear };
 }
 
@@ -106,7 +131,14 @@ function summarize(amounts: number[], kind: Baseline["kind"]): Baseline {
     typical: roundCents(median(amounts)),
     logMedian,
     logSpread: Math.max(mad, MIN_LOG_SPREAD),
+    p95: percentile(amounts, 0.95),
   };
+}
+
+/** Nearest-rank percentile. */
+function percentile(values: number[], q: number): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil(q * sorted.length) - 1))];
 }
 
 function reasonFor(txn: Txn, baseline: Baseline, ratio: number): string {

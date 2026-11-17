@@ -33,13 +33,33 @@ describe("unusual charges", () => {
   });
 
   it("falls back to the category when the vendor is new", () => {
-    const supplies = visits("STAPLES 00123", [24, 31.5, 18.75, 42, 27.3, 35.1, 22.9, 29.99, 38.4, 26.25, 33.6], "Office/Supplies", "2026-01-05", 14);
-    const chair = txn("2026-08-14", "Herman Miller Store", 1395, "Office/Supplies");
-    const r = buildLeakReport([...supplies, chair], TODAY);
+    const outings = visits("AMC THEATRES 00123", [24, 31.5, 18.75, 42, 27.3, 35.1, 22.9, 29.99, 38.4, 26.25, 33.6], "Entertainment", "2026-01-05", 14);
+    const tickets = txn("2026-08-14", "StubHub", 1395, "Entertainment");
+    const r = buildLeakReport([...outings, tickets], TODAY);
 
     expect(r.unusual).toHaveLength(1);
-    expect(r.unusual[0]).toMatchObject({ transactionId: chair.id, baseline: "category", severity: "critical", typicalAmount: 29.99 });
-    expect(r.unusual[0].reason).toBe("$1,395.00 is about 47 times a typical Office/Supplies charge of $29.99.");
+    expect(r.unusual[0]).toMatchObject({ transactionId: tickets.id, baseline: "category", severity: "critical", typicalAmount: 29.99 });
+    expect(r.unusual[0].reason).toBe("$1,395.00 is about 47 times a typical Entertainment charge of $29.99.");
+  });
+
+  it("never judges lumpy categories against the category", () => {
+    // A flight next to subway fares, or a chair next to printer paper, is normal.
+    const fares = visits("MTA NYCT PAYGO", [2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9], "Travel/Transport", "2026-01-05", 7);
+    const supplies = visits("STAPLES 00123", [24, 31.5, 18.75, 42, 27.3, 35.1, 22.9, 29.99, 38.4, 26.25, 33.6], "Office/Supplies", "2026-01-05", 14);
+    const r = buildLeakReport(
+      [...fares, ...supplies, txn("2026-08-14", "JETBLUE 2792345", 412.3, "Travel/Transport"), txn("2026-08-15", "Herman Miller Store", 1395, "Office/Supplies")],
+      TODAY,
+    );
+    expect(r.unusual).toEqual([]);
+  });
+
+  it("does not flag a category charge that is within its usual range", () => {
+    // Dinners up to about $140 are normal here, so $160 is not unusual even
+    // though it is many times the typical coffee-sized charge.
+    const coffee = visits("Blue Bottle", [4.5, 5, 4.75, 5.25, 4.5, 5, 4.75, 5, 4.5, 5.25, 4.75, 5], "Food/Dining", "2026-01-05", 7);
+    const dinners = [txn("2026-03-01", "Lilia", 128.4, "Food/Dining"), txn("2026-05-02", "Via Carota", 141.3, "Food/Dining")];
+    const r = buildLeakReport([...coffee, ...dinners, txn("2026-08-20", "Carbone", 160, "Food/Dining")], TODAY);
+    expect(r.unusual).toEqual([]);
   });
 
   it("uses a warning, not critical, for a charge about twice the usual", () => {
@@ -52,9 +72,9 @@ describe("unusual charges", () => {
 
   it("never uses statistics jargon in reasons", () => {
     const lunches = visits("CHIPOTLE 1734", [12.4, 13.1, 11.85, 12.95, 14.2, 12.6], "Food/Dining");
-    const supplies = visits("Staples", [24, 31.5, 18.75, 42, 27.3, 35.1, 22.9, 29.99, 38.4, 26.25], "Office/Supplies");
+    const outings = visits("AMC Theatres", [24, 31.5, 18.75, 42, 27.3, 35.1, 22.9, 29.99, 38.4, 26.25], "Entertainment");
     const r = buildLeakReport(
-      [...lunches, ...supplies, txn("2026-06-20", "CHIPOTLE 1734", 186.5, "Food/Dining"), txn("2026-06-21", "Desk Co", 900, "Office/Supplies")],
+      [...lunches, ...outings, txn("2026-06-20", "CHIPOTLE 1734", 186.5, "Food/Dining"), txn("2026-06-21", "StubHub", 900, "Entertainment")],
       TODAY,
     );
     expect(r.unusual.length).toBeGreaterThan(1);

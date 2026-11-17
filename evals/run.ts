@@ -11,8 +11,8 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type { EvalReport, EvalRun } from "@/lib/expense-intel/contracts";
 import { llmConfig } from "@/lib/llm";
-import { categorizeBatch } from "@/lib/expense-intel/pass1/categorizer";
-import type { ParsedRow, Pass1Item } from "@/lib/expense-intel/types";
+import { categorizeRows } from "@/lib/expense-intel/pass1/categorizer";
+import type { ParsedRow } from "@/lib/expense-intel/types";
 import { loadGolden } from "./lib/golden";
 import { buildRun, runBatches, toOrigin, type Categorised, type RowOutcome } from "./lib/harness";
 import { confusion } from "./lib/metrics";
@@ -24,17 +24,15 @@ const DEFAULT_BATCH = 25;
 /**
  * Adapter: the only place the harness touches the categoriser.
  *
- * Today `categorizeBatch` is model-only and still calls OpenAI directly, so
- * the provider recorded from `llmConfig()` is accurate only once workstream A
- * routes it through `completeJson`. When A's rules-first entry point lands,
- * change the call below; items carrying `category_origin` are then reported
- * per path (rule, history, model, fallback).
+ * Calls the shipped entry point with no merchant rules or history, so the run
+ * measures cold-start model quality: the hardest case, a brand-new user.
+ * `runBatches` already slices the golden set, so each call is one batch.
  */
 async function categorise(rows: ParsedRow[]): Promise<Categorised[]> {
-  const items: (Pass1Item & { category_origin?: string })[] = await categorizeBatch(rows);
+  const items = await categorizeRows(rows, undefined, { batchSize: rows.length });
   return items.map((item) => ({
     category: item.category,
-    origin: toOrigin(item.category_origin, item.subcategory),
+    origin: toOrigin(item.origin, item.subcategory ?? ""),
   }));
 }
 
