@@ -5,9 +5,13 @@ import Layout from "@/components/Layout";
 import ConfirmDialog from "@/components/workspace/ConfirmDialog";
 import { createClient } from "../../../utils/supabase/client";
 import { api } from "@/lib/imports/http";
+import { firstName, lastName, nameMetadata } from "@/lib/auth/names";
 export default function AccountPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [first, setFirst] = useState("");
+  const [last, setLast] = useState("");
+  const [nameStatus, setNameStatus] = useState("");
   const [stats, setStats] = useState<{
     totalUploads: number;
     totalTransactions: number;
@@ -27,6 +31,8 @@ export default function AccountPage() {
         return;
       }
       setEmail(user.email ?? "");
+      setFirst(firstName({ user_metadata: user.user_metadata }));
+      setLast(lastName(user));
       setStats(await api("/api/account/stats"));
     } catch (e) {
       setError((e as Error).message);
@@ -35,6 +41,17 @@ export default function AccountPage() {
   useEffect(() => {
     void load();
   }, [load]);
+  async function saveName(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!first.trim()) {
+      setNameStatus("Enter a first name.");
+      return;
+    }
+    setNameStatus("Saving…");
+    const { error } = await createClient().auth.updateUser({ data: nameMetadata(first, last) });
+    setNameStatus(error ? "Your name could not be saved. Please try again." : "Saved.");
+    if (!error) router.refresh();
+  }
   async function exportData() {
     setBusy(true);
     setError("");
@@ -59,9 +76,9 @@ export default function AccountPage() {
       <main className="workspace-content">
         <div className="workspace-heading">
           <div>
-            <p className="eyebrow">YOUR WORKSPACE / ACCOUNT</p>
+            <p className="eyebrow">ACCOUNT</p>
             <h1>
-              Your data. <em>Your control.</em>
+              Your account and <em>your data</em>
             </h1>
             <p>Manage your account and the reports you’ve saved.</p>
           </div>
@@ -77,7 +94,7 @@ export default function AccountPage() {
         <section className="panel">
           <div className="panel-heading">
             <div>
-              <h2>Profile</h2>
+              <h2>{first ? `Hello, ${first}` : "Profile"}</h2>
               <p>{email || "Loading account…"}</p>
             </div>
             <button
@@ -86,7 +103,7 @@ export default function AccountPage() {
                 const { error } = await createClient().auth.signOut();
                 if (error) setError("Sign-out failed. Please retry.");
                 else {
-                  router.push("/");
+                  router.push("/logout");
                   router.refresh();
                 }
               }}
@@ -94,28 +111,42 @@ export default function AccountPage() {
               Sign out
             </button>
           </div>
+          <form className="name-form" onSubmit={(e) => void saveName(e)}>
+            <label htmlFor="account-first-name">
+              First name
+              <input id="account-first-name" value={first} onChange={(e) => setFirst(e.target.value)} autoComplete="given-name" maxLength={50} />
+            </label>
+            <label htmlFor="account-last-name">
+              Last name
+              <input id="account-last-name" value={last} onChange={(e) => setLast(e.target.value)} autoComplete="family-name" maxLength={50} />
+            </label>
+            <button className="btn subtle">Save name</button>
+            <span className="micro" role="status" aria-live="polite">
+              {nameStatus}
+            </span>
+          </form>
           <div className="stat-grid">
             <div>
               <span className="stat-label">Saved reports</span>
               <strong className="stat-value">
-                {stats?.totalUploads ?? "—"}
+                {stats?.totalUploads ?? "n/a"}
               </strong>
             </div>
             <div>
               <span className="stat-label">Transactions</span>
               <strong className="stat-value">
-                {stats?.totalTransactions ?? "—"}
+                {stats?.totalTransactions ?? "n/a"}
               </strong>
             </div>
             <div>
               <span className="stat-label">First report</span>
-              <strong className="stat-value" style={{ fontSize: 18 }}>
+              <strong className="stat-value" style={{ fontSize: "var(--text-lead)" }}>
                 {stats?.firstUploadDate
                   ? new Date(stats.firstUploadDate).toLocaleDateString(
                       "en-US",
                       { timeZone: "UTC" },
                     )
-                  : "—"}
+                  : "n/a"}
               </strong>
             </div>
           </div>

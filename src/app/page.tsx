@@ -23,7 +23,7 @@ import s from "./home.module.css";
 export const metadata: Metadata = {
   title: "AetherFlow | Find the money leaking out of your accounts",
   description:
-    "Upload card or bank statements (CSV, TXT or PDF) and see forgotten subscriptions, price increases, duplicate charges and unusual charges. No bank login. Every number is computed by code.",
+    "Upload card or bank statements (CSV, TXT or PDF) to see forgotten subscriptions, price increases, duplicate charges and unusual charges, without connecting a bank account. Every number is computed by code.",
 };
 
 const FINDS = [
@@ -65,7 +65,7 @@ const FINDS = [
   {
     icon: MessageCircleQuestion,
     title: "Ask your spending",
-    text: "“How much did I spend on software this year?” Answered by a query run on your data.",
+    text: "Ask “How much did I spend on software this year?” and get an answer from a query run on your own data.",
   },
 ];
 
@@ -109,15 +109,15 @@ export default function Home() {
             </p>
             <div className="button-row">
               <Link className="btn primary" href="/demo">
-                Try the demo &mdash; no sign-up <ArrowRight size={17} />
+                Try the demo, no sign-up needed <ArrowRight size={17} />
               </Link>
               <Link className="btn subtle" href="/signup">
                 Sign up to use your own statements <ArrowUpRight size={17} />
               </Link>
             </div>
             <p className="micro">
-              CSV &middot; TXT &middot; PDF statements &nbsp;/&nbsp; The demo
-              uses 12 months of synthetic data and runs in your browser.
+              Works with CSV, TXT and PDF statements. The demo uses 12 months
+              of synthetic data and runs in your browser.
             </p>
           </div>
 
@@ -158,8 +158,8 @@ export default function Home() {
             <div className={s.trustAside}>
               <Cpu size={18} aria-hidden="true" />
               <p>
-                Runs on a free local or open-weights model. No paid AI API
-                required.
+                Runs on a free local or open-weights model, so no paid AI API
+                is needed.
               </p>
             </div>
           </div>
@@ -167,11 +167,10 @@ export default function Home() {
 
         <section className="af-width editorial-section" aria-labelledby="finds-heading">
           <div className="section-heading">
-            <p className="eyebrow">WHAT IT FINDS, AND WHAT IT HELPS YOU DO</p>
             <h2 id="finds-heading">
-              Small charges add up.
+              See the small charges
               <br />
-              <em>Now you can see them.</em>
+              <em>that add up over a year.</em>
             </h2>
             <p>
               Leaks hide in long statements: a trial that became a plan, a bill
@@ -214,7 +213,6 @@ export default function Home() {
 
         <section className="af-width closing-section">
           <div>
-            <p className="eyebrow">TAKE A LOOK</p>
             <h2>
               Explore a full year
               <br />
@@ -223,7 +221,7 @@ export default function Home() {
           </div>
           <div>
             <Link className="btn primary" href="/demo">
-              Try the demo &mdash; no sign-up <ArrowRight size={17} />
+              Try the demo, no sign-up needed <ArrowRight size={17} />
             </Link>
             <p className="micro">
               Recurring charges need at least 2 to 3 months of statements to

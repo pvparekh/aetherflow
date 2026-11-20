@@ -1,15 +1,33 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowUpRight,
   Layers2,
   LayoutDashboard,
   FolderClock,
   ShieldCheck,
+  LogOut,
 } from "lucide-react";
+import { useAuthUser } from "./useAuthUser";
+import { firstName } from "@/lib/auth/names";
+import { createClient } from "../../utils/supabase/client";
 export default function Layout({ children }: { children: React.ReactNode }) {
   const path = usePathname();
+  const router = useRouter();
+  const user = useAuthUser();
+  const [signingOut, setSigningOut] = useState(false);
+  async function signOut() {
+    setSigningOut(true);
+    try {
+      await createClient().auth.signOut();
+    } finally {
+      router.push("/logout");
+      router.refresh();
+      setSigningOut(false);
+    }
+  }
   const workspace =
     path.startsWith("/expense-intel") ||
     path === "/demo" ||
@@ -43,12 +61,36 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           >
             How it works
           </Link>
-          <Link className={path === "/account" ? "active" : ""} href="/account">
-            Account
-          </Link>
-          <Link className="nav-signin" href="/login">
-            Sign in <ArrowUpRight size={14} />
-          </Link>
+          {user ? (
+            <>
+              <Link
+                className={path === "/account" ? "active" : ""}
+                href="/account"
+                title={user.email ?? undefined}
+              >
+                Hello, {firstName(user)}
+              </Link>
+              <button
+                type="button"
+                className="nav-signin"
+                onClick={() => void signOut()}
+                disabled={signingOut}
+              >
+                {signingOut ? "Signing out…" : "Sign out"} <LogOut size={14} />
+              </button>
+            </>
+          ) : user === null ? (
+            <>
+              <Link className={path === "/login" ? "active" : ""} href="/login">
+                Sign in
+              </Link>
+              <Link className="nav-signin" href="/signup">
+                Create account <ArrowUpRight size={14} />
+              </Link>
+            </>
+          ) : (
+            <span className="nav-signin nav-pending" aria-hidden="true" />
+          )}
         </nav>
       </header>
       {workspace && (
@@ -64,18 +106,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <ShieldCheck size={17} /> Account & data
           </Link>
           <div className="rail-note">
-            <span className="status-dot" /> Your numbers. Explained.
-            <p>
-              Computed statistics, reviewable records, and optional AI
-              interpretation.
-            </p>
+            <span className="status-dot" /> Every figure is computed from your
+            statements
+            <p>AI only sorts merchants and words the summaries.</p>
           </div>
         </aside>
       )}
       <div id="content">{children}</div>
       <footer className="af-footer">
         <Link className="brand" href="/">
-          AetherFlow<span className="muted"> / Make sense of spend.</span>
+          AetherFlow<span className="muted"> / Find the money leaking out</span>
         </Link>
         <div>
           <Link href="/how-it-works">How it works</Link>

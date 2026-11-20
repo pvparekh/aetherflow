@@ -3,7 +3,7 @@ export default function DataGuide() {
   return (
     <Layout>
       <main className="af-width reading">
-        <p className="eyebrow">WORK WITH CONTEXT</p>
+        <p className="eyebrow">DATA GUIDE</p>
         <h1>
           Data, formats
           <br />
@@ -28,10 +28,11 @@ export default function DataGuide() {
             before publication.
           </p>
           <p>
-            PDFs up to 20 pages and 4 MB use native text extraction where
-            available, with visual extraction through the existing OpenAI
-            provider for scanned documents. Results are suggestions, not a
-            guarantee of completeness. Poor scans, complex tables, unsupported
+            PDFs up to 20 pages and 4 MB are read as text, and a language
+            model turns that text into rows for you to confirm. Scanned PDFs
+            need a model that accepts files, which the live site does not use,
+            so export a CSV from your bank instead. Results are suggestions, not
+            a guarantee of completeness. Poor scans, complex tables, unsupported
             currencies or ambiguous dates may require a CSV export instead.
           </p>
         </section>
@@ -39,10 +40,12 @@ export default function DataGuide() {
           <h2>Where data goes</h2>
           <p>
             Account, review drafts, transaction records and analysis are stored
-            using Supabase. Descriptions are sent to OpenAI for categorization;
-            PDF contents may be sent for extraction. Narrative requests use
-            aggregated statistics and vendor summaries. The current version does
-            not run inference locally.
+            using Supabase. Merchant descriptions that your rules and history
+            don&apos;t already recognise are sent to an open-weights language
+            model (Llama 3.3 on Cloudflare Workers AI) for categorisation, and
+            PDF text is sent to it for row extraction. Summaries and drafts are
+            written from totals that code has already computed. Every figure
+            you see is calculated by code, never by the model.
           </p>
           <p>
             Raw source files are processed for extraction rather than stored as

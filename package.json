@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint src utils middleware.ts --max-warnings 0",
+    "lint": "eslint src utils --max-warnings 0",
     "test": "vitest",
     "eval": "tsx evals/run.ts",
     "eval:ci": "eslint evals --max-warnings 0 && vitest run evals src/lib/demo --reporter=verbose",

@@ -5,7 +5,8 @@
 .page h4 {
   margin: 0;
   font-weight: 600;
-  letter-spacing: -0.2px;
+  letter-spacing: var(--ls-title);
+  line-height: var(--lh-heading);
 }
 .page code {
   font-family: var(--font-jetbrains-mono), monospace;
@@ -21,15 +22,16 @@
   padding-bottom: 40px;
 }
 .hero h1 {
-  font-size: 60px;
-  line-height: 1.08;
+  font-size: var(--text-display);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-display);
   margin: 24px 0;
 }
 .lead {
-  font-size: 15px;
-  line-height: 1.85;
+  font-size: var(--text-lead);
+  line-height: var(--lh-body);
   color: var(--muted-ink);
-  max-width: 640px;
+  max-width: var(--measure);
 }
 
 .section {
@@ -40,10 +42,10 @@
   margin-top: 16px;
 }
 .sectionLead {
-  font-size: 14px;
-  line-height: 1.85;
+  font-size: var(--text-base);
+  line-height: var(--lh-body);
   color: var(--muted-ink);
-  max-width: 640px;
+  max-width: var(--measure);
   margin-top: 14px;
 }
 
@@ -86,19 +88,20 @@
   border-radius: 50%;
   background: var(--forest);
   color: #fff;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   display: grid;
   place-items: center;
 }
 .stage p {
-  font-size: 13px;
-  line-height: 1.75;
+  font-size: var(--text-base);
+  line-height: var(--lh-body);
   color: var(--muted-ink);
   margin-top: 8px;
+  max-width: var(--measure);
 }
 .stage h3 {
-  font-size: 16px;
+  font-size: var(--text-lead);
 }
 .stageHead {
   display: flex;
@@ -131,10 +134,10 @@
   left: -13px;
   top: 14px;
   color: var(--muted-ink);
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 .substeps h4 {
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 .ladderLabel {
   font-weight: 600;
@@ -148,7 +151,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 .ladder li,
 .flow li {
@@ -176,7 +179,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 .chips li {
   background: var(--soft);
@@ -187,9 +190,9 @@
 }
 
 .tag {
-  font-size: 10px;
+  font-size: var(--text-caption);
   font-weight: 600;
-  letter-spacing: 0.3px;
+  line-height: var(--lh-snug);
   border-radius: 5px;
   padding: 3px 8px;
   white-space: nowrap;
@@ -225,17 +228,18 @@
   padding: 22px;
 }
 .decisionNumber {
-  font-size: 10px;
+  font-size: var(--text-eyebrow);
+  font-weight: 600;
   color: var(--muted-ink);
-  letter-spacing: 1px;
+  letter-spacing: var(--ls-caps);
 }
 .decision h3 {
-  font-size: 16px;
+  font-size: var(--text-lead);
   margin-top: 12px;
 }
 .decision p {
-  font-size: 13px;
-  line-height: 1.75;
+  font-size: var(--text-base);
+  line-height: var(--lh-body);
   color: var(--muted-ink);
   margin-top: 10px;
 }
@@ -254,23 +258,24 @@
   padding: 18px 20px;
 }
 .stats dt {
-  font-size: 11px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--muted-ink);
 }
 .stats dd {
   margin: 8px 0 0;
-  font-size: 34px;
+  font-size: var(--text-h2);
   font-weight: 500;
-  letter-spacing: -1px;
+  line-height: var(--lh-heading);
+  letter-spacing: var(--ls-heading);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
 .stats p {
-  font-size: 11px;
+  font-size: var(--text-sm);
   color: var(--muted-ink);
   margin-top: 4px;
-  line-height: 1.6;
+  line-height: var(--lh-snug);
 }
 .tableWrap {
   margin-top: 22px;
@@ -282,13 +287,13 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
 }
 .table caption {
   text-align: left;
   padding: 16px 18px 6px;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--muted-ink);
 }
@@ -300,7 +305,7 @@
   white-space: nowrap;
 }
 .table thead th {
-  font-size: 11px;
+  font-size: var(--text-caption);
   font-weight: 600;
   color: var(--muted-ink);
   border-top: none;
@@ -339,11 +344,11 @@
   padding: 20px 22px;
 }
 .note h3 {
-  font-size: 15px;
+  font-size: var(--text-lead);
 }
 .note p {
-  font-size: 13px;
-  line-height: 1.75;
+  font-size: var(--text-base);
+  line-height: var(--lh-body);
   margin-top: 10px;
 }
 
@@ -378,17 +383,8 @@
   .hero {
     padding-top: 50px;
   }
-  .hero h1 {
-    font-size: 40px;
-    letter-spacing: -1.2px;
-  }
   .section {
     padding-top: 50px;
-  }
-  .section h2,
-  .closing h2 {
-    font-size: 30px;
-    letter-spacing: -1px;
   }
   .pipeline::before {
     left: 11px;
@@ -401,7 +397,7 @@
     left: -34px;
     width: 24px;
     height: 24px;
-    font-size: 11px;
+    font-size: var(--text-caption);
   }
   .group {
     padding: 14px 12px;
@@ -415,9 +411,7 @@
   .stats > div {
     padding: 14px;
   }
-  .stats dd {
-    font-size: 24px;
-  }
+
   .track {
     display: none;
   }

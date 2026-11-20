@@ -31,6 +31,7 @@ export async function generateChecked<T>(request: CheckedRequest<T>): Promise<Ch
       feedback = ["The previous answer did not match the required JSON format."];
       continue;
     }
+    value = plainDashes(value);
     const verdict = check(value);
     if (verdict.ok) return { ok: true, value, attempts: attempt };
     reason = "unfaithful";
@@ -47,3 +48,21 @@ export function feedbackBlock(feedback: string[]): string {
     ...feedback.map((p) => `- ${p}`),
   ].join("\n");
 }
+
+/**
+ * House style for model-written text: no em dashes, and no spaced en dashes
+ * used as punctuation. Both become commas. Ranges such as "Nov–Oct" stay.
+ */
+export function plainDashes<T>(value: T): T {
+  if (typeof value === "string")
+    return value
+      .replace(/\s*—\s*/g, ", ")
+      .replace(/\s+–\s+/g, ", ")
+      .replace(/,\s*,/g, ",")
+      .replace(/^,\s*/, "") as T;
+  if (Array.isArray(value)) return value.map((v) => plainDashes(v)) as T;
+  if (value && typeof value === "object")
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, plainDashes(v)])) as T;
+  return value;
+}
+

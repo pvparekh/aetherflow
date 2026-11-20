@@ -42,6 +42,8 @@ import SubscriptionsView from "./views/SubscriptionsView";
 import BudgetsView from "./views/BudgetsView";
 import AskView from "./views/AskView";
 import Annotations from "./views/Annotations";
+import { useAuthUser } from "@/components/useAuthUser";
+import { firstName } from "@/lib/auth/names";
 import {
   CATEGORIES,
   type Pass2Result,
@@ -93,6 +95,7 @@ function getDemoWorld(): DemoWorld {
 }
 export default function Workspace({ demo = false }: { demo?: boolean }) {
   const world = useMemo(() => (demo ? getDemoWorld() : null), [demo]);
+  const user = useAuthUser();
   const [data, setData] = useState<DashboardData | null>(() =>
     world ? world.dashboards[0] : null,
   );
@@ -402,16 +405,19 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
         <div className="workspace-heading">
           <div>
             <p className="eyebrow">
-              <span className="status-dot" /> YOUR WORKSPACE / EXPENSE
-              INTELLIGENCE
+              <span className="status-dot" /> {demo
+                ? "SAMPLE WORKSPACE"
+                : user
+                  ? `HELLO, ${firstName(user).toUpperCase()}`
+                  : "YOUR WORKSPACE"}
             </p>
             <h1>
               Find the money <em>leaking out.</em>
             </h1>
             <p>
-              Subscriptions, price increases, double charges and unusual
-              spending, found across your whole history. Every figure is
-              computed by code.
+              AetherFlow finds subscriptions, price increases, double charges
+              and unusual spending across your whole history, and every figure
+              is computed by code.
             </p>
           </div>
           {demo ? (
@@ -458,7 +464,7 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
               size={34}
               style={{ margin: "auto", color: "var(--forest)" }}
             />
-            <h2>Your first clear picture.</h2>
+            <h2>Start with your first statement</h2>
             <p>
               Import an expense file and review the extracted rows before
               anything enters your analytics. Start with a CSV, or bring a PDF
@@ -478,7 +484,7 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
           </section>
         ) : data.upload.pass1_status !== "complete" ? (
           <section className="panel">
-            <h2 style={{ fontSize: 26 }}>
+            <h2 style={{ fontSize: "var(--text-h2)" }}>
               Your report needs to finish processing.
             </h2>
             <p className="micro">
@@ -517,7 +523,7 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
             {!historyTab && (
               <>
                 <div className="toolbar">
-                  <label style={{ minWidth: 210 }}>
+                  <label style={{ minWidth: 190 }}>
                     REPORT
                     <select
                       aria-label="Report"
@@ -636,7 +642,7 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
                   <div>
                     <span className="stat-label">Average transaction</span>
                     <strong className="stat-value">
-                      {items.length ? money(total / items.length) : "—"}
+                      {items.length ? money(total / items.length) : "n/a"}
                     </strong>
                     <span className="stat-detail">
                       {scoped ? "Filtered rows" : "This report"} · not a
@@ -745,7 +751,8 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
                         <div>
                           <h2>A useful place to start</h2>
                           <p>
-                            Signals help you review. They don’t prove an error.
+                            These signals point to rows worth checking. They are
+                            not proof of an error.
                           </p>
                         </div>
                         <AlertCircle size={17} color="var(--forest)" />
@@ -761,8 +768,8 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
                           <article>
                             <h3>No review signals in this scope</h3>
                             <p>
-                              This doesn’t certify every transaction. Compare
-                              the report with the original source.
+                              That does not certify every transaction, so compare
+                              the report with your original statement.
                             </p>
                           </article>
                         )}
@@ -830,9 +837,9 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
                       <div>
                         <h2>Model interpretation</h2>
                         <p>
-                          Optional AI commentary on precomputed aggregates. It
-                          may make mistakes; your transaction totals remain
-                          authoritative.
+                          Optional AI commentary, written from totals that code
+                          has already computed. It can make mistakes, so your
+                          transaction totals remain the source of truth.
                         </p>
                       </div>
                       {!demo && !data.pass2 && (
@@ -883,10 +890,10 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
                 <section className="panel">
                   <div className="panel-heading">
                     <div>
-                      <h2>The details, in one place.</h2>
+                      <h2>Every transaction in this report</h2>
                       <p>
-                        {items.length} matching transactions · Select a
-                        description to inspect original evidence.
+                        {items.length} matching transactions. Select a
+                        description to see the original evidence.
                       </p>
                     </div>
                   </div>
@@ -1009,7 +1016,7 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
                   </div>
                   {!items.length && (
                     <div className="empty-state">
-                      <h2>No matches.</h2>
+                      <h2>No transactions match</h2>
                       <p>
                         Try a broader date range, category or search. Rows with
                         an unknown date are excluded by date filters.
@@ -1043,10 +1050,10 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
                 <section className="panel">
                   <div className="panel-heading">
                     <div>
-                      <h2>A closer look.</h2>
+                      <h2>Charges to review</h2>
                       <p>
-                        Category filter applies. Search and date filters apply
-                        to transaction totals, not these report signals.
+                        The category filter applies here, while search and date
+                        filters only change the transaction totals.
                       </p>
                     </div>
                     <span className="pill">{unresolved.length} UNRESOLVED</span>
@@ -1110,7 +1117,7 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
                   ) : (
                     <div className="empty-state">
                       <CheckCircle2 size={30} style={{ margin: "auto" }} />
-                      <h2>Nothing flagged here.</h2>
+                      <h2>Nothing is flagged in this report</h2>
                       <p>
                         Review the transactions against your source whenever
                         accuracy matters.
@@ -1125,9 +1132,8 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
                     <div>
                       <h2>Your vendor landscape</h2>
                       <p>
-                        Across all saved imports · Category filter applies.
-                        Transaction search and dates do not filter these
-                        historical aggregates.
+                        Totals across all saved imports. The category filter
+                        applies here, but search and dates do not.
                       </p>
                     </div>
                   </div>
@@ -1173,8 +1179,7 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
                     <div>
                       <h2>Saved expense reports</h2>
                       <p>
-                        Saved reports. Unfinished candidate reviews are
-                        available in the import panel.
+                        Unfinished reviews are waiting in the import panel.
                       </p>
                     </div>
                   </div>

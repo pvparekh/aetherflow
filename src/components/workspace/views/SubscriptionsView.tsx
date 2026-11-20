@@ -528,7 +528,7 @@ function DraftDialog({ demo, draftFor, onClose }: { demo: boolean; draftFor: Ope
             <div className={styles.dialogFoot}>
               <span className={styles.source}>
                 {state.draft.source === "model"
-                  ? "Worded by AI. Every figure is checked against your statements."
+                  ? "Worded by AI, with every figure checked against your statements."
                   : "Written from a template using your own figures."}
               </span>
               <div className={styles.actions}>

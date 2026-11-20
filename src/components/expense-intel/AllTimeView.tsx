@@ -64,7 +64,7 @@ export default function AllTimeView() {
   if (!data.total_uploads)
     return (
       <div className="panel empty-state">
-        <h2>No completed reports yet.</h2>
+        <h2>No completed reports yet</h2>
         <p>
           Finish reviewing and processing your first import to see your
           historical view.
@@ -78,9 +78,8 @@ export default function AllTimeView() {
   return (
     <>
       <div className="notice info">
-        ALL SAVED HISTORY · Completed reports only. This view uses all reports;
-        the report filters above do not apply. Reports may cover different or
-        overlapping periods.
+        This view covers every completed report, so the report filters above
+        do not apply. Reports may cover different or overlapping periods.
       </div>
       <div className="stat-grid">
         <div>
@@ -129,7 +128,7 @@ export default function AllTimeView() {
             <div>
               <h2>Report-by-report history</h2>
               <p>
-                Category totals by upload date; table provides the exact values.
+                Category totals by upload date, with exact values in the table.
               </p>
             </div>
           </div>

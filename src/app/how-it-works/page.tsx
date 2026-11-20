@@ -67,9 +67,9 @@ export default function HowItWorks() {
             <span className="status-dot" /> HOW IT WORKS
           </p>
           <h1>
-            Code does the maths.
+            Code does the maths,
             <br />
-            <em>The model does the words.</em>
+            <em>and the model only writes the words.</em>
           </h1>
           <p className={s.lead}>
             AetherFlow reads your card or bank statements and finds money leaking
@@ -95,7 +95,7 @@ export default function HowItWorks() {
                 <h3>Upload</h3>
                 <Tag actor="code" />
               </div>
-              <p>CSV, TXT or PDF statements. No bank login, no live feed.</p>
+              <p>You upload CSV, TXT or PDF statements without connecting a bank account.</p>
             </li>
             <li className={s.stage}>
               <div className={s.stageHead}>
@@ -137,7 +137,7 @@ export default function HowItWorks() {
                     <h4>History vote</h4>
                     <Tag actor="code" />
                   </div>
-                  <p>Your own past labels for the vendor, by majority.</p>
+                  <p>Your own past labels for the vendor decide by majority.</p>
                 </li>
                 <li>
                   <div className={s.stageHead}>
@@ -145,8 +145,8 @@ export default function HowItWorks() {
                     <Tag actor="model" />
                   </div>
                   <p>
-                    Only the remainder. Rows are keyed by ID and categories are
-                    an enum in a strict JSON schema.
+                    The model only sees the rows left over. Rows are keyed by ID
+                    and categories are an enum in a strict JSON schema.
                   </p>
                   <p className={s.ladderLabel}>If the output is invalid:</p>
                   <ol className={s.ladder} aria-label="Failure ladder">

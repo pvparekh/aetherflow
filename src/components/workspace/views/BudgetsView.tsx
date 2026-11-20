@@ -319,8 +319,8 @@ export default function BudgetsView({ demo, txns, today }: ViewProps) {
           <div className={styles.card} aria-busy={loading}>
             {progress.length === 0 ? (
               <p className={styles.empty}>
-                No budgets yet. Add one below to see how a category is tracking
-                against a monthly limit.
+                You have no budgets yet. Add one below to see how a category is
+                tracking against a monthly limit.
               </p>
             ) : (
               <>
@@ -361,7 +361,7 @@ export default function BudgetsView({ demo, txns, today }: ViewProps) {
 
           <p className={cx(styles.muted, styles.small)}>
             {local
-              ? "Sample budgets on synthetic data. Changes here stay in this browser tab."
+              ? "These sample budgets use synthetic data, and changes stay in this browser tab."
               : "Limits apply to every month. Figures are recalculated from your expenses each time you open this page."}
           </p>
         </>

@@ -86,7 +86,7 @@ export default function ImportReview({ onComplete, onCancel }: Props) {
     }
     setBusy(true);
     setError("");
-    setProgress("Extracting candidates. No expenses are published yet.");
+    setProgress("Reading your file. Nothing is saved as an expense until you confirm.");
     if (sourceRef.current) URL.revokeObjectURL(sourceRef.current);
     sourceRef.current = file.name.toLowerCase().endsWith(".pdf")
       ? URL.createObjectURL(file)
@@ -191,8 +191,7 @@ export default function ImportReview({ onComplete, onCancel }: Props) {
     <section className="panel">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">IMPORT / REVIEW / UNDERSTAND</p>
-          <h2 style={{ marginTop: 10 }}>
+          <h2>
             {draft
               ? "Review transaction candidates"
               : "Bring your expenses into focus"}
@@ -320,11 +319,11 @@ export default function ImportReview({ onComplete, onCancel }: Props) {
               size={26}
               style={{ margin: "auto", color: "var(--forest)" }}
             />
-            <h3>A clearer view starts here.</h3>
+            <h3>Add an expense file</h3>
             <p>
-              Drop an expense file, or choose one below.
+              Drop a file here, or choose one below.
               <br />
-              CSV · TXT · PDF / up to 4 MB · 500 rows · 20 PDF pages
+              CSV, TXT or PDF, up to 4 MB, 500 rows and 20 PDF pages.
             </p>
             <input
               aria-label="Choose expense file"
@@ -337,8 +336,8 @@ export default function ImportReview({ onComplete, onCancel }: Props) {
               }}
             />
             <p>
-              PDF extraction uses AI. Every PDF row requires confirmation
-              against its source.
+              PDF rows are extracted by AI, so you confirm each one against
+              the original statement.
             </p>
           </div>
           <p className="micro">
@@ -357,7 +356,7 @@ export default function ImportReview({ onComplete, onCancel }: Props) {
                 .filter((d) => d.status !== "complete")
                 .map((d) => (
                   <div className="review-actions" key={d.id}>
-                    <span style={{ fontSize: 12 }}>{d.review.filename}</span>
+                    <span style={{ fontSize: "var(--text-sm)" }}>{d.review.filename}</span>
                     <span className="pill">{d.status}</span>
                     <button className="text-link" onClick={() => load(d)}>
                       Resume →
@@ -370,12 +369,12 @@ export default function ImportReview({ onComplete, onCancel }: Props) {
       ) : (
         <>
           <p className="micro">
-            Your original evidence is preserved. Save or close to persist
-            corrections before leaving this page.
+            Your original file is kept as evidence. Save or close the review
+            before leaving this page to keep your corrections.
           </p>
           <div className="notice">
             <strong>{draft.review.filename}</strong> ·{" "}
-            {draft.review.rows.length} candidates · {draft.review.pages ?? "—"}{" "}
+            {draft.review.rows.length} candidates · {draft.review.pages ?? "unknown"}{" "}
             pages · {draft.review.method}
             {draft.review.warnings.slice(0, 6).map((w, i) => (
               <p key={i}>{w}</p>
@@ -523,12 +522,13 @@ export default function ImportReview({ onComplete, onCancel }: Props) {
             </table>
           </div>
           <div className="review-actions">
-            <strong style={{ fontSize: 13 }}>
+            <strong style={{ fontSize: "var(--text-sm)" }}>
               {draft.review.rows.filter((r) => r.included).length} selected · $
               {reviewTotal(draft.review.rows).toFixed(2)}
             </strong>
             <span className="micro" style={{ margin: 0 }}>
-              USD expenses only. Excluded rows do not affect analytics.
+              Only USD expenses are imported, and excluded rows do not affect
+              your analysis.
             </span>
           </div>
           <label className="review-actions">
@@ -549,7 +549,7 @@ export default function ImportReview({ onComplete, onCancel }: Props) {
                   setBusy(true);
                   try {
                     await save();
-                    setProgress("Review saved. You can return later.");
+                    setProgress("Your review is saved, so you can come back to it later.");
                   } catch (e) {
                     setError((e as Error).message);
                   } finally {

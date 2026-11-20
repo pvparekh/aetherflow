@@ -6,7 +6,7 @@
   grid-template-columns: minmax(0, 1fr);
   gap: 20px;
   min-width: 0;
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--ink);
 }
 
@@ -27,9 +27,9 @@
 }
 
 .title {
-  font-size: 22px;
+  font-size: var(--text-h2);
   font-weight: 500;
-  letter-spacing: -0.6px;
+  letter-spacing: var(--ls-title);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -42,9 +42,10 @@
 
 .lead {
   color: var(--muted-ink);
-  line-height: 1.7;
+  font-size: var(--text-base);
+  line-height: var(--lh-body);
   margin-top: 6px;
-  max-width: 560px;
+  max-width: var(--measure);
 }
 
 .field {
@@ -63,8 +64,8 @@
 }
 
 .small {
-  font-size: 11px;
-  line-height: 1.6;
+  font-size: var(--text-sm);
+  line-height: var(--lh-body);
 }
 
 .num {
@@ -86,8 +87,8 @@
 
 .error {
   color: var(--danger);
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: var(--text-sm);
+  line-height: var(--lh-snug);
   display: flex;
   align-items: flex-start;
   gap: 6px;
@@ -98,7 +99,7 @@
   background: var(--paper);
   border-radius: 8px;
   padding: 12px 14px;
-  line-height: 1.6;
+  line-height: var(--lh-body);
   display: flex;
   gap: 10px;
   align-items: flex-start;
@@ -121,7 +122,7 @@
   border: 1px solid var(--line);
   background: transparent;
   color: var(--ink);
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
 }
@@ -160,22 +161,22 @@
 }
 
 .tileLabel {
-  font-size: 11px;
+  font-size: var(--text-sm);
   color: var(--muted-ink);
   display: block;
 }
 
 .tileValue {
   display: block;
-  font-size: 26px;
+  font-size: var(--text-h2);
   font-weight: 500;
-  letter-spacing: -0.8px;
+  letter-spacing: var(--ls-title);
   margin: 6px 0 2px;
   font-variant-numeric: tabular-nums;
 }
 
 .tileDetail {
-  font-size: 11px;
+  font-size: var(--text-sm);
   color: var(--muted-ink);
 }
 
@@ -217,12 +218,12 @@
 }
 
 .budgetName {
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 600;
 }
 
 .budgetFigures {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--muted-ink);
 }
 
@@ -298,7 +299,7 @@
 }
 
 .status {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -318,7 +319,7 @@
 }
 
 .projection {
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--muted-ink);
 }
 
@@ -368,7 +369,7 @@
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: var(--muted-ink);
   margin-top: 14px;
 }
@@ -413,7 +414,7 @@
   text-align: center;
   padding: 28px 12px;
   color: var(--muted-ink);
-  line-height: 1.7;
+  line-height: var(--lh-body);
 }
 
 .skeleton {
@@ -449,7 +450,7 @@
 .askRow input {
   flex: 1;
   min-width: 0;
-  font-size: 14px;
+  font-size: var(--text-base);
   min-height: 46px;
 }
 
@@ -463,7 +464,7 @@
 .chipsLabel {
   margin-top: 20px;
   margin-bottom: 10px;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--muted-ink);
 }
@@ -484,8 +485,8 @@
   border-radius: 999px;
   padding: 8px 14px;
   min-height: 36px;
-  font-size: 12px;
-  line-height: 1.4;
+  font-size: var(--text-sm);
+  line-height: var(--lh-snug);
   text-align: left;
   cursor: pointer;
   transition:
@@ -516,7 +517,7 @@
 }
 
 .question {
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--muted-ink);
   display: flex;
   gap: 8px;
@@ -525,9 +526,9 @@
 
 .answerText {
   overflow-wrap: anywhere;
-  font-size: 19px;
-  line-height: 1.5;
-  letter-spacing: -0.3px;
+  font-size: var(--text-h3);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--ls-title);
   font-weight: 450;
 }
 
@@ -541,7 +542,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: var(--text-caption);
   padding: 4px 10px;
   border-radius: 999px;
   background: var(--soft);
@@ -555,7 +556,7 @@
 }
 
 .sectionTitle {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--muted-ink);
   margin-bottom: 10px;
@@ -611,7 +612,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 
 .table th,
@@ -623,7 +624,7 @@
 }
 
 .table th {
-  font-size: 11px;
+  font-size: var(--text-caption);
   font-weight: 600;
   color: var(--muted-ink);
   background: var(--paper);
@@ -650,7 +651,7 @@
 
 .disclosure summary {
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--forest);
   display: inline-flex;
@@ -683,7 +684,7 @@
   grid-template-columns: max-content minmax(0, 1fr);
   gap: 8px 18px;
   margin: 14px 0 0;
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 
 .queryGrid dt {
@@ -702,7 +703,7 @@
   align-items: center;
   gap: 6px;
   margin-top: 14px;
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: var(--muted-ink);
 }
 
@@ -724,8 +725,8 @@
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 8px;
-  font-size: 11px;
-  line-height: 1.5;
+  font-size: var(--text-caption);
+  line-height: var(--lh-snug);
   overflow-x: auto;
 }
 
@@ -733,7 +734,7 @@
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  line-height: 1.7;
+  line-height: var(--lh-body);
   background: var(--paper);
 }
 
@@ -771,17 +772,11 @@
   .tile:last-child {
     border-bottom: 0;
   }
-  .tileValue {
-    font-size: 22px;
-  }
   .addForm {
     grid-template-columns: 1fr;
   }
   .askRow {
     flex-direction: column;
-  }
-  .answerText {
-    font-size: 16px;
   }
   .header {
     align-items: stretch;

@@ -49,7 +49,7 @@ describe("connected workspace interactions", () => {
     );
     const user = userEvent.setup();
     render(<Workspace />);
-    await screen.findByText("Your first clear picture.");
+    await screen.findByText("Start with your first statement");
     await user.click(
       screen.getAllByRole("button", { name: /Import expenses/ })[0],
     );
@@ -117,11 +117,11 @@ describe("connected workspace interactions", () => {
     });
     const user = userEvent.setup();
     render(<Workspace />);
-    await screen.findByText("Your first clear picture.");
+    await screen.findByText("Start with your first statement");
     await user.click(screen.getAllByRole("button", { name: /Import expenses/ })[0]);
     expect(await screen.findByLabelText("Choose expense file")).toBeTruthy();
     expect(await screen.findByText(/Saved reviews are temporarily unavailable/)).toBeTruthy();
-    expect(screen.queryByText("Your first clear picture.")).toBeNull();
+    expect(screen.queryByText("Start with your first statement")).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
   });
   it("does not render partial statistics as a completed analysis", async () => {
