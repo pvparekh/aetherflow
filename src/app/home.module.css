@@ -197,3 +197,16 @@
     grid-column: auto;
   }
 }
+
+/* Signed-in hero: a greeting in place of the sign-up buttons. */
+.greeting {
+  display: grid;
+  gap: 16px;
+}
+.greetingText {
+  margin: 0;
+  font-size: var(--text-lead);
+  line-height: var(--lh-snug);
+  font-weight: 600;
+  color: var(--forest);
+}
