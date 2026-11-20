@@ -193,9 +193,21 @@ describe("failure ladder", () => {
 });
 
 describe("batching", () => {
+  it("sends each merchant to the model once and copies its answer to repeats", async () => {
+    completeJson.mockImplementation(modelAnswers(allSoftware));
+    const rows = [row("STARBUCKS #1234 SEATTLE WA"), row("UBER *TRIP 8KQ2"), row("STARBUCKS #0987 SEATTLE WA"), row("UBER *TRIP 4HZ9")];
+    const result = await categorizeRows(rows);
+    expect(descriptionsSent()).toEqual([["STARBUCKS #1234 SEATTLE WA", "UBER *TRIP 8KQ2"]]);
+    expect(result).toHaveLength(4);
+    expect(result[2]).toEqual(result[0]);
+    expect(result[3]).toEqual(result[1]);
+  });
+
   it("sends 25 rows per call by default and honours a smaller batch size", async () => {
     completeJson.mockImplementation(modelAnswers(allSoftware));
-    const rows = Array.from({ length: 30 }, (_, i) => row(`Vendor ${i}`));
+    // Distinct merchants: vendor keys drop digits, so numbered names would merge.
+    const name = (i: number) => `Vendor ${"abcdefghijklmnopqrstuvwxyz"[i % 26]}${"xyz"[Math.floor(i / 26)] ?? ""}`;
+    const rows = Array.from({ length: 30 }, (_, i) => row(name(i)));
     await categorizeRows(rows);
     expect(descriptionsSent().map((batch) => batch.length)).toEqual([25, 5]);
 

@@ -343,10 +343,10 @@ export default function ImportReview({ onComplete, onCancel }: Props) {
           <p className="micro">
             <a
               className="text-link"
-              href="/sample/Q2_Expense_Report.csv"
+              href="/sample/sample-card-statement-12-months.csv"
               download
             >
-              Download a sample CSV ↗
+              Download a sample year of card spending (CSV, 480 rows) ↗
             </a>
           </p>
           {drafts.length > 0 && (

@@ -95,15 +95,24 @@ export async function categorizeRows(
   });
 }
 
-/** Model-only categorisation in sequential batches (one request at a time). */
+/**
+ * Model-only categorisation in sequential batches (one request at a time).
+ * Each merchant is sent once; repeats of the same vendor key share its answer,
+ * which keeps a statement full of coffee and groceries to a few requests.
+ */
 async function categorizeWithModel(
   rows: ParsedRow[],
   batchSize = DEFAULT_BATCH_SIZE,
 ): Promise<CategorizedRow[]> {
-  const results: CategorizedRow[] = [];
-  for (let i = 0; i < rows.length; i += batchSize)
-    results.push(...(await categorizeBatchWithLadder(rows.slice(i, i + batchSize))));
-  return results;
+  const keyOf = (row: ParsedRow) => vendorKey(row.vendor) || row.vendor.trim().toLowerCase();
+  const unique = new Map<string, ParsedRow>();
+  for (const row of rows) if (!unique.has(keyOf(row))) unique.set(keyOf(row), row);
+  const distinct = [...unique.values()];
+  const answers: CategorizedRow[] = [];
+  for (let i = 0; i < distinct.length; i += batchSize)
+    answers.push(...(await categorizeBatchWithLadder(distinct.slice(i, i + batchSize))));
+  const byKey = new Map(distinct.map((row, i) => [keyOf(row), answers[i]]));
+  return rows.map((row) => byKey.get(keyOf(row))!);
 }
 
 async function categorizeBatchWithLadder(
