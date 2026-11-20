@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
-  ArrowUpRight,
   Calculator,
   CalendarDays,
   Copy,
@@ -19,6 +18,7 @@ import {
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import s from "./home.module.css";
+import HeroActions from "./HeroActions";
 
 export const metadata: Metadata = {
   title: "AetherFlow | Find the money leaking out of your accounts",
@@ -107,14 +107,7 @@ export default function Home() {
               unusual charges, each with a dollar figure you can trace back to
               the transactions behind it.
             </p>
-            <div className="button-row">
-              <Link className="btn primary" href="/demo">
-                Try the demo, no sign-up needed <ArrowRight size={17} />
-              </Link>
-              <Link className="btn subtle" href="/signup">
-                Sign up to use your own statements <ArrowUpRight size={17} />
-              </Link>
-            </div>
+            <HeroActions />
             <p className="micro">
               Works with CSV, TXT and PDF statements. The demo uses 12 months
               of synthetic data and runs in your browser.
