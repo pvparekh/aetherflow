@@ -44,12 +44,12 @@ export function runDate(iso: string): string {
 }
 
 /**
- * Builds the scoreboard from the most recent run. Missed and extra counts are
+ * Builds the scoreboard from the most recent run (the harness prepends runs). Missed and extra counts are
  * reconstructed from precision, recall and support (tp = recall x support,
  * predicted = tp / precision), rounded to whole rows.
  */
 export function buildScoreboard(source: EvalReport = report): Scoreboard {
-  const run = source.runs[source.runs.length - 1];
+  const run = source.runs[0];
   const known = new Set<string>(CATEGORIES);
   const names = [
     ...CATEGORIES.filter((c) => c in run.categorisation.perCategory),

@@ -19,7 +19,7 @@ import HowItWorks, { metadata } from "./page";
 
 afterEach(() => cleanup());
 
-const run = latest.runs[latest.runs.length - 1];
+const run = latest.runs[0];
 const accuracy = `${(run.categorisation.accuracy * 100).toFixed(1)}%`;
 
 describe("how it works page", () => {

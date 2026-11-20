@@ -91,9 +91,10 @@ Categorisation is scored by a harness (`npm run eval`) that runs the shipping ca
 
 | Run | Accuracy | Macro F1 | Valid JSON | Latency per 25 rows (p50 / p95) |
 | --- | --- | --- | --- | --- |
-| qwen3.5:9b on Ollama, laptop GPU (RTX 3080 Laptop, Vulkan), cold start | **83.7%** | 83.2% | 100% | 13.5 s / 47.1 s |
+| Llama 3.3 70B (fp8, fast) on Cloudflare Workers AI, free tier, cold start | **92.3%** | 91.8% | 100% | 22.5 s / 50.9 s |
+| qwen3.5:9b on Ollama, laptop GPU (RTX 3080 Laptop, Vulkan), cold start | 83.7% | 83.2% | 100% | 13.5 s / 47.1 s |
 
-"Cold start" means no merchant rules and no history, so every row went to the model; that is the hardest case, a brand-new user. The main confusions are multi-purpose retailers (Amazon, Target, Costco) read as food, and marketing tools (Mailchimp, LinkedIn Premium) read as software. Full per-category results are on `/how-it-works` and in [`evals/results/latest.json`](evals/results/latest.json).
+"Cold start" means no merchant rules and no history, so every row went to the model; that is the hardest case, a brand-new user. The hosted model is what the live site uses; the local model is the free development default. Their main confusions are marketing tools (Mailchimp, Semrush, LinkedIn Premium) read as software and print shops (Vistaprint, MOO) read as office supplies; the local model also reads multi-purpose retailers (Amazon, Target, Costco) as food. Full per-category results are on `/how-it-works` and in [`evals/results/latest.json`](evals/results/latest.json).
 
 **Tests:** 669 tests across 49 files, covering:
 - statistical fixtures, with planted positives and negatives for every leak detector;

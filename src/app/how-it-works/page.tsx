@@ -251,7 +251,10 @@ export default function HowItWorks() {
             <div>
               <dt>Latency per batch of 25</dt>
               <dd>{seconds(run.latencyMs.p50)}</dd>
-              <p>p50; p95 {seconds(run.latencyMs.p95)}, on a local GPU</p>
+              <p>
+                p50; p95 {seconds(run.latencyMs.p95)},{" "}
+                {run.provider === "ollama" ? "on a local GPU" : `hosted (${run.provider})`}
+              </p>
             </div>
           </dl>
 
