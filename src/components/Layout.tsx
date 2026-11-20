@@ -37,6 +37,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <Link className={path === "/demo" ? "active" : ""} href="/demo">
             Explore demo
           </Link>
+          <Link
+            className={path === "/how-it-works" ? "active" : ""}
+            href="/how-it-works"
+          >
+            How it works
+          </Link>
           <Link className={path === "/account" ? "active" : ""} href="/account">
             Account
           </Link>
@@ -72,6 +78,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           AetherFlow<span className="muted"> / Make sense of spend.</span>
         </Link>
         <div>
+          <Link href="/how-it-works">How it works</Link>
           <Link href="/data-guide">Data & limitations</Link>
           <Link href="/demo">Try sample workspace</Link>
           <a

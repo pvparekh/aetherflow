@@ -25,24 +25,22 @@ beforeEach(() => {
 });
 afterEach(() => cleanup());
 describe("connected workspace interactions", () => {
-  it("keeps the demo isolated, filters totals, opens source details and records a reversible review choice", async () => {
+  it("runs the demo year in the browser: leaks, statements, source details and review", async () => {
     const user = userEvent.setup();
     render(<Workspace demo />);
-    expect(screen.getByText(/Synthetic sample data/)).toBeTruthy();
+    expect(screen.getByText(/synthetic year of card spending/)).toBeTruthy();
+    expect(screen.getByText(/\$194\.32/)).toBeTruthy();
     await user.click(screen.getByRole("tab", { name: "Transactions" }));
-    await user.type(
-      screen.getByPlaceholderText("Vendor or description"),
-      "Figma",
-    );
-    expect(screen.getAllByText("$45.00").length).toBeGreaterThan(0);
-    expect(screen.queryByRole("button", { name: /Adobe ↗/ })).toBeNull();
-    await user.click(screen.getByRole("button", { name: "Figma ↗" }));
-    expect(screen.getByText("2026-09-03,Figma,45.00")).toBeTruthy();
-    await user.click(screen.getByRole("tab", { name: "Review (2)" }));
+    await user.type(screen.getByPlaceholderText("Vendor or description"), "Adobe");
+    await user.click(screen.getByRole("button", { name: "Adobe ↗" }));
+    expect(screen.getByText(/ADOBE/)).toBeTruthy();
+    // May holds the planted double charge; switch statements to review it.
+    await user.selectOptions(screen.getAllByRole("combobox")[0], "demo-upload-2026-05");
+    await user.click(screen.getByRole("tab", { name: /^Review \(\d\)$/ }));
+    expect(screen.queryByRole("button", { name: "Reset" })).toBeNull();
     await user.click(screen.getAllByRole("button", { name: "Expected" })[0]);
-    expect(screen.getByRole("tab", { name: "Review (1)" })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Reset" }));
-    expect(screen.getByRole("tab", { name: "Review (2)" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Reset" })).toBeNull();
     expect(request).not.toHaveBeenCalled();
   });
   it("distinguishes an empty account from a failed load and opens real import controls", async () => {
@@ -73,6 +71,8 @@ describe("connected workspace interactions", () => {
     });
     const user = userEvent.setup();
     render(<Workspace />);
+    expect(await screen.findByText(/leak report could not be built/)).toBeTruthy();
+    await user.click(screen.getByRole("tab", { name: "Overview" }));
     await screen.findByText("Rolling category context");
     await user.click(
       screen.getByRole("button", { name: /Generate interpretation/ }),
@@ -99,9 +99,12 @@ describe("connected workspace interactions", () => {
         return { uploads: [interrupted, ready.upload] };
       if (url === `/api/expense-intel/dashboard/${ready.upload.id}`)
         return ready;
+      if (url === "/api/expense-intel/leaks") throw new Error("Leak report unavailable");
       throw new Error(`Unexpected API request: ${url}`);
     });
+    const user = userEvent.setup();
     render(<Workspace />);
+    await user.click(await screen.findByRole("tab", { name: "Overview" }));
     expect(await screen.findByText("Rolling category context")).toBeTruthy();
     expect(screen.queryByText("Your report needs to finish processing.")).toBeNull();
     expect(request.mock.calls.some(([url]) => url === "/api/expense-intel/dashboard/interrupted-upload")).toBe(false);

@@ -110,6 +110,9 @@ export interface LineItem {
   is_round_number: boolean;
   is_possible_duplicate: boolean;
   user_resolution: UserResolution;
+  /** Present once the leak-finder migration is applied. */
+  tags?: string[] | null;
+  note?: string | null;
 }
 
 export interface CategoryStats {

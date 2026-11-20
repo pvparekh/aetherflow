@@ -1418,3 +1418,30 @@ h2 {
     padding-inline: 14px;
   }
 }
+
+/* Tags and a note on one transaction */
+.annotations {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  max-width: 520px;
+}
+.annotations label {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.annotations input,
+.annotations textarea {
+  width: 100%;
+  padding: 8px 10px;
+  font-weight: 400;
+  resize: vertical;
+}
+.annotations small {
+  color: var(--muted-ink);
+  margin-top: -4px;
+}

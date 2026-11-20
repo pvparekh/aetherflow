@@ -136,3 +136,6 @@ export interface PresetQuestion {
   question: string;
   query: AskQuery;
 }
+
+/** Longest question the Ask box and route accept. */
+export const MAX_QUESTION_LENGTH = 300;

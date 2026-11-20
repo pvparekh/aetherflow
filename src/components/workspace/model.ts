@@ -6,6 +6,7 @@ import type {
   Flag,
   Pass2Result,
 } from "@/lib/expense-intel/types";
+import type { LeakReport } from "@/lib/expense-intel/contracts";
 export interface UploadList {
   id: string;
   filename: string;
@@ -190,4 +191,125 @@ export function correctSample(
     };
   });
   return { ...data, line_items, category_stats };
+}
+
+/**
+ * The public demo: the latest month of the 12-month synthetic year as the
+ * open report, with category history across every month and review flags
+ * taken from the leak report. Computed in the browser; no backend, no model.
+ */
+export function demoMonths(all: LineItem[]): string[] {
+  return [...new Set(all.map((r) => (r.transaction_date ?? "").slice(0, 7)))]
+    .filter(Boolean)
+    .sort();
+}
+
+export function demoDashboard(
+  all: LineItem[],
+  report: LeakReport,
+  displayName: (raw: string) => string,
+  month?: string,
+): DashboardData {
+  const allMonths = demoMonths(all);
+  const latest = month ?? allMonths[allMonths.length - 1];
+  // History runs up to the open statement, as it would for a real upload.
+  const months = allMonths.filter((m) => m <= latest);
+  const uploadId = `demo-upload-${latest}`;
+  const line_items = all
+    .filter((r) => r.transaction_date?.startsWith(latest))
+    .map((r) => ({ ...r, upload_id: uploadId, vendor: displayName(r.vendor ?? r.raw_text ?? "") }));
+  const inMonth = new Set(line_items.map((r) => r.id));
+  const total = line_items.reduce((s, r) => s + Number(r.amount), 0);
+  const monthTotal = (category: string, month: string) =>
+    all
+      .filter((r) => r.category === category && r.transaction_date?.startsWith(month))
+      .reduce((s, r) => s + Number(r.amount), 0);
+  const categories = [...new Set(line_items.map((r) => r.category ?? "Misc"))];
+  const category_history = categories.map((category) => ({
+    category,
+    points: months.map((m) => ({ uploaded_at: `${m}-28T12:00:00Z`, total: monthTotal(category, m) })),
+  }));
+  const category_stats: CategoryStats[] = categories.map((category, i) => {
+    const rows = line_items.filter((r) => r.category === category);
+    const sum = rows.reduce((s, r) => s + Number(r.amount), 0);
+    const history = months.map((m) => monthTotal(category, m));
+    const recent = history.slice(-5);
+    const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / Math.max(xs.length, 1);
+    const allTime = avg(history);
+    return {
+      id: `cat-${i}`,
+      category,
+      upload_id: "sample",
+      computed_at: `${latest}-28`,
+      total_spend_period: sum,
+      total_spend_alltime: history.reduce((a, b) => a + b, 0),
+      mean_amount: sum / rows.length,
+      median_amount: null,
+      std_dev: null,
+      rolling_avg_5: avg(recent),
+      rolling_avg_alltime: allTime,
+      pct_of_total_spend: (sum / total) * 100,
+      trend_direction: sum > allTime * 1.15 ? "up" : sum < allTime * 0.85 ? "down" : "stable",
+    };
+  });
+  const byVendor = new Map<string, LineItem[]>();
+  for (const r of line_items) byVendor.set(r.vendor, [...(byVendor.get(r.vendor) ?? []), r]);
+  const vendors: Vendor[] = [...byVendor].map(([vendor_name, rows], i) => {
+    const sum = rows.reduce((s, r) => s + Number(r.amount), 0);
+    return {
+      id: `v-${i}`,
+      user_id: "sample",
+      vendor_name,
+      first_seen_upload_id: "sample",
+      last_seen_upload_id: "sample",
+      total_occurrences: rows.length,
+      total_spend: sum,
+      avg_amount: sum / rows.length,
+      recurrence_tier: rows.length > 3 ? "regular" : rows.length > 1 ? "occasional" : "one_time",
+      primary_category: rows[0].category,
+    };
+  });
+  const flags: Flag[] = [
+    ...report.duplicates
+      .filter((d) => d.transactionIds.some((id) => inMonth.has(id)))
+      .map((d): Flag => ({
+      severity: "warning",
+      flag_type: "duplicate",
+      title: `Possible double charge at ${d.vendor}`,
+      description: `Two ${money(d.amount)} charges within a few days of each other. Check the statement before disputing.`,
+      metric: `${money(d.amount)} × 2`,
+      vendor: d.vendor,
+      amount: d.amount,
+      z_score: null,
+      category: "",
+      related_line_item_ids: d.transactionIds.filter((id) => inMonth.has(id)),
+    })),
+    ...report.unusual
+      .filter((u) => inMonth.has(u.transactionId))
+      .map((u): Flag => ({
+      severity: u.severity === "critical" ? "critical" : "warning",
+      flag_type: "statistical",
+      title: `An unusually large charge at ${u.vendor}`,
+      description: u.reason,
+      metric: money(u.amount),
+      vendor: u.vendor,
+      amount: u.amount,
+      z_score: null,
+      category: u.category,
+      related_line_item_ids: [u.transactionId],
+    })),
+  ];
+  const upload: Upload = {
+    id: uploadId,
+    user_id: "sample",
+    filename: `${latest}-card-statement.csv`,
+    uploaded_at: `${latest}-28T12:00:00Z`,
+    total_amount: total,
+    line_item_count: line_items.length,
+    pass1_status: "complete",
+    pass2_status: "pending",
+    health_score: null,
+    ai_analysis: null,
+  };
+  return { upload, line_items, category_stats, category_history, vendors, flags, pass2: null };
 }

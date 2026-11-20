@@ -1,5 +1,12 @@
 "use client";
-import { useState, useEffect, useRef, useCallback, Fragment } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  Fragment,
+} from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -19,12 +26,22 @@ import AllTimeView from "@/components/expense-intel/AllTimeView";
 import { api } from "@/lib/imports/http";
 import { csvExport } from "@/lib/expense-intel/csv";
 import {
-  sampleData,
+  demoDashboard,
+  demoMonths,
   correctSample,
   money,
   type DashboardData,
   type UploadList,
 } from "./model";
+import { buildLeakReport } from "@/lib/expense-intel/leaks";
+import { displayVendor } from "@/lib/expense-intel/normalize";
+import type { LeakReport, Txn } from "@/lib/expense-intel/contracts";
+import { demoLineItems, demoTxns, DEMO_TODAY } from "@/lib/demo";
+import LeaksView from "./views/LeaksView";
+import SubscriptionsView from "./views/SubscriptionsView";
+import BudgetsView from "./views/BudgetsView";
+import AskView from "./views/AskView";
+import Annotations from "./views/Annotations";
 import {
   CATEGORIES,
   type Pass2Result,
@@ -32,8 +49,21 @@ import {
 } from "@/lib/expense-intel/types";
 
 type Tab =
-  "Overview" | "Transactions" | "Review" | "Vendors" | "History" | "All time";
+  | "Money leaks"
+  | "Subscriptions"
+  | "Budgets"
+  | "Ask"
+  | "Overview"
+  | "Transactions"
+  | "Review"
+  | "Vendors"
+  | "History"
+  | "All time";
 const tabs: Tab[] = [
+  "Money leaks",
+  "Subscriptions",
+  "Budgets",
+  "Ask",
   "Overview",
   "Transactions",
   "Review",
@@ -41,17 +71,44 @@ const tabs: Tab[] = [
   "History",
   "All time",
 ];
+interface DemoWorld {
+  txns: Txn[];
+  report: LeakReport;
+  /** One statement per month, newest first. */
+  dashboards: DashboardData[];
+}
+let demoWorld: DemoWorld | null = null;
+/** The demo year, computed once in the browser: no backend, no model. */
+function getDemoWorld(): DemoWorld {
+  if (!demoWorld) {
+    const txns = demoTxns();
+    const report = buildLeakReport(txns, DEMO_TODAY);
+    const items = demoLineItems();
+    const dashboards = demoMonths(items)
+      .reverse()
+      .map((m) => demoDashboard(items, report, displayVendor, m));
+    demoWorld = { txns, report, dashboards };
+  }
+  return demoWorld;
+}
 export default function Workspace({ demo = false }: { demo?: boolean }) {
+  const world = useMemo(() => (demo ? getDemoWorld() : null), [demo]);
   const [data, setData] = useState<DashboardData | null>(() =>
-    demo ? sampleData() : null,
+    world ? world.dashboards[0] : null,
   );
   const [uploads, setUploads] = useState<UploadList[]>(() =>
-    demo ? [sampleData().upload] : [],
+    world ? world.dashboards.map((d) => d.upload) : [],
   );
-  const [active, setActive] = useState(demo ? "sample" : "");
+  const [report, setReport] = useState<LeakReport | null>(
+    () => world?.report ?? null,
+  );
+  const [reportFailed, setReportFailed] = useState(false);
+  const [active, setActive] = useState(
+    world ? world.dashboards[0].upload.id : "",
+  );
   const [loading, setLoading] = useState(!demo);
   const [error, setError] = useState("");
-  const [tab, setTab] = useState<Tab>("Overview");
+  const [tab, setTab] = useState<Tab>("Money leaks");
   const [importing, setImporting] = useState(false);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
@@ -67,7 +124,14 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
   const controller = useRef<AbortController | null>(null);
   const load = useCallback(
     async (id?: string) => {
-      if (demo) return;
+      if (world) {
+        const next = world.dashboards.find((d) => d.upload.id === id);
+        if (next) {
+          setData(next);
+          setActive(next.upload.id);
+        }
+        return;
+      }
       const current = ++sequence.current;
       controller.current?.abort();
       controller.current = new AbortController();
@@ -93,6 +157,23 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
             setData(d);
             setActive(next);
           }
+          // The leak report spans all history; a failure leaves the
+          // statement views working.
+          api<LeakReport>("/api/expense-intel/leaks", {
+            signal: controller.current.signal,
+          })
+            .then((r) => {
+              if (current === sequence.current) {
+                setReport(r);
+                setReportFailed(false);
+              }
+            })
+            .catch(() => {
+              if (current === sequence.current) {
+                setReport(null);
+                setReportFailed(true);
+              }
+            });
         } else {
           setData(null);
           setActive("");
@@ -104,7 +185,7 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
         if (current === sequence.current) setLoading(false);
       }
     },
-    [demo],
+    [world],
   );
   useEffect(() => {
     void load();
@@ -122,6 +203,22 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
     );
     if (selected) setTab(selected);
   }, [searchKey]);
+  function viewProps(r: LeakReport) {
+    return {
+      demo,
+      report: r,
+      txns: world?.txns ?? null,
+      today: demo ? DEMO_TODAY : new Date().toISOString().slice(0, 10),
+      navigate: (view: string) => {
+        const next = tabs.find(
+          (t) =>
+            t.toLowerCase().replace(/ /g, "") ===
+            view.toLowerCase().replace(/ /g, ""),
+        );
+        if (next) chooseTab(next);
+      },
+    };
+  }
   function openImport() {
     setError("");
     setImporting(true);
@@ -161,6 +258,12 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
   const flags = (data?.flags ?? []).filter(
     (f) => !category || f.category === category,
   );
+  /** Tabs that cover all history, not the open statement. */
+  const historyTab =
+    tab === "Money leaks" ||
+    tab === "Subscriptions" ||
+    tab === "Budgets" ||
+    tab === "Ask";
   const unresolved = flags.filter((f) =>
     f.related_line_item_ids.some(
       (id) => !data?.line_items.find((r) => r.id === id)?.user_resolution,
@@ -290,8 +393,9 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
     <Layout>
       {demo && (
         <div className="demo-banner">
-          INTERACTIVE DEMO · Synthetic sample data. Review actions stay in this
-          page. <Link href="/signup">Create your workspace ↗</Link>
+          INTERACTIVE DEMO · A synthetic year of card spending for a freelance
+          designer, analysed in your browser.{" "}
+          <Link href="/signup">Create your workspace ↗</Link>
         </div>
       )}
       <main className="workspace-content">
@@ -302,11 +406,12 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
               INTELLIGENCE
             </p>
             <h1>
-              Make sense of <em>every expense.</em>
+              Find the money <em>leaking out.</em>
             </h1>
             <p>
-              Review the details. Understand the patterns. Decide what deserves
-              a closer look.
+              Subscriptions, price increases, double charges and unusual
+              spending, found across your whole history. Every figure is
+              computed by code.
             </p>
           </div>
           {demo ? (
@@ -325,7 +430,7 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
             onCancel={() => setImporting(false)}
             onComplete={(id) => {
               setImporting(false);
-              chooseTab("Overview");
+              chooseTab("Money leaks");
               void load(id);
             }}
           />
@@ -360,10 +465,7 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
               statement.
             </p>
             <div className="button-row" style={{ justifyContent: "center" }}>
-              <button
-                className="btn primary"
-                onClick={openImport}
-              >
+              <button className="btn primary" onClick={openImport}>
                 Import expenses <ArrowRight size={14} />
               </button>
               <Link className="btn subtle" href="/demo">
@@ -412,126 +514,138 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
           </section>
         ) : (
           <>
-            <div className="toolbar">
-              <label style={{ minWidth: 210 }}>
-                REPORT
-                <select
-                  aria-label="Report"
-                  value={active}
-                  onChange={(e) => void load(e.target.value)}
-                >
-                  {uploads.map((u) => (
-                    <option value={u.id} key={u.id}>
-                      {u.filename}{u.pass1_status !== "complete" ? " · needs processing" : ""}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="grow">
-                SEARCH TRANSACTIONS
-                <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <Search size={14} />
-                  <input
-                    style={{ width: "100%" }}
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Vendor or description"
-                  />
-                </span>
-              </label>
-              <label>
-                CATEGORY
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                >
-                  <option value="">All categories</option>
-                  {CATEGORIES.map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                FROM
-                <input
-                  type="date"
-                  value={from}
-                  onChange={(e) => setFrom(e.target.value)}
-                />
-              </label>
-              <label>
-                TO
-                <input
-                  type="date"
-                  min={from}
-                  value={to}
-                  onChange={(e) => setTo(e.target.value)}
-                />
-              </label>
-              <label>
-                SORT
-                <select value={sort} onChange={(e) => setSort(e.target.value)}>
-                  <option value="date-desc">Newest date</option>
-                  <option value="amount-desc">Largest amount</option>
-                  <option value="amount-asc">Smallest amount</option>
-                  <option value="vendor">Vendor A–Z</option>
-                </select>
-              </label>
-              <button className="btn subtle" onClick={download}>
-                <Download size={14} />
-                Export {scoped ? "filtered" : ""}
-              </button>
-              {scoped && (
-                <button
-                  className="text-link"
-                  onClick={() => {
-                    setQuery("");
-                    setCategory("");
-                    setFrom("");
-                    setTo("");
-                  }}
-                >
-                  Clear filters
-                </button>
-              )}
-            </div>
-            <div className="stat-grid">
-              <div>
-                <span className="stat-label">
-                  {scoped ? "Filtered" : "Report"} expense total
-                </span>
-                <strong className="stat-value">{money(total)}</strong>
-                <span className="stat-detail">
-                  USD · {items.length} selected transactions
-                </span>
-              </div>
-              <div>
-                <span className="stat-label">Transactions</span>
-                <strong className="stat-value">
-                  {items.length.toLocaleString()}
-                </strong>
-                <span className="stat-detail">
-                  {categories.length} categories in this report
-                </span>
-              </div>
-              <div>
-                <span className="stat-label">Awaiting a decision</span>
-                <strong className="stat-value">{unresolved.length}</strong>
-                <span className="stat-detail">
-                  {category ? "Selected category" : "Report"} review signals
-                </span>
-              </div>
-              <div>
-                <span className="stat-label">Average transaction</span>
-                <strong className="stat-value">
-                  {items.length ? money(total / items.length) : "—"}
-                </strong>
-                <span className="stat-detail">
-                  {scoped ? "Filtered rows" : "This report"} · not a historical
-                  baseline
-                </span>
-              </div>
-            </div>
+            {!historyTab && (
+              <>
+                <div className="toolbar">
+                  <label style={{ minWidth: 210 }}>
+                    REPORT
+                    <select
+                      aria-label="Report"
+                      value={active}
+                      onChange={(e) => void load(e.target.value)}
+                    >
+                      {uploads.map((u) => (
+                        <option value={u.id} key={u.id}>
+                          {u.filename}
+                          {u.pass1_status !== "complete"
+                            ? " · needs processing"
+                            : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="grow">
+                    SEARCH TRANSACTIONS
+                    <span
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
+                      <Search size={14} />
+                      <input
+                        style={{ width: "100%" }}
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Vendor or description"
+                      />
+                    </span>
+                  </label>
+                  <label>
+                    CATEGORY
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                    >
+                      <option value="">All categories</option>
+                      {CATEGORIES.map((c) => (
+                        <option key={c}>{c}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    FROM
+                    <input
+                      type="date"
+                      value={from}
+                      onChange={(e) => setFrom(e.target.value)}
+                    />
+                  </label>
+                  <label>
+                    TO
+                    <input
+                      type="date"
+                      min={from}
+                      value={to}
+                      onChange={(e) => setTo(e.target.value)}
+                    />
+                  </label>
+                  <label>
+                    SORT
+                    <select
+                      value={sort}
+                      onChange={(e) => setSort(e.target.value)}
+                    >
+                      <option value="date-desc">Newest date</option>
+                      <option value="amount-desc">Largest amount</option>
+                      <option value="amount-asc">Smallest amount</option>
+                      <option value="vendor">Vendor A–Z</option>
+                    </select>
+                  </label>
+                  <button className="btn subtle" onClick={download}>
+                    <Download size={14} />
+                    Export {scoped ? "filtered" : ""}
+                  </button>
+                  {scoped && (
+                    <button
+                      className="text-link"
+                      onClick={() => {
+                        setQuery("");
+                        setCategory("");
+                        setFrom("");
+                        setTo("");
+                      }}
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+                <div className="stat-grid">
+                  <div>
+                    <span className="stat-label">
+                      {scoped ? "Filtered" : "Report"} expense total
+                    </span>
+                    <strong className="stat-value">{money(total)}</strong>
+                    <span className="stat-detail">
+                      USD · {items.length} selected transactions
+                    </span>
+                  </div>
+                  <div>
+                    <span className="stat-label">Transactions</span>
+                    <strong className="stat-value">
+                      {items.length.toLocaleString()}
+                    </strong>
+                    <span className="stat-detail">
+                      {categories.length} categories in this report
+                    </span>
+                  </div>
+                  <div>
+                    <span className="stat-label">Awaiting a decision</span>
+                    <strong className="stat-value">{unresolved.length}</strong>
+                    <span className="stat-detail">
+                      {category ? "Selected category" : "Report"} review signals
+                    </span>
+                  </div>
+                  <div>
+                    <span className="stat-label">Average transaction</span>
+                    <strong className="stat-value">
+                      {items.length ? money(total / items.length) : "—"}
+                    </strong>
+                    <span className="stat-detail">
+                      {scoped ? "Filtered rows" : "This report"} · not a
+                      historical baseline
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
             <div className="tabs" role="tablist" aria-label="Workspace views">
               {tabs
                 .filter((t) => !demo || t !== "All time")
@@ -550,6 +664,40 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
                 ))}
             </div>
             <div role="tabpanel" aria-label={tab}>
+              {(tab === "Money leaks" ||
+                tab === "Subscriptions" ||
+                tab === "Budgets" ||
+                tab === "Ask") &&
+                !report && (
+                  <section className="panel" role="status">
+                    <p className="micro">
+                      {reportFailed ? (
+                        <>
+                          Your leak report could not be built right now. Your
+                          statements are unaffected.{" "}
+                          <button
+                            className="text-link"
+                            onClick={() => void load(active || undefined)}
+                          >
+                            Retry
+                          </button>
+                        </>
+                      ) : (
+                        "Building your leak report across all of your history…"
+                      )}
+                    </p>
+                  </section>
+                )}
+              {report && tab === "Money leaks" && (
+                <LeaksView {...viewProps(report)} />
+              )}
+              {report && tab === "Subscriptions" && (
+                <SubscriptionsView {...viewProps(report)} />
+              )}
+              {report && tab === "Budgets" && (
+                <BudgetsView {...viewProps(report)} />
+              )}
+              {report && tab === "Ask" && <AskView {...viewProps(report)} />}
               {tab === "Overview" && (
                 <>
                   <div className="workspace-grid">
@@ -829,6 +977,27 @@ export default function Workspace({ demo = false }: { demo?: boolean }) {
                                         .filter(Boolean)
                                         .join(", ") || "none"}
                                     </p>
+                                    <Annotations
+                                      id={r.id}
+                                      tags={r.tags ?? []}
+                                      note={r.note ?? null}
+                                      demo={demo}
+                                      onSaved={(tags, note) =>
+                                        setData((d) =>
+                                          d
+                                            ? {
+                                                ...d,
+                                                line_items: d.line_items.map(
+                                                  (x) =>
+                                                    x.id === r.id
+                                                      ? { ...x, tags, note }
+                                                      : x,
+                                                ),
+                                              }
+                                            : d,
+                                        )
+                                      }
+                                    />
                                   </div>
                                 </td>
                               </tr>

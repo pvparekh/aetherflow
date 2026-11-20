@@ -13,7 +13,8 @@ import { PRESET_QUESTIONS } from "./presets";
 import { parseTranslation, TRANSLATION_SCHEMA, type Translation } from "./schema";
 import type { AskQuery, DataSpan, DeclineReason } from "./types";
 
-export const MAX_QUESTION_LENGTH = 300;
+import { MAX_QUESTION_LENGTH } from "./types";
+export { MAX_QUESTION_LENGTH };
 const TOP_VENDOR_COUNT = 40;
 
 export interface TranslatorContext {

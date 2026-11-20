@@ -1,163 +1,237 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  ArrowUpRight,
   ArrowRight,
-  FileText,
-  SlidersHorizontal,
-  ScanLine,
-  Check,
+  ArrowUpRight,
+  Calculator,
+  CalendarDays,
+  Copy,
+  Cpu,
+  ListChecks,
+  MessageCircleQuestion,
+  PenLine,
+  Repeat,
   ShieldCheck,
+  TrendingUp,
+  TriangleAlert,
+  Upload,
+  Wallet,
 } from "lucide-react";
 import Layout from "@/components/Layout";
+import s from "./home.module.css";
+
+export const metadata: Metadata = {
+  title: "AetherFlow | Find the money leaking out of your accounts",
+  description:
+    "Upload card or bank statements (CSV, TXT or PDF) and see forgotten subscriptions, price increases, duplicate charges and unusual charges. No bank login. Every number is computed by code.",
+};
+
+const FINDS = [
+  {
+    icon: Repeat,
+    title: "Forgotten subscriptions",
+    text: "Every recurring charge, with how often it bills, when it bills next and what it costs a year.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Price increases",
+    text: "Subscriptions and bills that quietly started charging more, with the old and new price.",
+  },
+  {
+    icon: Copy,
+    title: "Duplicate charges",
+    text: "The same merchant charging the same amount twice within a few days.",
+  },
+  {
+    icon: TriangleAlert,
+    title: "Unusual charges",
+    text: "Charges far above what that merchant, or that kind of spending, normally costs you.",
+  },
+  {
+    icon: CalendarDays,
+    title: "Upcoming-charges calendar",
+    text: "See what is due next, and add it to your own calendar as an .ics file.",
+  },
+  {
+    icon: PenLine,
+    title: "Cancel and negotiate drafts",
+    text: "A cancellation message or a negotiation call script built from your own numbers. You send it.",
+  },
+  {
+    icon: Wallet,
+    title: "Budgets",
+    text: "Set a monthly limit per category and see where each one stands.",
+  },
+  {
+    icon: MessageCircleQuestion,
+    title: "Ask your spending",
+    text: "“How much did I spend on software this year?” Answered by a query run on your data.",
+  },
+];
+
+const STEPS = [
+  {
+    icon: Upload,
+    title: "Upload statements",
+    text: "CSV, TXT or PDF exports from your card or bank. Review the rows before they are imported.",
+  },
+  {
+    icon: ListChecks,
+    title: "Categorise",
+    text: "Merchant rules and your own history first; a language model only for what is left.",
+  },
+  {
+    icon: Calculator,
+    title: "Compute and report",
+    text: "Code finds recurring charges, price changes, duplicates and outliers, and totals them.",
+  },
+];
+
 export default function Home() {
   return (
     <Layout>
       <main>
-        <section className="hero af-width">
-          <div className="hero-copy">
+        <section className={`af-width ${s.hero}`}>
+          <div>
             <p className="eyebrow">
-              <span className="status-dot" /> CLARITY, DOWN TO THE TRANSACTION
+              <span className="status-dot" /> LEAK FINDER &middot; NO BANK LOGIN
             </p>
-            <h1>
-              Your expenses.
+            <h1 className={s.title}>
+              Find the money
               <br />
-              <em>A clearer picture.</em>
+              <em>quietly leaving your accounts.</em>
             </h1>
             <p className="hero-lead">
-              From scattered files to a considered view of your spending. Review
-              your records, understand what changed, and keep the details within
-              reach.
+              Upload a few months of card or bank statements. AetherFlow lists
+              your subscriptions, price increases, duplicate charges and
+              unusual charges, each with a dollar figure you can trace back to
+              the transactions behind it.
             </p>
             <div className="button-row">
-              <Link className="btn primary" href="/signup">
-                Open your workspace <ArrowUpRight size={17} />
+              <Link className="btn primary" href="/demo">
+                Try the demo &mdash; no sign-up <ArrowRight size={17} />
               </Link>
-              <Link className="btn subtle" href="/demo">
-                Explore with sample data <ArrowRight size={17} />
+              <Link className="btn subtle" href="/signup">
+                Sign up to use your own statements <ArrowUpRight size={17} />
               </Link>
             </div>
             <p className="micro">
-              CSV · TXT · PDF review &nbsp; / &nbsp; USD expense analytics
+              CSV &middot; TXT &middot; PDF statements &nbsp;/&nbsp; The demo
+              uses 12 months of synthetic data and runs in your browser.
             </p>
           </div>
-          <div
-            className="hero-product"
-            aria-label="Illustrative sample expense workspace"
-          >
-            <div className="preview-top">
-              <span className="brand-mark">
-                <ScanLine size={16} />
-              </span>
-              <strong>Spending overview</strong>
-              <span className="pill">SAMPLE DATA</span>
-            </div>
-            <div className="preview-scope">
-              <span>October 2026</span>
-              <SlidersHorizontal size={14} />
-            </div>
-            <div className="preview-total">
-              <span>Total reviewed expenses</span>
-              <strong>
-                $8,426<span>.50</span>
-              </strong>
+
+          <aside className={s.panel} aria-labelledby="report-heading">
+            <p className="eyebrow" id="report-heading">
+              WHAT A LEAK REPORT SHOWS
+            </p>
+            <ul>
+              {FINDS.slice(0, 4).map(({ icon: Icon, title, text }) => (
+                <li key={title}>
+                  <span className={s.panelIcon}>
+                    <Icon size={16} aria-hidden="true" />
+                  </span>
+                  <div>
+                    <strong>{title}</strong>
+                    <p>{text}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        </section>
+
+        <section className={s.trust} aria-labelledby="trust-heading">
+          <div className={`af-width ${s.trustInner}`}>
+            <ShieldCheck size={22} aria-hidden="true" className={s.trustIcon} />
+            <div>
+              <h2 id="trust-heading" className={s.trustTitle}>
+                Every number is computed by code.
+              </h2>
               <p>
-                <span className="positive">↓ 8.2%</span> vs. previous sample
-                period
+                AI only categorises transactions, extracts rows from PDFs and
+                words summaries and drafts. Its wording is checked against the
+                computed numbers before you see it, and replaced by a template
+                if anything does not match.
               </p>
             </div>
-            <div className="preview-bars">
-              {[30, 55, 39, 65, 50, 80, 62, 41, 71, 50, 91, 68].map((h, i) => (
-                <div key={i} style={{ height: h + "%" }} />
-              ))}
-            </div>
-            <div className="preview-days">
-              <span>01 OCT</span>
-              <span>15 OCT</span>
-              <span>31 OCT</span>
-            </div>
-            <div className="preview-note">
-              <span className="note-icon">
-                <Check size={14} />
-              </span>
-              <div>
-                <strong>Everything has a source.</strong>
-                <p>Trace a total back to the transactions behind it.</p>
-              </div>
+            <div className={s.trustAside}>
+              <Cpu size={18} aria-hidden="true" />
+              <p>
+                Runs on a free local or open-weights model. No paid AI API
+                required.
+              </p>
             </div>
           </div>
         </section>
-        <div className="principles-strip">
-          <div className="af-width">
-            <span>DESIGNED FOR THE DETAILS</span>
-            <p>Review before import</p>
-            <p>Statistics computed in code</p>
-            <p>Insights you can question</p>
-          </div>
-        </div>
-        <section className="af-width editorial-section">
+
+        <section className="af-width editorial-section" aria-labelledby="finds-heading">
           <div className="section-heading">
-            <p className="eyebrow">A MORE USEFUL MONTH-END</p>
-            <h2>
-              Less deciphering.
+            <p className="eyebrow">WHAT IT FINDS, AND WHAT IT HELPS YOU DO</p>
+            <h2 id="finds-heading">
+              Small charges add up.
               <br />
-              <em>More understanding.</em>
+              <em>Now you can see them.</em>
             </h2>
             <p>
-              Bring your expense exports into one workspace. Keep the original
-              context, resolve uncertainty, and explore the numbers at your
-              pace.
+              Leaks hide in long statements: a trial that became a plan, a bill
+              that crept up, a charge that went through twice. AetherFlow puts
+              them on one page.
             </p>
           </div>
-          <div className="feature-grid">
-            {[
-              {
-                icon: FileText,
-                n: "01",
-                title: "Start with your records",
-                text: "Import a CSV, text file, or PDF. Preview extracted rows, correct meaningful details, and choose what belongs in your expenses.",
-              },
-              {
-                icon: SlidersHorizontal,
-                n: "02",
-                title: "Find the signal",
-                text: "Explore vendors, categories, and unusual charges. Filters keep your totals, transactions, and exports aligned.",
-              },
-              {
-                icon: ShieldCheck,
-                n: "03",
-                title: "Keep your judgment",
-                text: "Reviewable suggestions sit alongside computed statistics. A flag is a reason to investigate, not a verdict.",
-              },
-            ].map(({ icon: Icon, ...f }) => (
-              <article key={f.n}>
-                <div className="feature-top">
-                  <Icon size={23} />
-                  <span>{f.n}</span>
-                </div>
-                <h3>{f.title}</h3>
-                <p>{f.text}</p>
+          <div className={s.finds}>
+            {FINDS.map(({ icon: Icon, title, text }) => (
+              <article key={title}>
+                <Icon size={21} aria-hidden="true" />
+                <h3>{title}</h3>
+                <p>{text}</p>
               </article>
             ))}
           </div>
         </section>
+
+        <section className={`af-width ${s.how}`} aria-labelledby="how-heading">
+          <div className={s.howHead}>
+            <p className="eyebrow">HOW IT WORKS</p>
+            <h2 id="how-heading">Three steps, no bank login.</h2>
+          </div>
+          <ol className={s.steps}>
+            {STEPS.map(({ icon: Icon, title, text }, i) => (
+              <li key={title}>
+                <div className={s.stepTop}>
+                  <Icon size={20} aria-hidden="true" />
+                  <span>{String(i + 1).padStart(2, "0")}</span>
+                </div>
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </li>
+            ))}
+          </ol>
+          <Link className="text-link" href="/how-it-works">
+            See the pipeline, design decisions and eval results &rarr;
+          </Link>
+        </section>
+
         <section className="af-width closing-section">
           <div>
-            <p className="eyebrow">A GOOD PLACE TO START</p>
+            <p className="eyebrow">TAKE A LOOK</p>
             <h2>
-              Make your next
+              Explore a full year
               <br />
-              <em>expense review easier.</em>
+              <em>of sample statements.</em>
             </h2>
           </div>
           <div>
             <Link className="btn primary" href="/demo">
-              Take a look inside <ArrowUpRight size={17} />
+              Try the demo &mdash; no sign-up <ArrowRight size={17} />
             </Link>
             <p className="micro">
-              No account needed for the isolated sample workspace.
+              Recurring charges need at least 2 to 3 months of statements to
+              detect; annual subscriptions need 12. Nothing here is tax or
+              financial advice.
             </p>
             <Link className="text-link" href="/data-guide">
-              Understand file support and data handling →
+              File support, data handling and limitations &rarr;
             </Link>
           </div>
         </section>
