@@ -7,6 +7,7 @@ import { buildScoreboard } from "./scoreboard";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/how-it-works",
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
 // Vite's CSS pipeline cannot load the Tailwind PostCSS config under Vitest;
 // class names do not matter to these assertions.

@@ -29,8 +29,8 @@
   background: linear-gradient(90deg, var(--forest), #6f9f86 60%, var(--warm));
 }
 .eyebrow {
-  font-size: 10px;
-  letter-spacing: 1.8px;
+  font-size: var(--text-eyebrow);
+  letter-spacing: var(--ls-caps);
   font-weight: 600;
   color: var(--muted-ink);
   text-transform: uppercase;
@@ -39,9 +39,9 @@
   gap: 8px;
 }
 .headline {
-  font-size: 46px;
-  line-height: 1.08;
-  letter-spacing: -1.8px;
+  font-size: var(--text-h1);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-heading);
   font-weight: 450;
   margin: 14px 0 12px;
 }
@@ -50,17 +50,17 @@
   white-space: nowrap;
 }
 .lead {
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: var(--text-lead);
+  line-height: var(--lh-body);
   color: var(--muted-ink);
-  max-width: 560px;
+  max-width: var(--measure);
 }
 .lead strong {
   color: var(--ink);
   font-weight: 600;
 }
 .period {
-  font-size: 11px;
+  font-size: var(--text-sm);
   color: var(--muted-ink);
   margin-top: 14px;
 }
@@ -80,7 +80,7 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 .breakdownLabel span:last-child {
   font-variant-numeric: tabular-nums;
@@ -103,8 +103,8 @@
   background: #b07a3a;
 }
 .note {
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: var(--text-sm);
+  line-height: var(--lh-body);
   color: var(--ink);
   background: var(--warm);
   border-radius: 8px;
@@ -167,20 +167,20 @@
   color: #8a5a22;
 }
 .cardLabel {
-  font-size: 11px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--muted-ink);
 }
 .cardValue {
-  font-size: 28px;
+  font-size: var(--text-h2);
   font-weight: 500;
-  letter-spacing: -1px;
+  letter-spacing: var(--ls-heading);
   font-variant-numeric: tabular-nums;
-  line-height: 1.1;
+  line-height: var(--lh-tight);
 }
 .cardDetail {
-  font-size: 11px;
-  line-height: 1.5;
+  font-size: var(--text-sm);
+  line-height: var(--lh-snug);
   color: var(--muted-ink);
 }
 .cardMore {
@@ -189,7 +189,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--forest);
 }
@@ -213,14 +213,14 @@
 }
 .panelHeading h2,
 .panelHeading h3 {
-  font-size: 16px;
+  font-size: var(--text-h3);
   font-weight: 600;
-  letter-spacing: -0.4px;
+  letter-spacing: var(--ls-title);
 }
 .panelHeading p {
   color: var(--muted-ink);
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: var(--text-sm);
+  line-height: var(--lh-body);
   margin-top: 4px;
 }
 .grid2 {
@@ -246,7 +246,7 @@
   padding-top: 0;
 }
 .itemTitle {
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -254,12 +254,12 @@
   gap: 8px;
 }
 .itemMeta {
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: var(--text-sm);
+  line-height: var(--lh-body);
   color: var(--muted-ink);
 }
 .itemAmount {
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -267,7 +267,7 @@
 }
 .itemAmountSub {
   display: block;
-  font-size: 11px;
+  font-size: var(--text-caption);
   font-weight: 500;
   color: var(--muted-ink);
 }
@@ -288,8 +288,8 @@
   color: var(--forest);
 }
 .empty {
-  font-size: 13px;
-  line-height: 1.7;
+  font-size: var(--text-sm);
+  line-height: var(--lh-body);
   color: var(--muted-ink);
   padding: 8px 0;
 }
@@ -301,13 +301,13 @@
   gap: 12px;
 }
 .emptyState h2 {
-  font-size: 30px;
-  letter-spacing: -1px;
+  font-size: var(--text-h2);
+  letter-spacing: var(--ls-heading);
 }
 .emptyState p {
-  max-width: 460px;
-  font-size: 13px;
-  line-height: 1.8;
+  max-width: 34rem;
+  font-size: var(--text-base);
+  line-height: var(--lh-body);
   color: var(--muted-ink);
 }
 
@@ -320,7 +320,7 @@
   white-space: nowrap;
   border-radius: 99px;
   padding: 3px 9px;
-  font-size: 10px;
+  font-size: var(--text-caption);
   font-weight: 600;
   letter-spacing: 0.2px;
   background: var(--soft);
@@ -374,14 +374,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--muted-ink);
 }
 .sortLabel select {
   min-height: 38px;
   padding: 7px 10px;
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 .subRow {
   display: grid;
@@ -401,20 +401,20 @@
   min-width: 0;
 }
 .subName strong {
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 .subFigures {
   display: grid;
   gap: 2px;
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--muted-ink);
   font-variant-numeric: tabular-nums;
 }
 .subFigures b {
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 600;
 }
 .share {
@@ -440,7 +440,7 @@
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--ink);
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
@@ -485,11 +485,11 @@
   margin-bottom: 10px;
 }
 .weekHead h3 {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 .weekHead span {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
   color: var(--muted-ink);
 }
@@ -499,25 +499,25 @@
   align-items: center;
   gap: 10px;
   padding: 7px 0;
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 .day {
   display: grid;
   justify-items: center;
-  line-height: 1.1;
+  line-height: var(--lh-tight);
   padding: 5px 0;
   border-radius: 7px;
   background: var(--surface);
   border: 1px solid var(--line);
 }
 .day small {
-  font-size: 9px;
-  letter-spacing: 0.6px;
+  font-size: var(--text-eyebrow);
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   color: var(--muted-ink);
 }
 .day b {
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 600;
 }
 .chargeName {
@@ -567,14 +567,14 @@
   gap: 14px;
 }
 .dialogHead h2 {
-  font-size: 24px;
-  letter-spacing: -0.6px;
+  font-size: var(--text-h2);
+  letter-spacing: var(--ls-title);
   font-weight: 500;
   outline: none;
 }
 .dialogHead p {
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: var(--text-sm);
+  line-height: var(--lh-body);
   color: var(--muted-ink);
   margin-top: 6px;
 }
@@ -599,9 +599,9 @@
   outline-offset: 2px;
 }
 .section h3 {
-  font-size: 11px;
+  font-size: var(--text-eyebrow);
   font-weight: 600;
-  letter-spacing: 1.2px;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   color: var(--muted-ink);
   margin-bottom: 8px;
@@ -611,8 +611,8 @@
   border-radius: 10px;
   background: var(--paper);
   padding: 16px;
-  font-size: 13px;
-  line-height: 1.7;
+  font-size: var(--text-base);
+  line-height: var(--lh-body);
 }
 .subject {
   font-weight: 600;
@@ -639,12 +639,12 @@
   min-width: 0;
 }
 .facts dt {
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: var(--muted-ink);
 }
 .facts dd {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
@@ -655,14 +655,14 @@
   list-style: decimal;
   display: grid;
   gap: 6px;
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: var(--text-sm);
+  line-height: var(--lh-body);
 }
 .link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--forest);
   text-decoration: underline;
@@ -684,19 +684,19 @@
   border-top: 1px solid var(--line);
 }
 .source {
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: var(--muted-ink);
 }
 .error {
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: var(--text-sm);
+  line-height: var(--lh-body);
   color: var(--danger);
   background: #f8ebe7;
   border-radius: 8px;
   padding: 12px 14px;
 }
 .loading {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--muted-ink);
   padding: 20px 0;
 }
@@ -772,10 +772,6 @@
 @media (max-width: 480px) {
   .hero {
     padding: 26px 20px 22px;
-  }
-  .headline {
-    font-size: 34px;
-    letter-spacing: -1.2px;
   }
   .panel {
     padding: 18px;

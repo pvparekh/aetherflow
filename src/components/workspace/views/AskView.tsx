@@ -347,7 +347,7 @@ export default function AskView({ demo, txns, today, report }: ViewProps) {
                   </a>
                 </>
               ) : (
-                "Questions about your own expenses only. No advice, no other people."
+                "Ask about your own expenses. It does not give advice or answer questions about other people."
               )}
             </p>
             {!local ? (

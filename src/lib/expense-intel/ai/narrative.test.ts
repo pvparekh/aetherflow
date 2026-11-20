@@ -180,3 +180,13 @@ describe("validateAnalysis", () => {
     expect(() => validateAnalysis({ ...modelNarrative(), source: "guess" })).toThrow();
   });
 });
+
+describe("plainDashes", () => {
+  it("turns em dashes and spaced en dashes into commas, keeping ranges", async () => {
+    const { plainDashes } = await import("./generate");
+    expect(plainDashes({ a: "Adobe went up — by $10.", b: ["Nov–Oct", "fees – again"] })).toEqual({
+      a: "Adobe went up, by $10.",
+      b: ["Nov–Oct", "fees, again"],
+    });
+  });
+});
