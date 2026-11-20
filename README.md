@@ -1,58 +1,203 @@
-# AetherFlow — expense intelligence
+# Aether Flow
 
-AetherFlow helps an individual operator review expense files, inspect transactions and understand spending patterns. It is an expense-review product, not a bank ledger or accounting platform.
+**Find the money leaking out of your accounts.** Aether Flow reads card and bank statements (CSV, TXT or PDF) and finds forgotten subscriptions, price increases, double charges and unusual spending. It then helps you act: an upcoming-charges calendar, cancellation and negotiation drafts, budgets, and plain-English questions about your spending.
 
-Production: https://aetherflow-three.vercel.app/ . The product-upgrade branch is a release candidate until its migration and deployment acceptance checks are complete.
+**The rule that shapes the whole system: code computes every number, and the model only does the words.** A language model categorises merchants it doesn't recognise, extracts rows from PDFs, writes summaries and drafts, and translates questions into structured queries. Every figure on screen comes from deterministic, tested TypeScript, and model wording is checked against those figures before anyone sees it.
 
-## Workflow
+![The money-leaks view on the demo year](docs/media/leaks.png)
 
-1. Choose a CSV, TXT or PDF and specify amount direction, date order and optional CSV column names.
-2. Review a saved draft. Correct descriptions, amounts and dates; explicitly exclude credits, transfers and ambiguous rows. Every PDF candidate starts unselected.
-3. Confirm the selected positive USD expenses. Categorization checkpoints at 25 rows. Repeating the same import/settings reuses its draft; commit replay cannot publish it twice.
-4. Inspect computed totals, category history, vendor aggregates and review signals. Resolve a signal or correct a category. Category corrections retain source evidence and an audit record, then recalculate deterministic results.
-5. Optionally generate AI commentary from aggregates. Provider failure leaves computed results available. Filter transaction rows and export the same matching rows, across all pages.
+- **Demo, no sign-up:** `/demo` runs a full synthetic year in your browser with no backend and no model.
+- **How it works:** `/how-it-works` is a public engineering page with the pipeline, the design decisions and the live eval scoreboard.
+- **Production:** https://aetherflow-three.vercel.app serves the previous release until `feat/leak-finder` ships (see [Status](#status)).
 
-`/demo` uses labeled synthetic records in browser state and makes no import/analysis requests. Changes in the demo are discarded on reload. It is not a substitute for an authenticated integration test.
+## What it finds
 
-## Supported limits
+On the demo year (620 synthetic transactions for a freelance designer, with leaks planted at known places), the engine finds exactly what was planted and nothing it shouldn't:
 
-- UTF-8 CSV/TXT; common headers, quoted delimiters/newlines, BOM/CRLF, up to 19 preamble records, custom columns, US decimal format, strict ISO or selected day/month date order.
-- Separate debit/credit or a signed-amount convention. Ambiguous double-populated columns and known non-USD currency are excluded. No currency conversion.
-- 4 MB, 500 candidate rows and 20 PDF pages. Native text uses page-tagged PDF.js extraction; scanned or mixed pages use visual PDF input through the existing OpenAI provider. Native extraction is capped at five 18,000-character segments. No text is silently truncated into a claimed complete import.
-- All PDFs require source review. Extraction completeness and statement reconciliation are unknown; a complex layout, unsupported language or poor scan may require a CSV export. Scanned extraction accuracy has not been measured against real bank statements.
-- Extraction attempts are limited to 20 per account per hour and one concurrent extraction. Categorization uses at most three bounded attempts per 25-row checkpoint. Normal import progress survives navigation; unsaved review edits must be saved before leaving the page.
+| Finding | Demo result | How it's detected |
+| --- | --- | --- |
+| Subscriptions | 12 active ($4,184.64 a year), plus Hulu flagged *possibly cancelled* | Per-merchant cadence from median intervals (weekly to annual), amounts within 15% or a persistent step change |
+| Price increases | Adobe $59.99 → $69.99, **+$120 a year** | A step in a stream's amount that persists for two or more charges |
+| Double charges | Same pizza order billed twice, **$74.32** | Same merchant and amount within 3 days, excluding expected recurring charges |
+| Unusual charges | A $187.45 Uber ride and a $486.20 dinner | Robust score on log amounts against the merchant's own history, else a category range rule |
+| **Headline** | **"We found $194.32 a year"** | Only money already charged or locked in counts, never a guess at savings |
 
-## Analytics contracts
+Plus:
+- an upcoming-charges calendar with `.ics` export;
+- cancellation and negotiation drafts, with official cancel links for 42 services (28 URLs verified by hand);
+- monthly budgets with month-end projection;
+- tags and notes on transactions;
+- "Ask your spending".
 
-Nine canonical categories, positive expense amounts, 25-row categorization, and code-computed formulas remain. Reviewed amounts and dates cannot be overwritten by model output. Recent averages include the current report and up to four prior category report totals; all-history averages include every recorded report for that category. Reports can have different coverage or overlap. Missing dates are excluded by date filters.
+<table>
+  <tr>
+    <td><img src="docs/media/subscriptions.png" alt="Subscriptions with yearly cost, next charge and draft buttons" /></td>
+    <td><img src="docs/media/ask.png" alt="Ask your spending: a preset question answered by a computed query" /></td>
+  </tr>
+  <tr>
+    <td><img src="docs/media/budgets.png" alt="Monthly budgets with progress and over-budget state" /></td>
+    <td><img src="docs/media/how-it-works.png" alt="How it works page with pipeline and eval scoreboard" /></td>
+  </tr>
+</table>
 
-Anomaly signals are review cues, not findings of fraud. Category confidence and optional model commentary are not audited financial assessments. Narrative requests contain precomputed category/vendor summaries, not individual transaction records. Health scoring is retained in storage for compatibility but is not the principal financial metric in the new workspace.
+## Architecture
 
-## Development
+```text
+ statement (CSV / TXT / PDF)
+        │
+        ▼
+ parse ─────────────── code: CSV/TXT parsers; PDF.js text, then model row extraction
+        │              into a fixed schema, every row reviewed by the user before import
+        ▼
+ normalise merchants ─ code: "SQ *BLUE BOTTLE 0611 NY" → vendor key "blue bottle"
+        │
+        ▼
+ categorise ────────── 1. merchant rules (incl. the user's corrections)   confidence 1.0
+        │              2. history vote (≥2 rows, ≥75% agree)              confidence 0.9
+        │              3. model, batches of 25, ID-keyed enum schema      confidence 0.7
+        │                 failure ladder: retry → halve batch → single → "Misc, needs review" (0)
+        ▼
+ leak engine ───────── code, pure and isomorphic: recurring streams, price changes,
+        │              duplicates, unusual charges, RFC 5545 calendar
+        ▼
+ words ─────────────── model writes summary and drafts from code-supplied facts;
+        │              faithfulness check: every amount, %, count, date and name must
+        │              match the facts, otherwise regenerate once, then use a template
+        ▼
+ ask ───────────────── model: question → AskQuery JSON → validated → code executes →
+                       answer worded from the computed rows
+```
 
-Use Node 24 (or a supported runtime satisfying PDF.js's Node >=22.3 requirement) and `npm ci`.
+All model calls go through one function, `completeJson` in [`src/lib/llm/index.ts`](src/lib/llm/index.ts): OpenAI-compatible chat completions with a strict JSON schema, temperature 0 and validation in code. The provider is configuration, not code:
 
-Configure these names in a local, ignored environment file:
+- local Ollama for development and evals;
+- a hosted open model (Cloudflare Workers AI) for the live site;
+- OpenAI if a key is supplied.
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY` (server only)
-- `OPENAI_API_KEY` (server only)
+## Engineering decisions
 
-Use an isolated Supabase database for upgrade testing. Apply `supabase/migrations/20261024_import_review.sql` once using an authorized migration runner before running this branch. It expects the existing uploads, line_items, category_stats and vendors tables; the minimal automated-test schema is **not** a production schema migration.
+Each one is recorded with its reasoning, and what would reverse it, in the [decision log](docs/leak-finder/03-decisions.md).
 
-Run `npm run dev`. Google OAuth and confirmation URLs must allow the candidate origin's `/auth/callback` and existing `/auth/confirm` routes. Do not point an unvalidated preview at production data.
+- **Model last, on the fewest rows.** Rules and the user's own history resolve known merchants first, and the model only sees what's left. Confidence is assigned by which path resolved a row, not by the model's own guess, because small models are poorly calibrated.
+- **Robust scoring instead of plain z-scores.** With *n* charges a z-score can't exceed (n−1)/√n, so short histories never trigger. Unusual charges are scored as 0.6745 · (ln x − median) / MAD on log amounts. Categories that are lumpy by nature, such as travel and office equipment, are only judged against the merchant's own history.
+- **A faithfulness check on every model sentence.** The narrative and drafts may only contain numbers and names present in the facts code supplied. Unsupported text is regenerated once, then replaced by a template, so a model failure removes wording, never correctness.
+- **Questions become queries, not answers.** "Ask your spending" has the model emit a typed, schema-validated `AskQuery`; a pure executor computes the result. The model never sees the answer's numbers before code does.
+- **Provider-neutral, chat completions.** Ollama's Responses endpoint ignores JSON mode and has no seed, so the system uses chat completions, which every target provider supports identically.
+- **The demo runs the real code in the browser.** The analysis modules import nothing server-only, so `/demo` runs the production leak engine and query executor on a deterministic synthetic year.
 
-Validation:
+## Measured results
 
-```sh
+Categorisation is scored by a harness (`npm run eval`) that runs the shipping categoriser over a **hand-labelled golden set of 233 raw bank descriptors**, covering all nine categories and including 83 deliberately hard cases.
+
+| Run | Accuracy | Macro F1 | Valid JSON | Latency per 25 rows (p50 / p95) |
+| --- | --- | --- | --- | --- |
+| qwen3.5:9b on Ollama, laptop GPU (RTX 3080 Laptop, Vulkan), cold start | **83.7%** | 83.2% | 100% | 13.5 s / 47.1 s |
+
+"Cold start" means no merchant rules and no history, so every row went to the model; that is the hardest case, a brand-new user. The main confusions are multi-purpose retailers (Amazon, Target, Costco) read as food, and marketing tools (Mailchimp, LinkedIn Premium) read as software. Full per-category results are on `/how-it-works` and in [`evals/results/latest.json`](evals/results/latest.json).
+
+**Tests:** 667 tests across 49 files, covering:
+- statistical fixtures, with planted positives and negatives for every leak detector;
+- parsers, plus real PDF.js extraction;
+- the failure ladder and faithfulness checker;
+- routes with real Postgres row-level security through PGlite;
+- component interaction tests for every view.
+
+CI runs typecheck, lint, the full suite and `eval:ci`. `eval:ci` is an offline check of golden-set integrity, the merchant normaliser and the planted demo leaks, and needs no model or paid API.
+
+## Run it locally
+
+Requires Node 22.3 or later.
+
+```bash
+npm ci
+npm run dev
+```
+
+Open http://localhost:3000/demo. The demo needs no database and no model.
+
+For the signed-in app, copy `.env.example` to `.env.local` and fill in:
+
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase project |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server only |
+| `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | Any OpenAI-compatible endpoint. Leave unset to use local Ollama |
+| `LLM_MODEL_<TASK>` | Optional per-task model: `CATEGORIZE`, `EXTRACT`, `NARRATIVE`, `ASK`, `DRAFT` |
+
+Apply the migrations in `supabase/migrations/` to an isolated database first.
+
+To run the model locally, install [Ollama](https://ollama.com) and pull the model:
+
+```bash
+ollama pull qwen3.5:9b
+```
+
+On some NVIDIA laptop GPUs, Ollama's CUDA runner crashes on this model. Set `OLLAMA_LLM_LIBRARY=vulkan` and `OLLAMA_VULKAN=1`, then restart Ollama.
+
+To check everything, run the evals, or score only the first 50 golden rows:
+
+```bash
 npm run verify
 ```
 
-This runs TypeScript, ESLint, the full Vitest suite and the optimized build. Tests cover statistical fixtures, import parsing, real PDF text extraction with mocked provider responses, real Postgres transactions/RLS via PGlite, route lifecycle/retry behavior and component interactions. A mocked provider is not an OCR-quality evaluation; PGlite is not a live Supabase deployment test; DOM tests do not certify responsive visual appearance.
+```bash
+npm run eval
+```
 
-## Data and operations
+```bash
+npm run eval -- --limit 50 --no-write
+```
 
-Supabase stores accounts, extracted review evidence, selected expenses, category corrections, aggregates and interpretation. Raw uploaded files are not persisted as downloadable originals. Existing OpenAI services receive descriptions for categorization and PDF content for extraction. Account export includes drafts and correction history; deleting expense data removes both saved reports and unfinished reviews. Account deletion removes the owning auth user and associated rows according to database foreign keys. Verify the existing production cascade contract before releasing.
+`npm run verify` runs the typecheck, lint, every test and the production build. `npm run eval` scores the configured model and records the run.
 
-See [the runbook and acceptance record](docs/product-upgrade/02-release-and-verification.md) for deployment, migration, recovery and rollback instructions. Local-model migration, banking connections, payments, taxes and subscriptions are deferred.
+## Repository map
+
+```text
+src/lib/llm/                 provider-neutral model client (completeJson)
+src/lib/expense-intel/
+  normalize/                 merchant descriptor → display name and vendor key
+  rules/  pass1/             rules, history vote, batched categoriser with failure ladder
+  leaks/                     recurring, price changes, duplicates, unusual charges, .ics
+  ai/  actions/              narrative, faithfulness check, drafts, cancel guide
+  ask/                       AskQuery schema, translator, pure executor, answers
+  budgets/                   budgets, tags and notes
+src/lib/demo/                deterministic 12-month synthetic dataset with planted leaks
+src/components/workspace/    workspace shell and views (leaks, subscriptions, budgets, ask)
+src/app/                     Next.js routes, pages and API handlers
+evals/                       golden set, harness, offline CI checks, recorded results
+docs/leak-finder/            brief, architecture, workstreams, decisions, research
+supabase/migrations/         database schema changes (applied manually)
+```
+
+## Documentation
+
+- [Brief](docs/leak-finder/00-brief.md): scope, who it's for, and an honest market verdict.
+- [Architecture](docs/leak-finder/01-architecture.md): pipeline, modules, model layer and demo mode.
+- [Decision log](docs/leak-finder/03-decisions.md): each decision, its evidence, and what would reverse it.
+- [Research](docs/leak-finder/04-research.md): evidence ledger with sources (competitors, models, methods).
+- [Workstreams](docs/leak-finder/02-workstreams.md): how the build was split and accepted.
+- [Release and verification runbook](docs/product-upgrade/02-release-and-verification.md): migrations, deployment, rollback.
+
+## Status
+
+`feat/leak-finder` is complete and verified locally: tests, lint, typecheck, production build, a recorded eval, and a browser review of every view. Before it goes live:
+
+1. apply `supabase/migrations/20261116_leak_finder.sql` (tags, notes, budgets, merchant rules);
+2. set the hosted model credentials;
+3. merge and deploy.
+
+**Limits:**
+- Recurring detection needs two or three months of statements, and twelve for annual plans.
+- Scanned PDFs need a provider with file input.
+- Amounts are USD with no currency conversion.
+- Insights are review prompts, not financial or tax advice.
+
+## Stack
+
+| Layer | Technologies |
+| --- | --- |
+| App | Next.js 16 (App Router), React 19, TypeScript, Recharts |
+| Data | Supabase Postgres with row-level security |
+| Models | Any OpenAI-compatible endpoint: Ollama (qwen3.5:9b), Cloudflare Workers AI, OpenAI |
+| Quality | Vitest, Testing Library, PGlite, ESLint, GitHub Actions, golden-set evals |
+| Hosting | Vercel |
