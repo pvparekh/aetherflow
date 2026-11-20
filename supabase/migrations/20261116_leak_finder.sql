@@ -1,6 +1,26 @@
 -- Additive migration for the leak-finder release. Not yet applied anywhere.
 -- Apply only with the owner's explicit authorisation (see docs/leak-finder/02-workstreams.md).
 
+-- Guard first, so a refusal leaves nothing half-applied.
+--
+-- Production still has an unused legacy public.budgets(id, user_id, category,
+-- monthly_target, active) whose only unique key is on category alone, which
+-- would allow one budget per category across all users. It is replaced only
+-- if it still has that layout (no created_at) and holds no rows; otherwise
+-- the migration stops and changes nothing.
+do $$
+begin
+  if to_regclass('public.budgets') is not null
+     and not exists (select 1 from information_schema.columns
+                     where table_schema = 'public' and table_name = 'budgets'
+                       and column_name = 'created_at') then
+    if exists (select 1 from public.budgets) then
+      raise exception 'Legacy public.budgets has rows; migrate them by hand before applying this migration';
+    end if;
+    drop table public.budgets;
+  end if;
+end $$;
+
 -- Tags and notes on transactions.
 alter table public.line_items add column if not exists tags text[] not null default '{}';
 alter table public.line_items add column if not exists note text;

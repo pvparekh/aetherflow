@@ -95,7 +95,7 @@ Categorisation is scored by a harness (`npm run eval`) that runs the shipping ca
 
 "Cold start" means no merchant rules and no history, so every row went to the model; that is the hardest case, a brand-new user. The main confusions are multi-purpose retailers (Amazon, Target, Costco) read as food, and marketing tools (Mailchimp, LinkedIn Premium) read as software. Full per-category results are on `/how-it-works` and in [`evals/results/latest.json`](evals/results/latest.json).
 
-**Tests:** 667 tests across 49 files, covering:
+**Tests:** 669 tests across 49 files, covering:
 - statistical fixtures, with planted positives and negatives for every leak detector;
 - parsers, plus real PDF.js extraction;
 - the failure ladder and faithfulness checker;
