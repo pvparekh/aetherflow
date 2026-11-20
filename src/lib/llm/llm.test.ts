@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractJsonText, isSchemaRefusal, llmConfig, requestBody, type LlmConfig } from "./index";
+import { DEFAULT_MODEL, extractJsonText, isSchemaRefusal, llmConfig, requestBody, type LlmConfig } from "./index";
 
 describe("llmConfig", () => {
   it("defaults to local Ollama with qwen3.5:9b", () => {
@@ -72,3 +72,16 @@ describe("requestBody", () => {
     expect(isSchemaRefusal(new Error("401 Unauthorized"))).toBe(false);
   });
 });
+
+describe("provider defaults", () => {
+  it("uses a real Workers AI model when Cloudflare is configured without LLM_MODEL", () => {
+    const config = llmConfig("categorize", {
+      LLM_BASE_URL: "https://api.cloudflare.com/client/v4/accounts/abc/ai/v1",
+      LLM_API_KEY: "k",
+    });
+    expect(config.provider).toBe("cloudflare");
+    expect(config.model).toBe(DEFAULT_MODEL.cloudflare);
+    expect(config.model.startsWith("@cf/")).toBe(true);
+  });
+});
+

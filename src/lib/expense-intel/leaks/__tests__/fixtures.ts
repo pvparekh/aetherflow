@@ -1,7 +1,7 @@
 // Small builders for leak engine fixtures. Vendor keys go through the real
 // normaliser so fixtures behave like imported rows.
 import type { Txn } from "../../contracts";
-import { displayVendor, vendorKey } from "../../normalize";
+import { displayVendor, isPersonToPerson, vendorKey } from "../../normalize";
 import { addDays, addMonths } from "../dates";
 
 let counter = 0;
@@ -19,6 +19,7 @@ export function txn(
     date,
     vendor: displayVendor(rawVendor),
     vendorKey: vendorKey(rawVendor),
+    transfer: isPersonToPerson(rawVendor),
     amount,
     category,
     uploadId: "upload-1",

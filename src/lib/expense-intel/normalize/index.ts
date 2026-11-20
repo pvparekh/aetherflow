@@ -35,7 +35,22 @@ const PREFIXES = [
   /^paddle\.net\s*\*\s*/i,
   /^sumup\s*\*\s*/i,
   /^zettle_?\s*\*\s*/i,
+  // Person-to-person transfers: keep the payee, drop the service wording.
+  /^zelle\s+(?:payment|transfer)\s+(?:to|from)\s+/i,
+  /^zelle\s+(?:to|from)\s+/i,
+  /^venmo\s*\*?\s*(?:payment\s+(?:to\s+)?)?/i,
+  /^cash\s*app\s*\*?\s*/i,
 ];
+/**
+ * Money sent to a person rather than spent at a merchant. Judged on the raw
+ * descriptor, because the display name drops the service ("Zelle payment to").
+ */
+export function isPersonToPerson(raw: string): boolean {
+  return /\b(?:zelle|venmo|cash\s*app|square\s+cash)\b/i.test(raw);
+}
+
+/** Trailing transfer confirmation or reference codes, e.g. "CONF# 8KQ2". */
+const TRAILING_CONFIRMATION = /\s+(?:conf(?:irmation)?|ref(?:erence)?)\s*(?:#|no\.?|number)?\s*[a-z0-9-]*$/i;
 
 // Known merchants, tested against the prefix-stripped descriptor. Order
 // matters: specific entries (Amazon Prime, Uber Eats) precede general ones.
@@ -189,7 +204,7 @@ function stripPrefixes(raw: string): string {
       }
     }
   }
-  return s;
+  return s.replace(TRAILING_CONFIRMATION, "");
 }
 
 function knownAlias(descriptor: string): string | null {

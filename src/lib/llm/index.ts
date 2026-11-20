@@ -83,6 +83,17 @@ function inferProvider(baseURL: string): LlmProvider {
  * 2. Legacy: OPENAI_API_KEY alone selects OpenAI with gpt-4o-mini.
  * 3. Otherwise local Ollama with qwen3.5:9b.
  */
+/**
+ * The model used when LLM_MODEL is not set. Each must exist on its provider:
+ * a local Ollama tag is not a valid Workers AI model, and vice versa.
+ */
+export const DEFAULT_MODEL: Record<LlmProvider, string> = {
+  ollama: "qwen3.5:9b",
+  openai: "gpt-4o-mini",
+  cloudflare: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+  custom: "qwen3.5:9b",
+};
+
 export function llmConfig(
   task?: LlmTask,
   env: Record<string, string | undefined> = process.env,
@@ -90,11 +101,12 @@ export function llmConfig(
   const taskModel = task ? env[`LLM_MODEL_${task.toUpperCase()}`] : undefined;
   if (env.LLM_BASE_URL) {
     const baseURL = env.LLM_BASE_URL;
+    const provider = (env.LLM_PROVIDER as LlmProvider) || inferProvider(baseURL);
     return {
-      provider: (env.LLM_PROVIDER as LlmProvider) || inferProvider(baseURL),
+      provider,
       baseURL,
       apiKey: env.LLM_API_KEY || "not-needed",
-      model: taskModel || env.LLM_MODEL || "qwen3.5:9b",
+      model: taskModel || env.LLM_MODEL || DEFAULT_MODEL[provider],
     };
   }
   if (env.OPENAI_API_KEY) {

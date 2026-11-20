@@ -148,3 +148,14 @@ describe("vendorKey", () => {
     );
   });
 });
+
+describe("person-to-person transfers", () => {
+  it.each([
+    ["ZELLE PAYMENT TO PROSPECT STUDIO HOLDINGS LLC CONF# 8KQ2", "Prospect Studio Holdings"],
+    ["Zelle Payment To Prospect Studio Holdings Llc Conf", "Prospect Studio Holdings"],
+    ["VENMO *JANE DOE", "Jane Doe"],
+    ["CASH APP*MARCUS LEE", "Marcus Lee"],
+  ])("%s -> %s", (raw, name) => {
+    expect(displayVendor(raw)).toBe(name);
+  });
+});
