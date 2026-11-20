@@ -182,7 +182,7 @@ supabase/migrations/         database schema changes (applied manually)
 
 `feat/leak-finder` is complete and verified locally: tests, lint, typecheck, production build, a recorded eval, and a browser review of every view. Before it goes live:
 
-1. apply `supabase/migrations/20261116_leak_finder.sql` (tags, notes, budgets, merchant rules);
+1. ~~apply `supabase/migrations/20261116_leak_finder.sql`~~ (applied to production on 2026-11-19);
 2. set the hosted model credentials;
 3. merge and deploy.
 

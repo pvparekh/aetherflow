@@ -1,4 +1,4 @@
--- Additive migration for the leak-finder release. Not yet applied anywhere.
+-- Additive migration for the leak-finder release. Applied to production 2026-11-19.
 -- Apply only with the owner's explicit authorisation (see docs/leak-finder/02-workstreams.md).
 
 -- Guard first, so a refusal leaves nothing half-applied.
