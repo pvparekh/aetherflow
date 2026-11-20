@@ -14,7 +14,7 @@ describe('session refresh availability', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     create.mockReturnValue({ auth: { getUser } })
-    getUser.mockResolvedValue({ error: null })
+    getUser.mockResolvedValue({ data: { user: { id: 'u1' } }, error: null })
   })
   afterEach(() => vi.useRealTimers())
 
@@ -23,7 +23,15 @@ describe('session refresh availability', () => {
     expect(create).not.toHaveBeenCalled()
   })
   it('does not refresh absent sessions', async () => {
-    expect((await updateSession(request('/account', false))).status).toBe(200)
+    expect((await updateSession(request('/demo', false))).status).toBe(200)
+    expect(create).not.toHaveBeenCalled()
+  })
+  it('sends signed-out visitors of private pages to sign in and back', async () => {
+    const response = await updateSession(request('/expense-intel', false))
+    expect(response.status).toBe(307)
+    const location = new URL(response.headers.get('location')!)
+    expect(location.pathname).toBe('/login')
+    expect(location.searchParams.get('next')).toBe('/expense-intel')
     expect(create).not.toHaveBeenCalled()
   })
   it('preserves all cookie mutations across refresh batches', async () => {
@@ -31,7 +39,7 @@ describe('session refresh availability', () => {
       const cookies = create.mock.calls[0][2].cookies
       cookies.setAll([{ name: 'sb-project-auth-token.0', value: 'new', options: { httpOnly: true } }])
       cookies.setAll([{ name: 'sb-project-auth-token.1', value: 'part2', options: { secure: true } }])
-      return { error: null }
+      return { data: { user: { id: 'u1' } }, error: null }
     })
     const req = request()
     const response = await updateSession(req)
@@ -59,7 +67,9 @@ describe('session refresh availability', () => {
     expect((await updateSession(request())).status).toBe(503)
   })
   it('allows normal invalid-session handling without treating it as an outage', async () => {
-    getUser.mockResolvedValue({ error: { status: 401 } })
-    expect((await updateSession(request())).status).toBe(200)
+    getUser.mockResolvedValue({ data: { user: null }, error: { status: 401 } })
+    expect((await updateSession(request('/demo'))).status).toBe(200)
+    // An expired session on a private page signs in again rather than failing.
+    expect((await updateSession(request('/account'))).status).toBe(307)
   })
 })

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import "./workspace.css";
+import "./auth.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +28,8 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "AetherFlow",
-  description: "AI-powered expense intelligence",
+  description:
+    "Find forgotten subscriptions, price increases and duplicate charges in your card and bank statements.",
 };
 
 export default function RootLayout({

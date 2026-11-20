@@ -3,10 +3,26 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 export const AUTH_DEADLINE_MS = 4000
 
+/** Pages that need a signed-in user. APIs verify identity themselves. */
+export const PROTECTED_PATHS = ['/expense-intel', '/account']
+
+export function isProtected(pathname: string) {
+  return PROTECTED_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+}
+
+/** Send a signed-out visitor to sign in, then back to where they were going. */
+function toLogin(request: NextRequest) {
+  const url = request.nextUrl.clone()
+  url.pathname = '/login'
+  url.search = `?next=${encodeURIComponent(request.nextUrl.pathname + request.nextUrl.search)}`
+  return NextResponse.redirect(url)
+}
+
 export async function updateSession(request: NextRequest) {
+  const guarded = isProtected(request.nextUrl.pathname)
   // Refresh only existing sessions. Sensitive handlers verify identity themselves.
   if (!request.cookies.getAll().some(({ name }) =>
-    /^sb-.+-auth-token(?:\.\d+)?$/.test(name))) return NextResponse.next()
+    /^sb-.+-auth-token(?:\.\d+)?$/.test(name))) return guarded ? toLogin(request) : NextResponse.next()
 
   const controller = new AbortController()
   const pendingCookies = new Map<string, { name: string; value: string; options: CookieOptions }>()
@@ -42,8 +58,9 @@ export async function updateSession(request: NextRequest) {
         reject(new Error('auth_deadline'))
       }, AUTH_DEADLINE_MS)
     })
-    const { error } = await Promise.race([supabase.auth.getUser(), deadline])
+    const { data, error } = await Promise.race([supabase.auth.getUser(), deadline])
     if (error && (!error.status || error.status >= 500)) throw error
+    if (guarded && !data?.user) return toLogin(request)
 
     const response = NextResponse.next({ request: { headers: request.headers } })
     for (const { name, value, options } of pendingCookies.values()) {

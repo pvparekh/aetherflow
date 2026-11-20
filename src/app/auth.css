@@ -1,0 +1,30 @@
+/* Session-aware header and auth extras. Kept apart from workspace.css. */
+.af-nav button.nav-signin {
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  gap: 8px;
+}
+.af-nav button.nav-signin:hover {
+  border-color: var(--forest);
+  color: var(--forest);
+}
+.af-nav .nav-pending {
+  min-width: 132px;
+  min-height: 42px;
+  visibility: hidden;
+}
+.auth-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 4px;
+}
+.auth-links button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
