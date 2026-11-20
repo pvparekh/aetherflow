@@ -14,7 +14,8 @@ const CARD_PAYMENTS =
 const HOUSING_AND_DEBT =
   /\b(rent(?! the runway| a car)|rental payment|lease|landlord|apartments?|apts|property (management|mgmt)|prop mgmt|properties|realty|hoa|homeowners|mortgage|loan)\b/;
 
-export function isNonMerchant(txn: Pick<Txn, "vendor" | "vendorKey">): boolean {
+export function isNonMerchant(txn: Pick<Txn, "vendor" | "vendorKey" | "transfer">): boolean {
+  if (txn.transfer) return true;
   const text = `${txn.vendorKey} ${txn.vendor.toLowerCase()}`;
   return (
     TRANSFERS_AND_CASH.test(text) || CARD_PAYMENTS.test(text) || HOUSING_AND_DEBT.test(text)
@@ -25,6 +26,6 @@ export function isNonMerchant(txn: Pick<Txn, "vendor" | "vendorKey">): boolean {
  * Housing is never a subscription, however regular. Accommodation also covers
  * hotels, whose double charges still matter, so it is excluded only here.
  */
-export function canBeSubscription(txn: Pick<Txn, "vendor" | "vendorKey" | "category">): boolean {
+export function canBeSubscription(txn: Pick<Txn, "vendor" | "vendorKey" | "category" | "transfer">): boolean {
   return txn.category !== "Accommodation" && !isNonMerchant(txn);
 }

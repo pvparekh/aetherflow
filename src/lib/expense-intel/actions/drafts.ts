@@ -102,7 +102,7 @@ async function writeWording(
     validate: validateWording,
     check: (wording) => checkWording(wording, check),
     maxTokens: 800,
-    timeoutMs: 30000,
+    timeoutMs: 45000,
   });
   if (outcome.ok) return outcome.value;
   console.warn("[drafts] wording fell back to template", { reason: outcome.reason, attempts: outcome.attempts });

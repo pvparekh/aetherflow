@@ -119,8 +119,7 @@ export function modelFailure(
     };
   if (status === 400)
     return {
-      message:
-        "The model provider rejected the request. Check the model and provider configuration and the server diagnostics.",
+      message: `The model provider rejected the request for model "${config.model}". Check LLM_MODEL and LLM_BASE_URL for this deployment; your review is unchanged.`,
       status: 503,
     };
   return {

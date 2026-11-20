@@ -93,7 +93,13 @@ describe("PDF transport and source validation (provider mocked, no OCR accuracy 
   });
 
   it("rejects unmatched source evidence, invalid output, invalid files and invalid amounts", async () => {
-    completeJson.mockImplementation(extraction([{ ...rows[0], evidence: "Invented vendor" }]));
+    // An invented transaction: no line on the page has this description and amount.
+    completeJson.mockImplementation(
+      extraction([{ ...rows[0], description: "Invented vendor", evidence: "Invented vendor $45.00" }]),
+    );
+    await expect(parsePdfReview(native(), "a.pdf", DEFAULT_OPTIONS)).rejects.toThrow("matched");
+    // A real row whose amount is not the one printed is still rejected.
+    completeJson.mockImplementation(extraction([{ ...rows[0], amount: 54, evidence: "exact printed row" }]));
     await expect(parsePdfReview(native(), "a.pdf", DEFAULT_OPTIONS)).rejects.toThrow("matched");
     completeJson.mockRejectedValue(new LlmOutputError("Model output was not valid JSON"));
     await expect(parsePdfReview(native(), "a.pdf", DEFAULT_OPTIONS)).rejects.toThrow(
@@ -106,6 +112,12 @@ describe("PDF transport and source validation (provider mocked, no OCR accuracy 
     await expect(parsePdfReview(native(), "a.pdf", DEFAULT_OPTIONS)).rejects.toThrow(
       "invalid transaction records",
     );
+  });
+
+  it("recovers the printed line when a model paraphrases its evidence", async () => {
+    completeJson.mockImplementation(extraction(rows.map((r) => ({ ...r, evidence: "exact printed row" }))));
+    const r = await parsePdfReview(native(), "statement.pdf", DEFAULT_OPTIONS);
+    expect(r.rows.map((row) => row.source)).toEqual(["2026-10-01 Figma $45.00", "2026-10-01 Adobe $59.99"]);
   });
 
   it("rejects a row that names a page the model was not shown", async () => {

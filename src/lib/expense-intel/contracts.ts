@@ -5,7 +5,7 @@
 // coordinated commit; extend by adding optional fields.
 // Owners: see docs/leak-finder/02-workstreams.md.
 import type { LineItem } from "./types";
-import { displayVendor, vendorKey } from "./normalize";
+import { displayVendor, isPersonToPerson, vendorKey } from "./normalize";
 
 /** One expense, normalised for analysis across all of a user's uploads. */
 export interface Txn {
@@ -20,6 +20,8 @@ export interface Txn {
   uploadId: string | null;
   tags: string[];
   note: string | null;
+  /** Paid to a person by Zelle, Venmo or Cash App; never a subscription or duplicate charge. */
+  transfer?: boolean;
 }
 
 export function toTxn(
@@ -41,6 +43,7 @@ export function toTxn(
     uploadId: item.upload_id ?? null,
     tags: item.tags ?? [],
     note: item.note ?? null,
+    transfer: isPersonToPerson(raw),
   };
 }
 

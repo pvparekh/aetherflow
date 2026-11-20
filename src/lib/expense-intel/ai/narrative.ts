@@ -161,7 +161,7 @@ export async function writeNarrative(
     validate: validateNarrative,
     check: (result) => checkNarrative(result, facts),
     maxTokens: 1500,
-    timeoutMs: 35000,
+    timeoutMs: 50000,
   });
   if (outcome.ok) return { ...outcome.value, anomaly_explanations: [], source: "model" };
   console.warn("[pass2] narrative fell back to template", { reason: outcome.reason, attempts: outcome.attempts });

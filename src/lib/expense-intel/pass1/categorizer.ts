@@ -148,6 +148,9 @@ async function attempt(
   return null;
 }
 
+/** A 25-row batch takes about 22 s on Workers AI's 70B model (p95 51 s); below the commit route's 120 s with one retry. */
+export const CATEGORIZE_TIMEOUT_MS = 55000;
+
 async function requestBatch(rows: ParsedRow[]): Promise<CategorizedRow[]> {
   const ids = rows.map((_, i) => String(i + 1));
   const items = rows.map((row, i) => ({
@@ -156,6 +159,7 @@ async function requestBatch(rows: ParsedRow[]): Promise<CategorizedRow[]> {
     amount: row.amount,
   }));
   const { value } = await completeJson({
+    timeoutMs: CATEGORIZE_TIMEOUT_MS,
     task: "categorize",
     system: SYSTEM_PROMPT,
     user: `Categorise these ${rows.length} expenses:\n${JSON.stringify(items)}`,
