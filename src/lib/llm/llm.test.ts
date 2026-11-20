@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractJsonText, llmConfig } from "./index";
+import { extractJsonText, isSchemaRefusal, llmConfig, requestBody, type LlmConfig } from "./index";
 
 describe("llmConfig", () => {
   it("defaults to local Ollama with qwen3.5:9b", () => {
@@ -38,5 +38,37 @@ describe("extractJsonText", () => {
   });
   it("drops leading prose", () => {
     expect(extractJsonText('Sure! {"a":1}')).toBe('{"a":1}');
+  });
+});
+
+describe("requestBody", () => {
+  const request = {
+    task: "categorize" as const,
+    system: "s",
+    user: "u",
+    schema: { name: "items", schema: { type: "object" } },
+    validate: (v: unknown) => v,
+  };
+  const config = (provider: LlmConfig["provider"]): LlmConfig => ({ provider, baseURL: "x", apiKey: "k", model: "m" });
+
+  it("uses OpenAI's strict json_schema wrapper by default", () => {
+    expect(requestBody(request, config("openai")).response_format).toEqual({
+      type: "json_schema",
+      json_schema: { name: "items", schema: { type: "object" }, strict: true },
+    });
+  });
+  it("sends the bare schema to Cloudflare Workers AI", () => {
+    expect(requestBody(request, config("cloudflare")).response_format).toEqual({
+      type: "json_schema",
+      json_schema: { type: "object" },
+    });
+  });
+  it("turns off thinking only on Ollama", () => {
+    expect(requestBody(request, config("ollama")).reasoning_effort).toBe("none");
+    expect(requestBody(request, config("cloudflare")).reasoning_effort).toBeUndefined();
+  });
+  it("treats a schema refusal as bad output, not an outage", () => {
+    expect(isSchemaRefusal(new Error("400 JSON Mode couldn't be met"))).toBe(true);
+    expect(isSchemaRefusal(new Error("401 Unauthorized"))).toBe(false);
   });
 });

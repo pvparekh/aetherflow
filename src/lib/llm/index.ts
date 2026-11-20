@@ -174,11 +174,13 @@ function toUnavailable(error: unknown): LlmUnavailableError {
   );
 }
 
-export async function completeJson<T>(
-  request: JsonRequest<T>,
-  config: LlmConfig = llmConfig(request.task),
-): Promise<LlmResult<T>> {
-  const started = Date.now();
+/**
+ * The chat-completions body for a request. Exported for tests.
+ *
+ * Cloudflare Workers AI documents JSON mode with the bare schema under
+ * `json_schema` (no OpenAI `name`/`strict` wrapper), so it gets that shape.
+ */
+export function requestBody<T>(request: JsonRequest<T>, config: LlmConfig): Record<string, unknown> {
   const body: Record<string, unknown> = {
     model: config.model,
     messages: [
@@ -188,18 +190,40 @@ export async function completeJson<T>(
     temperature: 0,
     seed: 7,
     max_tokens: request.maxTokens ?? 2000,
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: request.schema.name,
-        schema: request.schema.schema,
-        strict: true,
-      },
-    },
+    response_format:
+      config.provider === "cloudflare"
+        ? { type: "json_schema", json_schema: request.schema.schema }
+        : {
+            type: "json_schema",
+            json_schema: {
+              name: request.schema.name,
+              schema: request.schema.schema,
+              strict: true,
+            },
+          },
   };
   // Qwen 3.5 and Gemma 4 think by default on Ollama; thinking consumes the
   // output budget and is unnecessary for constrained JSON.
   if (config.provider === "ollama") body.reasoning_effort = "none";
+  return body;
+}
+
+/**
+ * A provider that enforces the schema server-side may refuse output it cannot
+ * fit ("JSON Mode couldn't be met" on Workers AI). That is bad output for this
+ * request, not an outage, so callers' retry ladders should handle it.
+ */
+export function isSchemaRefusal(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /json mode couldn'?t be met/i.test(message);
+}
+
+export async function completeJson<T>(
+  request: JsonRequest<T>,
+  config: LlmConfig = llmConfig(request.task),
+): Promise<LlmResult<T>> {
+  const started = Date.now();
+  const body = requestBody(request, config);
 
   let content: string | null | undefined;
   try {
@@ -209,6 +233,7 @@ export async function completeJson<T>(
     );
     content = response.choices[0]?.message?.content;
   } catch (error) {
+    if (isSchemaRefusal(error)) throw new LlmOutputError("Model could not produce output matching the schema");
     throw toUnavailable(error);
   }
   if (!content) throw new LlmOutputError("Model returned no content");
