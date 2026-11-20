@@ -1,13 +1,20 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '../../../../../../utils/supabase/server';
-import { createServiceClient } from '../../../../../../utils/supabase/service';
-import type { Flag, FlagType, Pass2Result, DuplicateContext } from '@/lib/expense-intel/types';
+import { NextResponse } from "next/server";
+import { createClient } from "../../../../../../utils/supabase/server";
+import { createServiceClient } from "../../../../../../utils/supabase/service";
+import type {
+  Flag,
+  FlagType,
+  Pass2Result,
+  DuplicateContext,
+} from "@/lib/expense-intel/types";
 
-export const dynamic = 'force-dynamic';
+import { validateAnalysis } from "@/lib/expense-intel/ai/validate";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ uploadId: string }> }
+  { params }: { params: Promise<{ uploadId: string }> },
 ) {
   const { uploadId } = await params;
 
@@ -16,61 +23,73 @@ export async function GET(
     data: { user },
   } = await authClient.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 },
+    );
   }
 
   const supabase = createServiceClient();
 
   const { data: upload, error: uploadError } = await supabase
-    .from('uploads')
-    .select('*')
-    .eq('id', uploadId)
-    .eq('user_id', user.id)
+    .from("uploads")
+    .select("*")
+    .eq("id", uploadId)
+    .eq("user_id", user.id)
     .single();
 
   if (uploadError || !upload) {
-    return NextResponse.json({ error: 'Upload not found' }, { status: 404 });
+    return NextResponse.json({ error: "Upload not found" }, { status: 404 });
   }
 
   const [
-    { data: lineItems },
-    { data: catStats },
-    { data: vendors },
+    { data: lineItems, error: lineError },
+    { data: catStats, error: statsError },
+    { data: vendors, error: vendorsError },
     { data: latestUploadMeta },
-    { data: allUserUploads },
+    { data: allUserUploads, error: uploadsError },
   ] = await Promise.all([
     supabase
-      .from('line_items')
-      .select('*')
-      .eq('upload_id', uploadId)
-      .order('amount', { ascending: false }),
-    supabase.from('category_stats').select('*').eq('upload_id', uploadId),
-    supabase.from('vendors').select('*').eq('user_id', user.id),
+      .from("line_items")
+      .select("*")
+      .eq("upload_id", uploadId)
+      .order("amount", { ascending: false }),
+    supabase.from("category_stats").select("*").eq("upload_id", uploadId),
+    supabase.from("vendors").select("*").eq("user_id", user.id),
     supabase
-      .from('uploads')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('pass1_status', 'complete')
-      .order('uploaded_at', { ascending: false })
+      .from("uploads")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("pass1_status", "complete")
+      .order("uploaded_at", { ascending: false })
       .limit(1)
       .single(),
     supabase
-      .from('uploads')
-      .select('id, uploaded_at')
-      .eq('user_id', user.id)
-      .eq('pass1_status', 'complete'),
+      .from("uploads")
+      .select("id, uploaded_at")
+      .eq("user_id", user.id)
+      .eq("pass1_status", "complete"),
   ]);
 
+  if (lineError || statsError || vendorsError || uploadsError)
+    return NextResponse.json(
+      { error: "Report data could not be loaded. Retry shortly." },
+      { status: 503 },
+    );
   // Merge latest rolling averages when viewing an older upload
   let mergedCatStats = catStats ?? [];
   if (latestUploadMeta && latestUploadMeta.id !== uploadId) {
     const { data: latestStats } = await supabase
-      .from('category_stats')
-      .select('category, rolling_avg_5, rolling_avg_alltime, std_dev, trend_direction, total_spend_alltime')
-      .eq('upload_id', latestUploadMeta.id);
+      .from("category_stats")
+      .select(
+        "category, rolling_avg_5, rolling_avg_alltime, std_dev, trend_direction, total_spend_alltime",
+      )
+      .eq("upload_id", latestUploadMeta.id);
 
     if (latestStats && latestStats.length > 0) {
-      const latestMap = new Map(latestStats.map((s) => [s.category as string, s]));
+      const latestMap = new Map(
+        latestStats.map((s) => [s.category as string, s]),
+      );
       mergedCatStats = mergedCatStats.map((s) => {
         const latest = latestMap.get(s.category as string);
         if (!latest) return s;
@@ -88,7 +107,10 @@ export async function GET(
 
   // Resolve vendor dates from upload date map
   const uploadDateMap = new Map(
-    (allUserUploads ?? []).map((u) => [u.id as string, u.uploaded_at as string])
+    (allUserUploads ?? []).map((u) => [
+      u.id as string,
+      u.uploaded_at as string,
+    ]),
   );
   const vendorsWithDates = (vendors ?? []).map((v) => ({
     ...v,
@@ -98,11 +120,12 @@ export async function GET(
 
   // Historical category totals for rolling avg chart (last 5 prior uploads)
   const { data: prevUploads } = await supabase
-    .from('uploads')
-    .select('id, uploaded_at')
-    .eq('user_id', user.id)
-    .neq('id', uploadId)
-    .order('uploaded_at', { ascending: false })
+    .from("uploads")
+    .select("id, uploaded_at")
+    .eq("user_id", user.id)
+    .neq("id", uploadId)
+    .eq("pass1_status", "complete")
+    .order("uploaded_at", { ascending: false })
     .limit(5);
 
   type HistoryPoint = { uploaded_at: string; total: number };
@@ -111,22 +134,30 @@ export async function GET(
   if (prevUploads && prevUploads.length > 0) {
     const prevIds = prevUploads.map((u) => u.id as string);
     const { data: histStats } = await supabase
-      .from('category_stats')
-      .select('category, total_spend_period, upload_id')
-      .in('upload_id', prevIds);
+      .from("category_stats")
+      .select("category, total_spend_period, upload_id")
+      .in("upload_id", prevIds);
 
     if (histStats) {
-      const categories = new Set((catStats ?? []).map((s) => s.category as string));
-      const prevUploadDateMap = new Map(prevUploads.map((u) => [u.id as string, u.uploaded_at as string]));
+      const categories = new Set(
+        (catStats ?? []).map((s) => s.category as string),
+      );
+      const prevUploadDateMap = new Map(
+        prevUploads.map((u) => [u.id as string, u.uploaded_at as string]),
+      );
 
       for (const cat of categories) {
         const points = histStats
           .filter((s) => s.category === cat)
           .map((s) => ({
-            uploaded_at: prevUploadDateMap.get(s.upload_id as string) ?? '',
+            uploaded_at: prevUploadDateMap.get(s.upload_id as string) ?? "",
             total: Number(s.total_spend_period),
           }))
-          .sort((a, b) => new Date(a.uploaded_at).getTime() - new Date(b.uploaded_at).getTime());
+          .sort(
+            (a, b) =>
+              new Date(a.uploaded_at).getTime() -
+              new Date(b.uploaded_at).getTime(),
+          );
 
         if (points.length > 0) {
           categoryHistory.push({ category: cat, points });
@@ -136,7 +167,9 @@ export async function GET(
   }
 
   // Find duplicate-match context for each possibly-duplicated line item
-  const duplicateItems = (lineItems ?? []).filter((i) => i.is_possible_duplicate);
+  const duplicateItems = (lineItems ?? []).filter(
+    (i) => i.is_possible_duplicate,
+  );
   const duplicateContextMap = new Map<string, DuplicateContext>();
 
   if (duplicateItems.length > 0) {
@@ -146,29 +179,35 @@ export async function GET(
 
     if (otherUploadIds.length > 0) {
       const vendorNames = [
-        ...new Set(duplicateItems.map((i) => i.vendor as string).filter(Boolean)),
+        ...new Set(
+          duplicateItems.map((i) => i.vendor as string).filter(Boolean),
+        ),
       ];
 
-      const [{ data: otherUploads }, { data: matchingItems }] = await Promise.all([
-        supabase.from('uploads').select('id, filename').in('id', otherUploadIds),
-        vendorNames.length > 0
-          ? supabase
-              .from('line_items')
-              .select('id, vendor, amount, transaction_date, upload_id')
-              .in('upload_id', otherUploadIds)
-              .in('vendor', vendorNames)
-          : Promise.resolve({ data: [] }),
-      ]);
+      const [{ data: otherUploads }, { data: matchingItems }] =
+        await Promise.all([
+          supabase
+            .from("uploads")
+            .select("id, filename")
+            .in("id", otherUploadIds),
+          vendorNames.length > 0
+            ? supabase
+                .from("line_items")
+                .select("id, vendor, amount, transaction_date, upload_id")
+                .in("upload_id", otherUploadIds)
+                .in("vendor", vendorNames)
+            : Promise.resolve({ data: [] }),
+        ]);
 
       const otherFilenameMap = new Map(
-        (otherUploads ?? []).map((u) => [u.id as string, u.filename as string])
+        (otherUploads ?? []).map((u) => [u.id as string, u.filename as string]),
       );
 
       for (const dupItem of duplicateItems) {
         const match = (matchingItems ?? []).find(
           (m) =>
             m.vendor === dupItem.vendor &&
-            Math.abs(Number(m.amount) - Number(dupItem.amount)) < 0.01
+            Math.abs(Number(m.amount) - Number(dupItem.amount)) < 0.01,
         );
         if (match) {
           duplicateContextMap.set(dupItem.id as string, {
@@ -178,7 +217,9 @@ export async function GET(
               amount: Number(dupItem.amount),
             },
             match: {
-              filename: otherFilenameMap.get(match.upload_id as string) ?? 'Unknown file',
+              filename:
+                otherFilenameMap.get(match.upload_id as string) ??
+                "Unknown file",
               transaction_date: match.transaction_date as string | null,
               amount: Number(match.amount),
             },
@@ -191,25 +232,26 @@ export async function GET(
   // Build a rolling-avg map so flag descriptions can say "usually around $X"
   const catAvgMap = new Map<string, number>();
   for (const s of mergedCatStats) {
-    const avg = Number(s.rolling_avg_5 ?? 0);
+    const avg = Number(s.mean_amount ?? 0);
     if (avg > 0) catAvgMap.set(s.category as string, avg);
   }
-  const historyCount = prevUploads?.length ?? 0;
 
   const flags: Flag[] = [];
-  for (const item of (lineItems ?? [])) {
-    const vendor = String(item.vendor ?? 'Unknown');
+  for (const item of lineItems ?? []) {
+    const vendor = String(item.vendor ?? "Unknown");
     const amount = Number(item.amount ?? 0);
-    const category = String(item.category ?? 'Misc');
+    const category = String(item.category ?? "Misc");
     const catAvg = catAvgMap.get(category);
-    const avgNote = catAvg ? ` (${category} usually runs around $${catAvg.toFixed(0)})` : '';
-    const historyNote = historyCount > 0 ? ` across your last ${historyCount} report${historyCount === 1 ? '' : 's'}` : '';
+    const avgNote = catAvg
+      ? ` (${category} has a mean transaction of $${catAvg.toFixed(0)})`
+      : "";
+    const historyNote = " within this report";
 
     if (item.is_possible_duplicate) {
       flags.push({
-        severity: 'critical',
-        flag_type: 'duplicate' as FlagType,
-        title: 'Possible Duplicate Charge',
+        severity: "critical",
+        flag_type: "duplicate" as FlagType,
+        title: "Possible Duplicate Charge",
         description: `You have two identical $${amount.toFixed(2)} charges from ${vendor} within 7 days. Could be a double charge worth checking.`,
         metric: `$${amount.toFixed(2)} × 2`,
         vendor,
@@ -222,11 +264,14 @@ export async function GET(
       continue;
     }
 
-    if (item.is_round_number && (item.anomaly_severity === 'high' || item.anomaly_severity === 'medium')) {
+    if (
+      item.is_round_number &&
+      (item.anomaly_severity === "high" || item.anomaly_severity === "medium")
+    ) {
       flags.push({
-        severity: item.anomaly_severity === 'high' ? 'critical' : 'warning',
-        flag_type: 'round_number' as FlagType,
-        title: 'Large Round Number',
+        severity: item.anomaly_severity === "high" ? "critical" : "warning",
+        flag_type: "round_number" as FlagType,
+        title: "Large Round Number",
         description: `$${amount.toFixed(2)} from ${vendor} is an exact round number and higher than what you'd typically spend in ${category}. Worth confirming it came from a real receipt.`,
         metric: `$${amount.toFixed(2)}, round number`,
         vendor,
@@ -238,11 +283,14 @@ export async function GET(
       continue;
     }
 
-    if (item.is_first_time_vendor && (item.anomaly_severity === 'high' || item.anomaly_severity === 'medium')) {
+    if (
+      item.is_first_time_vendor &&
+      (item.anomaly_severity === "high" || item.anomaly_severity === "medium")
+    ) {
       flags.push({
-        severity: 'warning',
-        flag_type: 'first_time' as FlagType,
-        title: 'New Vendor, Large Charge',
+        severity: "warning",
+        flag_type: "first_time" as FlagType,
+        title: "New Vendor, Large Charge",
         description: `First time seeing a charge from ${vendor} and it's on the larger side at $${amount.toFixed(2)}${avgNote}. Flagging since it's new.`,
         metric: `$${amount.toFixed(2)}, first-time vendor`,
         vendor,
@@ -254,27 +302,35 @@ export async function GET(
       continue;
     }
 
-    if (!item.is_possible_duplicate && !item.is_round_number && !item.is_first_time_vendor) {
-      if (item.anomaly_severity === 'high') {
+    if (
+      !item.is_possible_duplicate &&
+      !item.is_round_number &&
+      !item.is_first_time_vendor
+    ) {
+      if (item.anomaly_severity === "high") {
         flags.push({
-          severity: 'critical',
-          flag_type: 'statistical' as FlagType,
-          title: 'Unusually High Charge',
+          severity: "critical",
+          flag_type: "statistical" as FlagType,
+          title: "Unusually High Charge",
           description: `${vendor} at $${amount.toFixed(2)} is significantly higher than what you'd normally see in ${category}${historyNote}${avgNote}.`,
-          metric: catAvg ? `$${amount.toFixed(2)} vs $${catAvg.toFixed(0)} avg` : `$${amount.toFixed(2)}`,
+          metric: catAvg
+            ? `$${amount.toFixed(2)} vs $${catAvg.toFixed(0)} avg`
+            : `$${amount.toFixed(2)}`,
           vendor,
           amount,
           z_score: item.z_score != null ? Number(item.z_score) : null,
           category,
           related_line_item_ids: [item.id as string],
         });
-      } else if (item.anomaly_severity === 'medium') {
+      } else if (item.anomaly_severity === "medium") {
         flags.push({
-          severity: 'warning',
-          flag_type: 'statistical' as FlagType,
-          title: 'Higher Than Usual',
+          severity: "warning",
+          flag_type: "statistical" as FlagType,
+          title: "Higher Than Usual",
           description: `${vendor} at $${amount.toFixed(2)} is more than you'd typically spend in ${category}${avgNote}. Worth a look.`,
-          metric: catAvg ? `$${amount.toFixed(2)} vs $${catAvg.toFixed(0)} avg` : `$${amount.toFixed(2)}`,
+          metric: catAvg
+            ? `$${amount.toFixed(2)} vs $${catAvg.toFixed(0)} avg`
+            : `$${amount.toFixed(2)}`,
           vendor,
           amount,
           z_score: item.z_score != null ? Number(item.z_score) : null,
@@ -285,13 +341,28 @@ export async function GET(
     }
   }
 
-  const severityOrder: Record<string, number> = { critical: 0, warning: 1, info: 2, success: 3 };
-  flags.sort((a, b) => (severityOrder[a.severity] ?? 3) - (severityOrder[b.severity] ?? 3));
+  const severityOrder: Record<string, number> = {
+    critical: 0,
+    warning: 1,
+    info: 2,
+    success: 3,
+  };
+  flags.sort(
+    (a, b) =>
+      (severityOrder[a.severity] ?? 3) - (severityOrder[b.severity] ?? 3),
+  );
 
-  const pass2 =
-    upload.ai_analysis && upload.pass2_status === 'complete'
-      ? (upload.ai_analysis as Pass2Result)
-      : null;
+  let pass2: Pass2Result | null = null;
+  if (upload.ai_analysis && upload.pass2_status === "complete") {
+    try {
+      pass2 = validateAnalysis({
+        ...upload.ai_analysis,
+        anomaly_explanations: [],
+      });
+    } catch {
+      /* Legacy invalid interpretation remains unavailable, never a clean result. */
+    }
+  }
 
   return NextResponse.json({
     upload,
