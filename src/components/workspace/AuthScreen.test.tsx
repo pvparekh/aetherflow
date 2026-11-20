@@ -67,9 +67,14 @@ describe("sign in and sign up", () => {
     auth.resend.mockResolvedValue({ error: null });
     const user = userEvent.setup();
     render(<AuthScreen signup />);
-    await fill(user, { "Full name": "Ada", "Email address": "ada@example.com", Password: "longenough" });
+    await fill(user, { "First name": "Ada", "Last name": "Lovelace", "Email address": "ada@example.com", Password: "longenough" });
     await user.click(screen.getByRole("button", { name: "Create account" }));
     expect(await screen.findByText(/sent a confirmation link to ada@example.com/)).toBeTruthy();
+    expect(auth.signUp.mock.calls[0][0].options.data).toEqual({
+      first_name: "Ada",
+      last_name: "Lovelace",
+      full_name: "Ada Lovelace",
+    });
     expect(replace).not.toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: /confirmation email again/ }));
     expect(auth.resend).toHaveBeenCalledWith(expect.objectContaining({ type: "signup", email: "ada@example.com" }));
@@ -79,7 +84,7 @@ describe("sign in and sign up", () => {
     auth.signUp.mockResolvedValue({ data: { user: { identities: [] }, session: null }, error: null });
     const user = userEvent.setup();
     render(<AuthScreen signup />);
-    await fill(user, { "Full name": "Ada", "Email address": "ada@example.com", Password: "longenough" });
+    await fill(user, { "First name": "Ada", "Last name": "Lovelace", "Email address": "ada@example.com", Password: "longenough" });
     await user.click(screen.getByRole("button", { name: "Create account" }));
     expect((await screen.findByRole("alert")).textContent).toMatch(/already uses this email/);
   });

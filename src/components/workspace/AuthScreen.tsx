@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Layout from "@/components/Layout";
 import { createClient } from "../../../utils/supabase/client";
+import { nameMetadata } from "@/lib/auth/names";
 
 type Mode = "signin" | "signup" | "forgot";
 
@@ -86,7 +87,7 @@ export default function AuthScreen({ signup = false }: { signup?: boolean }) {
           password,
           options: {
             emailRedirectTo: callback(next),
-            data: { full_name: String(f.get("name") ?? "").trim() },
+            data: nameMetadata(String(f.get("first-name") ?? ""), String(f.get("last-name") ?? "")),
           },
         });
         if (error) throw error;
@@ -201,10 +202,16 @@ export default function AuthScreen({ signup = false }: { signup?: boolean }) {
           )}
           <form onSubmit={(e) => void submit(e)}>
             {mode === "signup" && (
-              <label htmlFor="full-name">
-                Full name
-                <input id="full-name" name="name" autoComplete="name" maxLength={100} required />
-              </label>
+              <div className="name-row">
+                <label htmlFor="first-name">
+                  First name
+                  <input id="first-name" name="first-name" autoComplete="given-name" maxLength={50} required />
+                </label>
+                <label htmlFor="last-name">
+                  Last name
+                  <input id="last-name" name="last-name" autoComplete="family-name" maxLength={50} required />
+                </label>
+              </div>
             )}
             <label htmlFor="email">
               Email address

@@ -11,6 +11,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuthUser } from "./useAuthUser";
+import { firstName } from "@/lib/auth/names";
 import { createClient } from "../../utils/supabase/client";
 export default function Layout({ children }: { children: React.ReactNode }) {
   const path = usePathname();
@@ -67,7 +68,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 href="/account"
                 title={user.email ?? undefined}
               >
-                Account
+                Hello, {firstName(user)}
               </Link>
               <button
                 type="button"

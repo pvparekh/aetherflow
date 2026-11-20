@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { updateSession } from './utils/supabase/middleware'
+import { updateSession } from '../utils/supabase/middleware'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Public content must remain available when authentication is slow.
   if (request.nextUrl.pathname === '/') return NextResponse.next()
   return await updateSession(request)
@@ -20,4 +20,5 @@ export const config = {
   ],
 }
 
-//these middleware files are necessary for refreshing off tokens on the server components and in the browser under the lib folder 
+// Next.js 16 runs this before matching routes: it refreshes the Supabase
+// session and sends signed-out visitors of private pages to sign in. 

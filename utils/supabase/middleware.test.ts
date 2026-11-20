@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server'
 const { create, getUser } = vi.hoisted(() => ({ create: vi.fn(), getUser: vi.fn() }))
 vi.mock('@supabase/ssr', () => ({ createServerClient: create }))
 import { updateSession, AUTH_DEADLINE_MS } from './middleware'
-import { middleware } from '../../middleware'
+import { proxy as middleware } from '../../src/proxy'
 
 const request = (path = '/account', cookie = true) => new NextRequest(`https://app.example${path}`, {
   headers: cookie ? { cookie: 'sb-project-auth-token.0=synthetic' } : {},
